@@ -4,6 +4,7 @@
         sourceRepoUrl,
         sourceChart,
         sourceTargetRevision,
+        server="",
         namespace="",
         helmValues={}) ::
     {
@@ -25,7 +26,7 @@
                 }
             },
             destination: {
-                server: "https://kubernetes.default.svc",
+                server: if server == "" then "https://kubernetes.default.svc" else server,
                 namespace: if namespace == "" then name else namespace
             },
             syncPolicy: {
