@@ -14,7 +14,7 @@ spec:
     path: app-of-apps
 
   destination:
-    server: default
+    server: "https://epsilon:6443"
     namespace: default
 
   syncPolicy:

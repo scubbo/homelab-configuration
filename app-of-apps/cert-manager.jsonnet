@@ -12,5 +12,5 @@ appDef.helmApplication(
     },
     namespace="security",
     // Can't use the `https://kubernetes.default.svc` server because, until this is installed, that won't be available!
-    server="default"
+    server="https://epsilon:6443"
 )
