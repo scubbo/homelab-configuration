@@ -123,7 +123,7 @@
         kind: "Application",
         metadata: {
             name: name,
-            namespace: "argo",
+            namespace: "argocd",
             finalizers: ["resources-finalizer.argocd.argoproj.io"]
         },
         spec: {
