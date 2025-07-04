@@ -1,6 +1,6 @@
 local appDef = import './app-definitions.libsonnet';
 
-appDef.helmApplication(
+appDef.helmRemotePlusLocalApplication(
     name="cert-manager",
     sourceChart="cert-manager",
     sourceRepoUrl="https://charts.jetstack.io",
@@ -12,5 +12,6 @@ appDef.helmApplication(
     },
     namespace="security",
     // Can't use the `https://kubernetes.default.svc` server because, until this is installed, that won't be available!
-    server="https://epsilon:6443"
+    server="https://epsilon:6443",
+    nonHelmApp=true
 )
