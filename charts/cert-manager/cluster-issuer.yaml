@@ -20,9 +20,8 @@ spec:
 
     solvers:
       - selector:
-          dnsNames:
-            - "*.scubbo.org"
-            - "*.avril"
+          dnsZones:
+            - "scubbo.org"
         dns01:
           cloudflare:
             email: scubbojj+cloudflare@gmail.com
