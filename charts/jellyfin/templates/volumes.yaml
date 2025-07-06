@@ -1,33 +1,13 @@
 {{- range .Values.volumes }}
 ---
 apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: jf-{{ .name }}
-spec:
-  capacity:
-    storage: {{ .config.size | quote }}
-  accessModes:
-    - {{ .config.accessMode }}
-  nfs:
-    server: {{ .config.nfs.server }}
-    path: {{ .config.nfs.path }}
-    {{- if hasPrefix "ReadOnly" .config.accessMode }}
-    readOnly: true
-    {{- end}}
-  mountOptions:
-    - nfsvers=4.2
----
-apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: jf-{{ .name }}-pvc
 spec:
-  storageClassName: ""
-  volumeName: jf-{{ .name }}
+  storageClassName: "freenas-nfs-csi"
   accessModes:
     - {{ .config.accessMode }}
-  volumeMode: Filesystem
   resources:
     requests:
       storage: {{ .config.size | quote }}
