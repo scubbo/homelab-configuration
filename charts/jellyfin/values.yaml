@@ -31,11 +31,11 @@ podSecurityContext: {}
 securityContext:
   runAsUser: 1000
   fsGroup: 1000
-  supplementalGroups:
-    - 44 # `getent group video | cut -d: -f3` - https://jellyfin.org/docs/general/administration/hardware-acceleration/intel#kubernetes
-  capabilities:
-    add:
-      - "SYS_ADMIN"
+  # supplementalGroups:
+  #   - 44 # `getent group video | cut -d: -f3` - https://jellyfin.org/docs/general/administration/hardware-acceleration/intel#kubernetes
+  # capabilities:
+  #   add:
+  #     - "SYS_ADMIN"
   #   drop:
   #   - ALL
   # readOnlyRootFilesystem: true
@@ -67,11 +67,11 @@ ingress:
   #      - chart-example.local
 
 # https://github.com/NVIDIA/k8s-device-plugin?tab=readme-ov-file#running-gpu-jobs
-resources:
-  requests:
-    nvidia.com/gpu: 1
-  limits:
-    nvidia.com/gpu: 1
+# resources:
+#   requests:
+#     nvidia.com/gpu: 1
+#   limits:
+#     nvidia.com/gpu: 1
 
 autoscaling:
   enabled: false
@@ -118,7 +118,7 @@ metricsImage:
   repository: gitea.scubbo.org/scubbo/jellyfin-library-count-prometheus-exporter
   tag: latest
 
-runtimeClassName: nvidia
+# runtimeClassName: nvidia
 
 metrics:
   apiUrl: "http://jellyfin.avril"
