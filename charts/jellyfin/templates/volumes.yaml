@@ -1,0 +1,97 @@
+{{- range .Values.volumes }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jf-{{ .name }}
+spec:
+  capacity:
+    storage: {{ .config.size | quote }}
+  accessModes:
+    - {{ .config.accessMode }}
+  nfs:
+    server: {{ .config.nfs.server }}
+    path: {{ .config.nfs.path }}
+    {{- if hasPrefix "ReadOnly" .config.accessMode }}
+    readOnly: true
+    {{- end}}
+  mountOptions:
+    - nfsvers=4.2
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jf-{{ .name }}-pvc
+spec:
+  storageClassName: ""
+  volumeName: jf-{{ .name }}
+  accessModes:
+    - {{ .config.accessMode }}
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: {{ .config.size | quote }}
+{{- end}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jf-truenas-media-pvc
+spec:
+  storageClassName: ""
+  volumeName: jf-truenas-media-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20T
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jf-truenas-media-pv
+spec:
+  capacity:
+    storage: 20T
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: galactus.avril
+    path: /mnt/low-resiliency-with-read-cache/ombi-data/
+# ---
+# # https://forum.jellyfin.org/t-could-not-apply-migration-migrateactivitylogdatabase
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: jf-config
+# spec:
+#   capacity:
+#     storage: "100M"
+#   volumeMode: Filesystem
+#   accessModes:
+#     - ReadWriteMany
+#   storageClassName: local-storage
+#   local:
+#     path: /mnt/NEW_BERTHA/local-jellyfin-config
+#   nodeAffinity:
+#     required:
+#       nodeSelectorTerms:
+#       - matchExpressions:
+#         - key: kubernetes.io/hostname
+#           operator: In
+#           values:
+#           - rasnu2
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: jf-config-pvc
+# spec:
+#   storageClassName: ""
+#   volumeName: jf-config
+#   accessModes:
+#     - ReadWriteMany
+#   volumeMode: Filesystem
+#   resources:
+#     requests:
+#       storage: "100M"
