@@ -81,12 +81,9 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 nodeSelector:
-  architecture: x86
+  kubernetes.io/arch: amd64
 
-tolerations:
-- key: architecture
-  operator: Equal
-  value: x86
+tolerations: []
 
 affinity: {}
 
