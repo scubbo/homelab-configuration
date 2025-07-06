@@ -102,14 +102,14 @@ volumes:
       accessMode: ReadWriteMany
       nfs:
         server: galactus.avril
-        path: "/mnt/high-resiliency/auto-created-k8s-nfs-vols/etc/jellyfin/cache"
+        path: "/mnt/high-resiliency/k8s/nfs/etc/jellyfin/cache"
   - name: config
     config:
       size: 100M
       accessMode: ReadWriteMany
       nfs:
         server: galactus.avril
-        path: "/mnt/high-resiliency/auto-created-k8s-nfs-vols/etc/jellyfin/config"
+        path: "/mnt/high-resiliency/k8s/nfs/etc/jellyfin/config"
 
 metricsImage:
   repository: gitea.scubbo.org/scubbo/jellyfin-library-count-prometheus-exporter
