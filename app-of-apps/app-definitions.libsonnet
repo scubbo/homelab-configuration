@@ -26,7 +26,7 @@
                 }
             },
             destination: {
-                server: if server == "" then "https://kubernetes.default.svc" else server,
+                server: if server == "" then "https://epsilon:6443" else server,
                 namespace: if namespace == "" then name else namespace
             },
             syncPolicy: {
@@ -63,7 +63,7 @@
                 }
             },
             destination: {
-                server: 'https://kubernetes.default.svc',
+                server: 'https://epsilon:6443',
                 namespace: if namespace == "" then name else namespace
             },
             syncPolicy: {
@@ -95,7 +95,7 @@
                 path: if path == "" then "." else path
             },
             destination: {
-                server: 'https://kubernetes.default.svc',
+                server: 'https://epsilon:6443',
                 namespace: if namespace == "" then name else namespace
             },
             syncPolicy: {
@@ -149,7 +149,7 @@
                 }
             ],
             destination: {
-                server: if server == "" then "https://kubernetes.default.svc" else server,
+                server: if server == "" then "https://epsilon:6443" else server,
                 namespace: if namespace == "" then name else namespace
             },
             syncPolicy: {
