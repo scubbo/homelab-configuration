@@ -103,7 +103,7 @@ volumes:
       accessMode: ReadWriteMany
   - name: config
     config:
-      size: 100M
+      size: 500M
       accessMode: ReadWriteMany
 
 metricsImage:
