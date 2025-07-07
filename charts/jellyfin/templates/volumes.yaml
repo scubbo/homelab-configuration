@@ -3,33 +3,12 @@ kind: PersistentVolumeClaim
 metadata:
   name: jf-config-pvc
 spec:
-  storageClassName: ""
-  volumeName: jf-config-pv
+  storageClassName: "freenas-iscsi-csi"
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 1G
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: jf-config-pv
-spec:
-  capacity:
-    storage: 1G
-  accessModes:
-    - ReadWriteOnce
-  local:
-    path: /mnt/HDD/local-jellyfin-config
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - epsilon
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
