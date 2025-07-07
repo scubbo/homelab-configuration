@@ -1,17 +1,26 @@
-{{- range .Values.volumes }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jf-config-pvc
+spec:
+  storageClassName: "freenas-iscsi-csi"
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1G
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: jf-{{ .name }}-pvc
+  name: jf-cache-pvc
 spec:
   storageClassName: "freenas-nfs-csi"
   accessModes:
-    - {{ .config.accessMode }}
+    - ReadWriteMany
   resources:
     requests:
-      storage: {{ .config.size | quote }}
-{{- end}}
+      storage: 2G
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

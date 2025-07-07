@@ -88,24 +88,6 @@ tolerations: []
 
 affinity: {}
 
-# Custom values below here
-
-# This approach is still pretty lacking:
-# - No type-checking
-# - Assumes NFS
-# - replication of nfsServer
-#
-# But hey, this is for my own use anyway. If people start referencing it, I can improve it! :P
-volumes:
-  - name: cache
-    config:
-      size: 2G
-      accessMode: ReadWriteMany
-  - name: config
-    config:
-      size: 1G
-      accessMode: ReadWriteMany
-
 metricsImage:
   repository: gitea.scubbo.org/scubbo/jellyfin-library-count-prometheus-exporter
   tag: latest
