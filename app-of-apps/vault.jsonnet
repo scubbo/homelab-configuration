@@ -18,6 +18,9 @@ appDef.helmRemotePlusLocalApplication(
             }
         },
         server: {
+            nodeSelector: {
+                "kubernetes.io/arch": "amd64"
+            },
             ingress: {
                 enabled: true,
                 ingressClassName: "traefik",
