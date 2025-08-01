@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-gluetun
+  namespace: vpn
+  labels:
+    app: busybox-gluetun
+spec:
+  containers:
+  # Gluetun VPN sidecar container
+  - name: gluetun
+    image: qmcgaw/gluetun:latest
+    securityContext:
+      capabilities:
+        add:
+          - NET_ADMIN
+    env:
+    - name: VPN_SERVICE_PROVIDER
+      value: "protonvpn"
+    - name: VPN_TYPE
+      value: "openvpn"
+    - name: OPENVPN_USER
+      valueFrom:
+        secretKeyRef:
+          name: gluetun-protonvpn
+          key: username
+    - name: OPENVPN_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: gluetun-protonvpn
+          key: password
+    - name: SERVER_COUNTRIES
+      value: "Canada"  # Change to your preferred country
+    # Optional: specific server selection
+    # - name: SERVER_NAMES
+    #   value: "CA#49"  # Specific server from your OpenVPN config
+    - name: FIREWALL_OUTBOUND_SUBNETS
+      value: "10.0.0.0/8,192.168.0.0/16"  # Allow local networks
+    - name: DNS_KEEP_NAMESERVER
+      value: "on"  # Keep Kubernetes DNS
+    ports:
+    - containerPort: 8000  # Gluetun control server
+      name: gluetun-http
+  
+  # Your application container
+  - name: busybox
+    image: busybox:latest
+    command: ["sleep", "3600"]
+    # This container will use the network namespace of the gluetun container
+    # All traffic will go through the VPN
+  
+  restartPolicy: Always
