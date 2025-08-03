@@ -1,0 +1,70 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: inject-gluetun-sidecar
+  annotations:
+    policies.kyverno.io/title: Inject Gluetun VPN Sidecar
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      This policy automatically injects a Gluetun VPN sidecar container
+      into all Pods created in the 'vpn' namespace, using ProtonVPN configuration.
+spec:
+  background: false
+  rules:
+  - name: inject-gluetun-container
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - vpn
+          - arr-stack
+    exclude:
+      any:
+      - resources:
+          annotations:
+            gluetun.kyverno.io/skip: "true"
+      - resources:
+          kinds:
+          - Pod
+          name: "*gluetun*"  # Skip pods that already have gluetun in the name
+    mutate:
+      patchStrategicMerge:
+        metadata:
+          annotations:
+            setGateway: "false"  # Disable pod-gateway webhook injection
+        spec:
+          containers:
+          - name: gluetun
+            image: qmcgaw/gluetun:latest
+            securityContext:
+              capabilities:
+                add:
+                - NET_ADMIN
+            env:
+            - name: VPN_SERVICE_PROVIDER
+              value: "protonvpn"
+            - name: VPN_TYPE
+              value: "openvpn"
+            - name: OPENVPN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-protonvpn
+                  key: username
+            - name: OPENVPN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-protonvpn
+                  key: password
+            - name: SERVER_COUNTRIES
+              value: "Canada"
+            - name: FIREWALL_OUTBOUND_SUBNETS
+              value: "10.0.0.0/8,192.168.0.0/16"
+            - name: DNS_KEEP_NAMESERVER
+              value: "on"
+            ports:
+            - containerPort: 8000
+              name: gluetun-http
+              protocol: TCP
