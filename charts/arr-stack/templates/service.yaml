@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "arr-stack.fullname" . }}
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 3579
+      protocol: TCP
+  selector:
+    {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-sonarr
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.sonarrPort }}
+      targetPort: 8989
+      protocol: TCP
+  selector:
+    {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-radarr
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.radarrPort }}
+      targetPort: 7878
+      protocol: TCP
+  selector:
+    {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-readarr
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.readarrPort }}
+      targetPort: 8787
+      protocol: TCP
+  selector:
+    {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-prowlarr
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.prowlarrPort }}
+      targetPort: 9696
+      protocol: TCP
+  selector:
+    {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-nzbget
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.nzbgetWebPort }}
+      targetPort: 6789
+      protocol: TCP
+  selector:
+    {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-sabnzbd
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.sabnzbdWebPort }}
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    {{- include "arr-stack.selectorLabels" . | nindent 4 }}

@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-truenas-data-pv
+  namespace: {{ .Release.Namespace }}
+spec:
+  capacity:
+    storage: 20T
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: galactus.avril
+    path: /mnt/low-resiliency-with-read-cache/ombi-data/
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-truenas-data-pvc
+  namespace: {{ .Release.Namespace }}
+spec:
+  storageClassName: ""
+  volumeName: {{ include "arr-stack.fullname" . }}-truenas-data-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20T
+{{- range tuple "overseerr" "sonarr" "radarr" "readarr" "prowlarr" "nzbget" "sabnzbd" }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "arr-stack.fullname" $ }}-{{.}}-config-pvc
+spec:
+  storageClassName: "freenas-nfs-csi"
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+{{- end }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-truenas-usenet-downloads-pv
+spec:
+  capacity:
+    storage: 1T
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: galactus.avril
+    path: /mnt/low-resiliency-with-read-cache/ombi-data/usenet
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-truenas-usenet-downloads-pvc
+spec:
+  storageClassName: ""
+  volumeName: {{ include "arr-stack.fullname" . }}-truenas-usenet-downloads-pv
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1T

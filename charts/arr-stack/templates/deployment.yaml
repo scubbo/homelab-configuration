@@ -1,0 +1,213 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "arr-stack.fullname" . }}
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "arr-stack.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "arr-stack.selectorLabels" . | nindent 8 }}
+    spec:
+      # Necessary for Pod to have a static hostname in order to expose ports:
+      # https://docs.k8s-at-home.com/guides/pod-gateway/#exposing-routed-pod-ports-from-the-gateway
+      hostname: arr-stack
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        {{ if .Values.overseerr.enabled }}
+        - name: overseerr
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PUID
+              value: "1000"
+            - name: GUID
+              value: "1000"
+            - name: TZ
+              value: "America/Los_Angeles"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: overseerr-config
+        {{- end -}}
+        {{ if .Values.sonarr.enabled }}
+        - name: sonarr
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12}}
+          image: "lscr.io/linuxserver/sonarr:{{ .Values.sonarr.tag | default "latest" }}"
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: sonarr-config
+            - mountPath: /data
+              name: truenas-data
+        {{- end -}}
+        {{ if .Values.radarr.enabled }}
+        - name: radarr
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12}}
+          image: "lscr.io/linuxserver/radarr:{{ .Values.radarr.tag | default "latest" }}"
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: radarr-config
+            - mountPath: /data
+              name: truenas-data
+        {{- end -}}
+        {{ if .Values.readarr.enabled }}
+        - name: readarr
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12}}
+          image: "lscr.io/linuxserver/readarr:{{ .Values.readarr.tag | default "develop" }}"
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: readarr-config
+            - mountPath: /data
+              name: truenas-data
+        {{- end -}}
+        {{if .Values.prowlarr.enabled}}
+        - name: prowlarr
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12}}
+          image: "lscr.io/linuxserver/prowlarr:{{ .Values.prowlarr.tag | default "latest" }}"
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+          resources:
+            {{- toYaml .Values.resources | nindent 12}}
+          volumeMounts:
+            - mountPath: /config
+              name: prowlarr-config
+            - mountPath: /data
+              name: truenas-data
+        {{- end -}}
+        {{ if .Values.nzbget.enabled }}
+        - name: nzbget
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "lscr.io/linuxserver/nzbget:{{ .Values.nzbget.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "America/Los_Angeles"
+            - name: NZBGET_USER
+              value: nzbget
+            - name: NZBGET_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: nzbget-creds
+                  key: password
+                  optional: false
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: nzbget-config
+            - mountPath: /data/usenet
+              name: usenet-truenas-downloads
+        {{ end }}
+        {{ if .Values.sabnzbd.enabled }}
+        - name: sabnzbd
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "lscr.io/linuxserver/sabnzbd:{{ .Values.sabnzbd.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "America/Los_Angeles"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: sabnzbd-config
+            - mountPath: /data/usenet
+              name: usenet-truenas-downloads
+        {{ end }}
+      volumes:
+        - name: overseerr-config
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-overseerr-config-pvc
+        - name: truenas-data
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-truenas-data-pvc
+        - name: sonarr-config
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-sonarr-config-pvc
+        - name: radarr-config
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-radarr-config-pvc
+        - name: readarr-config
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-readarr-config-pvc
+        - name: prowlarr-config
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-prowlarr-config-pvc
+        - name: nzbget-config
+          persistentVolumeClaim:
+            claimName: {{include "arr-stack.fullname" .}}-nzbget-config-pvc
+        - name: sabnzbd-config
+          persistentVolumeClaim:
+            claimName: {{include "arr-stack.fullname" .}}-sabnzbd-config-pvc
+        - name: usenet-truenas-downloads
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-truenas-usenet-downloads-pvc
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
