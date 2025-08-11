@@ -162,7 +162,7 @@ spec:
             claimName: {{ include "arr-stack.fullname" . }}-sonarr-config-pvc
         - name: radarr-config
           persistentVolumeClaim:
-            claimName: {{ include "arr-stack.fullname" . }}-radarr-config-pvc
+            claimName: {{ include "arr-stack.fullname" . }}-radarr-config-iscsi-pvc
         - name: readarr-config
           persistentVolumeClaim:
             claimName: {{ include "arr-stack.fullname" . }}-readarr-config-pvc
