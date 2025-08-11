@@ -23,8 +23,9 @@ spec:
       - resources:
           kinds:
           - Pod
-          labels:
-            gluetun-vpn: "true"
+          selector:
+            matchLabels:
+              gluetun-vpn: "true"
     exclude:
       any:
       - resources:
