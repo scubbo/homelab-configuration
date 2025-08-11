@@ -12,6 +12,7 @@ spec:
       protocol: TCP
   selector:
     {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: main
 ---
 apiVersion: v1
 kind: Service
@@ -27,6 +28,7 @@ spec:
       protocol: TCP
   selector:
     {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: main
 ---
 apiVersion: v1
 kind: Service
@@ -42,6 +44,7 @@ spec:
       protocol: TCP
   selector:
     {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: main
 ---
 apiVersion: v1
 kind: Service
@@ -57,6 +60,7 @@ spec:
       protocol: TCP
   selector:
     {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: main
 ---
 apiVersion: v1
 kind: Service
@@ -72,6 +76,7 @@ spec:
       protocol: TCP
   selector:
     {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: main
 ---
 apiVersion: v1
 kind: Service
@@ -87,6 +92,7 @@ spec:
       protocol: TCP
   selector:
     {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: main
 ---
 apiVersion: v1
 kind: Service
@@ -102,3 +108,4 @@ spec:
       protocol: TCP
   selector:
     {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: sabnzbd

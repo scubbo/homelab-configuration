@@ -19,6 +19,7 @@ spec:
       {{- end }}
       labels:
         {{- include "arr-stack.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: main
     spec:
       # Necessary for Pod to have a static hostname in order to expose ports:
       # https://docs.k8s-at-home.com/guides/pod-gateway/#exposing-routed-pod-ports-from-the-gateway
