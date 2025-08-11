@@ -150,27 +150,6 @@ spec:
             - mountPath: /data/usenet
               name: usenet-truenas-downloads
         {{ end }}
-        {{ if .Values.sabnzbd.enabled }}
-        - name: sabnzbd
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "lscr.io/linuxserver/sabnzbd:{{ .Values.sabnzbd.tag | default "latest" }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            - name: PUID
-              value: "1000"
-            - name: PGID
-              value: "1000"
-            - name: TZ
-              value: "America/Los_Angeles"
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          volumeMounts:
-            - mountPath: /config
-              name: sabnzbd-config
-            - mountPath: /data/usenet
-              name: usenet-truenas-downloads
-        {{ end }}
       volumes:
         - name: overseerr-config
           persistentVolumeClaim:
@@ -193,6 +172,77 @@ spec:
         - name: nzbget-config
           persistentVolumeClaim:
             claimName: {{include "arr-stack.fullname" .}}-nzbget-config-pvc
+        - name: usenet-truenas-downloads
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-truenas-usenet-downloads-pvc
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+{{ if .Values.sabnzbd.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-sabnzbd
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sabnzbd
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "arr-stack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: sabnzbd
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "arr-stack.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: sabnzbd
+        gluetun-vpn: "true"
+    spec:
+      hostname: sabnzbd
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: sabnzbd
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "lscr.io/linuxserver/sabnzbd:{{ .Values.sabnzbd.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "America/Los_Angeles"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: sabnzbd-config
+            - mountPath: /data/usenet
+              name: usenet-truenas-downloads
+      volumes:
         - name: sabnzbd-config
           persistentVolumeClaim:
             claimName: {{include "arr-stack.fullname" .}}-sabnzbd-config-pvc
@@ -211,3 +261,4 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+{{ end }}
