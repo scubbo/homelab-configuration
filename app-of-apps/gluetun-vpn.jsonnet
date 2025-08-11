@@ -17,7 +17,7 @@
       path: 'manifests/gluetun',
     },
     destination: {
-      server: 'https://kubernetes.default.svc',
+      server: 'https://epsilon:6443',
       namespace: 'proton-vpn',
     },
     syncPolicy: {
