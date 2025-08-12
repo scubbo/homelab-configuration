@@ -354,7 +354,7 @@ spec:
       volumes:
         - name: readarr-config
           persistentVolumeClaim:
-            claimName: {{ include "arr-stack.fullname" . }}-readarr-config-pvc
+            claimName: {{ include "arr-stack.fullname" . }}-readarr-config-iscsi-pvc
         - name: truenas-data
           persistentVolumeClaim:
             claimName: {{ include "arr-stack.fullname" . }}-truenas-data-pvc
@@ -428,7 +428,7 @@ spec:
       volumes:
         - name: prowlarr-config
           persistentVolumeClaim:
-            claimName: {{ include "arr-stack.fullname" . }}-prowlarr-config-pvc
+            claimName: {{ include "arr-stack.fullname" . }}-prowlarr-config-iscsi-pvc
         - name: truenas-data
           persistentVolumeClaim:
             claimName: {{ include "arr-stack.fullname" . }}-truenas-data-pvc
