@@ -2,7 +2,7 @@ Expects a secret named `nzbget-creds`, with key `password`
 
 # Supporting services
 
-Overseerr, Sonarr, Radarr, and NzbGet do nothing in isolation - you need to hook them up to supporting services to access any data.
+Ombi, Sonarr, Radarr, and NzbGet do nothing in isolation - you need to hook them up to supporting services to access any data.
 
 ## Indexers
 
