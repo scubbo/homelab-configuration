@@ -50,42 +50,6 @@ spec:
             - mountPath: /config
               name: overseerr-config
         {{- end -}}
-        {{ if .Values.readarr.enabled }}
-        - name: readarr
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12}}
-          image: "lscr.io/linuxserver/readarr:{{ .Values.readarr.tag | default "develop" }}"
-          env:
-            - name: PUID
-              value: "1000"
-            - name: PGID
-              value: "1000"
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          volumeMounts:
-            - mountPath: /config
-              name: readarr-config
-            - mountPath: /data
-              name: truenas-data
-        {{- end -}}
-        {{if .Values.prowlarr.enabled}}
-        - name: prowlarr
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12}}
-          image: "lscr.io/linuxserver/prowlarr:{{ .Values.prowlarr.tag | default "latest" }}"
-          env:
-            - name: PUID
-              value: "1000"
-            - name: PGID
-              value: "1000"
-          resources:
-            {{- toYaml .Values.resources | nindent 12}}
-          volumeMounts:
-            - mountPath: /config
-              name: prowlarr-config
-            - mountPath: /data
-              name: truenas-data
-        {{- end -}}
         {{ if .Values.nzbget.enabled }}
         - name: nzbget
           securityContext:
@@ -359,6 +323,154 @@ spec:
         - name: sonarr-config
           persistentVolumeClaim:
             claimName: {{ include "arr-stack.fullname" . }}-sonarr-config-pvc
+        - name: truenas-data
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-truenas-data-pvc
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{ end }}
+---
+{{ if .Values.readarr.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-readarr
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: readarr
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "arr-stack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: readarr
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "arr-stack.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: readarr
+    spec:
+      hostname: readarr
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: readarr
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "lscr.io/linuxserver/readarr:{{ .Values.readarr.tag | default "develop" }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "America/Los_Angeles"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: readarr-config
+            - mountPath: /data
+              name: truenas-data
+      volumes:
+        - name: readarr-config
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-readarr-config-pvc
+        - name: truenas-data
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-truenas-data-pvc
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{ end }}
+---
+{{ if .Values.prowlarr.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-prowlarr
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prowlarr
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "arr-stack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: prowlarr
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "arr-stack.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: prowlarr
+    spec:
+      hostname: prowlarr
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: prowlarr
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "lscr.io/linuxserver/prowlarr:{{ .Values.prowlarr.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "America/Los_Angeles"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: prowlarr-config
+            - mountPath: /data
+              name: truenas-data
+      volumes:
+        - name: prowlarr-config
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-prowlarr-config-pvc
         - name: truenas-data
           persistentVolumeClaim:
             claimName: {{ include "arr-stack.fullname" . }}-truenas-data-pvc

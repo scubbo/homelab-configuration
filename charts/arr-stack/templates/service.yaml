@@ -60,7 +60,7 @@ spec:
       protocol: TCP
   selector:
     {{- include "arr-stack.selectorLabels" . | nindent 4 }}
-    app.kubernetes.io/component: main
+    app.kubernetes.io/component: readarr
 ---
 apiVersion: v1
 kind: Service
@@ -76,7 +76,7 @@ spec:
       protocol: TCP
   selector:
     {{- include "arr-stack.selectorLabels" . | nindent 4 }}
-    app.kubernetes.io/component: main
+    app.kubernetes.io/component: prowlarr
 ---
 apiVersion: v1
 kind: Service
