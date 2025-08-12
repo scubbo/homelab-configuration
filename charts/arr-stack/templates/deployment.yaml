@@ -54,7 +54,7 @@ spec:
       volumes:
         - name: ombi-config
           persistentVolumeClaim:
-            claimName: {{ include "arr-stack.fullname" . }}-ombi-config-pvc
+            claimName: {{ include "arr-stack.fullname" . }}-ombi-config-iscsi-pvc
         # - name: truenas-data
         #   persistentVolumeClaim:
         #     claimName: {{ include "arr-stack.fullname" . }}-truenas-data-pvc

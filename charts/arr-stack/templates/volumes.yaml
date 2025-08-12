@@ -25,7 +25,7 @@ spec:
   resources:
     requests:
       storage: 20T
-{{- range tuple "ombi" "sonarr" "readarr" "prowlarr" "nzbget" "sabnzbd" }}
+{{- range tuple "sonarr" "readarr" "prowlarr" "nzbget" "sabnzbd" }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -41,6 +41,7 @@ spec:
 {{- end }}
 ---
 # Split this out so that we can use a different storage class for radarr
+{{ if .Values.radarr.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -53,6 +54,23 @@ spec:
     requests:
       storage: 1Gi
 ---
+{{- end }}
+
+{{ if .Values.ombi.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "arr-stack.fullname" $ }}-ombi-config-iscsi-pvc
+spec:
+  storageClassName: "freenas-iscsi-csi"
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+{{- end}}
+
 apiVersion: v1
 kind: PersistentVolume
 metadata:
