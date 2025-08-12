@@ -50,42 +50,6 @@ spec:
             - mountPath: /config
               name: overseerr-config
         {{- end -}}
-        {{ if .Values.sonarr.enabled }}
-        - name: sonarr
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12}}
-          image: "lscr.io/linuxserver/sonarr:{{ .Values.sonarr.tag | default "latest" }}"
-          env:
-            - name: PUID
-              value: "1000"
-            - name: PGID
-              value: "1000"
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          volumeMounts:
-            - mountPath: /config
-              name: sonarr-config
-            - mountPath: /data
-              name: truenas-data
-        {{- end -}}
-        {{ if .Values.radarr.enabled }}
-        - name: radarr
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12}}
-          image: "lscr.io/linuxserver/radarr:{{ .Values.radarr.tag | default "latest" }}"
-          env:
-            - name: PUID
-              value: "1000"
-            - name: PGID
-              value: "1000"
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          volumeMounts:
-            - mountPath: /config
-              name: radarr-config
-            - mountPath: /data
-              name: truenas-data
-        {{- end -}}
         {{ if .Values.readarr.enabled }}
         - name: readarr
           securityContext:
@@ -250,6 +214,154 @@ spec:
         - name: usenet-truenas-downloads
           persistentVolumeClaim:
             claimName: {{ include "arr-stack.fullname" . }}-truenas-usenet-downloads-pvc
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{ end }}
+---
+{{ if .Values.radarr.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-radarr
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: radarr
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "arr-stack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: radarr
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "arr-stack.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: radarr
+    spec:
+      hostname: radarr
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: radarr
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "lscr.io/linuxserver/radarr:{{ .Values.radarr.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "America/Los_Angeles"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: radarr-config
+            - mountPath: /data
+              name: truenas-data
+      volumes:
+        - name: radarr-config
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-radarr-config-iscsi-pvc
+        - name: truenas-data
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-truenas-data-pvc
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{ end }}
+---
+{{ if .Values.sonarr.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-sonarr
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sonarr
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "arr-stack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: sonarr
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "arr-stack.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: sonarr
+    spec:
+      hostname: sonarr
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: sonarr
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "lscr.io/linuxserver/sonarr:{{ .Values.sonarr.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "America/Los_Angeles"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /config
+              name: sonarr-config
+            - mountPath: /data
+              name: truenas-data
+      volumes:
+        - name: sonarr-config
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-sonarr-config-pvc
+        - name: truenas-data
+          persistentVolumeClaim:
+            claimName: {{ include "arr-stack.fullname" . }}-truenas-data-pvc
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

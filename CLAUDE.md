@@ -1,0 +1,1 @@
+- Never check YAML files under `charts/` for correctness - they are components of Helm charts, so will always be invalid YAML.

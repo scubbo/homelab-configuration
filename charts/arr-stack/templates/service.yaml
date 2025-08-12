@@ -28,7 +28,7 @@ spec:
       protocol: TCP
   selector:
     {{- include "arr-stack.selectorLabels" . | nindent 4 }}
-    app.kubernetes.io/component: main
+    app.kubernetes.io/component: sonarr
 ---
 apiVersion: v1
 kind: Service
@@ -44,7 +44,7 @@ spec:
       protocol: TCP
   selector:
     {{- include "arr-stack.selectorLabels" . | nindent 4 }}
-    app.kubernetes.io/component: main
+    app.kubernetes.io/component: radarr
 ---
 apiVersion: v1
 kind: Service
