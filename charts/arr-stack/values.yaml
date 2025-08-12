@@ -92,7 +92,7 @@ tolerations:
 affinity: {}
 
 # Custom values below here
-overseerr:
+ombi:
   enabled: true
 
 sonarr:

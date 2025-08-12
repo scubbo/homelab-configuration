@@ -25,7 +25,7 @@ spec:
   resources:
     requests:
       storage: 20T
-{{- range tuple "overseerr" "sonarr" "readarr" "prowlarr" "nzbget" "sabnzbd" }}
+{{- range tuple "ombi" "sonarr" "readarr" "prowlarr" "nzbget" "sabnzbd" }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

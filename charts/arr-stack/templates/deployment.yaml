@@ -1,9 +1,11 @@
+{{ if .Values.ombi.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "arr-stack.fullname" . }}
+  name: {{ include "arr-stack.fullname" . }}-ombi
   labels:
     {{- include "arr-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ombi
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -11,6 +13,7 @@ spec:
   selector:
     matchLabels:
       {{- include "arr-stack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ombi
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -19,7 +22,7 @@ spec:
       {{- end }}
       labels:
         {{- include "arr-stack.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: main
+        app.kubernetes.io/component: ombi
     spec:
       # Necessary for Pod to have a static hostname in order to expose ports:
       # https://docs.k8s-at-home.com/guides/pod-gateway/#exposing-routed-pod-ports-from-the-gateway
@@ -31,8 +34,7 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        {{ if .Values.overseerr.enabled }}
-        - name: overseerr
+        - name: ombi
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -48,62 +50,17 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /config
-              name: overseerr-config
-        {{- end -}}
-        {{ if .Values.nzbget.enabled }}
-        - name: nzbget
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "lscr.io/linuxserver/nzbget:{{ .Values.nzbget.tag | default "latest" }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            - name: PUID
-              value: "1000"
-            - name: PGID
-              value: "1000"
-            - name: TZ
-              value: "America/Los_Angeles"
-            - name: NZBGET_USER
-              value: nzbget
-            - name: NZBGET_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: nzbget-creds
-                  key: password
-                  optional: false
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          volumeMounts:
-            - mountPath: /config
-              name: nzbget-config
-            - mountPath: /data/usenet
-              name: usenet-truenas-downloads
-        {{ end }}
+              name: ombi-config
       volumes:
-        - name: overseerr-config
+        - name: ombi-config
           persistentVolumeClaim:
-            claimName: {{ include "arr-stack.fullname" . }}-overseerr-config-pvc
-        - name: truenas-data
-          persistentVolumeClaim:
-            claimName: {{ include "arr-stack.fullname" . }}-truenas-data-pvc
-        - name: sonarr-config
-          persistentVolumeClaim:
-            claimName: {{ include "arr-stack.fullname" . }}-sonarr-config-pvc
-        - name: radarr-config
-          persistentVolumeClaim:
-            claimName: {{ include "arr-stack.fullname" . }}-radarr-config-iscsi-pvc
-        - name: readarr-config
-          persistentVolumeClaim:
-            claimName: {{ include "arr-stack.fullname" . }}-readarr-config-pvc
-        - name: prowlarr-config
-          persistentVolumeClaim:
-            claimName: {{ include "arr-stack.fullname" . }}-prowlarr-config-pvc
-        - name: nzbget-config
-          persistentVolumeClaim:
-            claimName: {{include "arr-stack.fullname" .}}-nzbget-config-pvc
-        - name: usenet-truenas-downloads
-          persistentVolumeClaim:
-            claimName: {{ include "arr-stack.fullname" . }}-truenas-usenet-downloads-pvc
+            claimName: {{ include "arr-stack.fullname" . }}-ombi-config-pvc
+        # - name: truenas-data
+        #   persistentVolumeClaim:
+        #     claimName: {{ include "arr-stack.fullname" . }}-truenas-data-pvc
+        # - name: usenet-truenas-downloads
+        #   persistentVolumeClaim:
+        #     claimName: {{ include "arr-stack.fullname" . }}-truenas-usenet-downloads-pvc
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -116,6 +73,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+{{ end }}
 ---
 {{ if .Values.sabnzbd.enabled }}
 apiVersion: apps/v1
