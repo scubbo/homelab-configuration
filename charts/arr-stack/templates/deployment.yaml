@@ -132,7 +132,7 @@ spec:
       volumes:
         - name: sabnzbd-config
           persistentVolumeClaim:
-            claimName: {{include "arr-stack.fullname" .}}-sabnzbd-config-pvc
+            claimName: {{include "arr-stack.fullname" .}}-sabnzbd-config-iscsi-pvc
         - name: usenet-truenas-downloads
           persistentVolumeClaim:
             claimName: {{ include "arr-stack.fullname" . }}-truenas-usenet-downloads-pvc

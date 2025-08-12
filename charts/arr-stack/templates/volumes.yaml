@@ -25,20 +25,6 @@ spec:
   resources:
     requests:
       storage: 20T
-{{- range tuple "readarr" "prowlarr" "nzbget" "sabnzbd" }}
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ include "arr-stack.fullname" $ }}-{{.}}-config-pvc
-spec:
-  storageClassName: "freenas-nfs-csi"
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 1Gi
-{{- end }}
 ---
 # Split this out so that we can use a different storage class for radarr
 {{ if .Values.radarr.enabled }}
@@ -115,6 +101,21 @@ spec:
       storage: 1Gi
 ---
 {{- end}}
+
+{{ if .Values.sabnzbd.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "arr-stack.fullname" $ }}-sabnzbd-config-iscsi-pvc
+spec:
+  storageClassName: "freenas-iscsi-csi"
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+{{- end }}
 
 apiVersion: v1
 kind: PersistentVolume
