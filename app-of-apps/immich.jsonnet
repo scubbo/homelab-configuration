@@ -12,7 +12,7 @@
             {
                 repoURL: "ghcr.io/immich-app/immich-charts",
                 chart: "immich",
-                targetRevision: "0.9.3",
+                targetRevision: "0.10.1",
                 helm: {
                     valuesObject: {
                         immich: {
@@ -22,27 +22,40 @@
                                 }
                             }
                         },
-                        redis: {
+                        env: {
+                            DB_HOSTNAME: "immich-database-rw",
+                            DB_DATABASE_NAME: "immich",
+                            DB_USERNAME: "immich",
+                            DB_PASSWORD: {
+                                valueFrom: {
+                                    secretKeyRef: {
+                                        name: "immich-database-app",
+                                        key: "password"
+                                    }
+                                }
+                            },
+                            REDIS_HOSTNAME: "immich-valkey"
+                        },
+                        valkey: {
                             enabled: true,
-                            master: {
-                                persistence: {
+                            controllers: {
+                                main: {
+                                    containers: {
+                                        main: {
+                                            image: {
+                                                repository: "docker.io/valkey/valkey",
+                                                tag: "9.0-alpine"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            persistence: {
+                                data: {
                                     enabled: true,
                                     size: "2Gi",
-                                    storageClass: "freenas-iscsi-csi"
-                                }
-                            }
-                        },
-                        postgresql: {
-                            enabled: true,
-                            image: {
-                                repository: "tensorchord/cloudnative-pgvecto.rs",
-                                tag: "16.0-v0.2.0"
-                            },
-                            primary: {
-                                persistence: {
-                                    enabled: true,
-                                    size: "10Gi",
-                                    storageClass: "freenas-iscsi-csi"
+                                    storageClass: "freenas-iscsi-csi",
+                                    type: "persistentVolumeClaim"
                                 }
                             }
                         },
