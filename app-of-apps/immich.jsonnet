@@ -12,7 +12,7 @@
             {
                 repoURL: "ghcr.io/immich-app/immich-charts",
                 chart: "immich",
-                targetRevision: "0.8.1",
+                targetRevision: "0.10.1",
                 helm: {
                     valuesObject: {
                         immich: {
