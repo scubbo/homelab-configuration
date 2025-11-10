@@ -10,7 +10,7 @@
         project: "default",
         sources: [
             {
-                repoURL: "oci://ghcr.io/immich-app/immich-charts",
+                repoURL: "ghcr.io/immich-app/immich-charts",
                 chart: "immich",
                 targetRevision: "0.8.1",
                 helm: {
