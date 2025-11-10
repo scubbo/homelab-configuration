@@ -1,0 +1,6 @@
+apiVersion: v2
+name: immich
+description: A Helm chart for Immich storage resources
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
