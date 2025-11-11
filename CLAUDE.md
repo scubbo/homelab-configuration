@@ -1,1 +1,2 @@
 - Never check YAML files under `charts/` for correctness - they are components of Helm charts, so will always be invalid YAML.
+- Except when debugging or testing something, never make changes directly to the cluster (e.g. with `jsonnet <path> | kubectl apply -f`). Always make a change to the Infrastructure-as-Code definitions, then prompt me to review and push it.
