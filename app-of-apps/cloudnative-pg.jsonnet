@@ -6,4 +6,10 @@ appDef.helmApplication(
     sourceRepoUrl="https://cloudnative-pg.github.io/charts",
     sourceTargetRevision="0.22.1",
     namespace="cnpg-system"
-)
+) + {
+    spec+: {
+        syncPolicy+: {
+            syncOptions: ["CreateNamespace=true", "ServerSideApply=true"]
+        }
+    }
+}
