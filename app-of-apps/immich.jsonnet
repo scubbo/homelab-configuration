@@ -15,26 +15,34 @@
                 targetRevision: "0.10.1",
                 helm: {
                     valuesObject: {
+                        controllers: {
+                            main: {
+                                containers: {
+                                    main: {
+                                        env: {
+                                            DB_HOSTNAME: "immich-database-rw",
+                                            DB_DATABASE_NAME: "immich",
+                                            DB_USERNAME: "immich",
+                                            DB_PASSWORD: {
+                                                valueFrom: {
+                                                    secretKeyRef: {
+                                                        name: "immich-database-app",
+                                                        key: "password"
+                                                    }
+                                                }
+                                            },
+                                            REDIS_HOSTNAME: "immich-valkey"
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         immich: {
                             persistence: {
                                 library: {
                                     existingClaim: "immich-library-pvc"
                                 }
                             }
-                        },
-                        env: {
-                            DB_HOSTNAME: "immich-database-rw",
-                            DB_DATABASE_NAME: "immich",
-                            DB_USERNAME: "immich",
-                            DB_PASSWORD: {
-                                valueFrom: {
-                                    secretKeyRef: {
-                                        name: "immich-database-app",
-                                        key: "password"
-                                    }
-                                }
-                            },
-                            REDIS_HOSTNAME: "immich-valkey"
                         },
                         valkey: {
                             enabled: true,
