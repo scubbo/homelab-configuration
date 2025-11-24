@@ -22,42 +22,37 @@ spec:
   # Target discovery: all Ingresses matching the selector
   targets:
     ingress:
-      # Select Ingresses by labels
-      selector:
-        matchExpressions:
-          - key: ingressClassName
-            operator: In
-            values:
-              - {{ .Values.ingressSelector.ingressClassName }}
-        {{- if .Values.ingressSelector.matchLabels }}
-        matchLabels:
-          {{- toYaml .Values.ingressSelector.matchLabels | nindent 10 }}
-        {{- end }}
-
       # Search in all namespaces
       namespaceSelector:
         any: true
 
       # Relabel configuration to construct proper URLs
       relabelingConfigs:
-        # Use the Ingress host as the target
-        - sourceLabels: [__meta_kubernetes_ingress_scheme,__meta_kubernetes_ingress_host,__meta_kubernetes_ingress_path]
-          regex: (.+);(.+);(.+)
-          replacement: ${1}://${2}${3}
-          targetLabel: __param_target
-
-        # Add namespace label
-        - sourceLabels: [__meta_kubernetes_namespace]
-          targetLabel: namespace
-
-        # Add ingress name label
-        - sourceLabels: [__meta_kubernetes_ingress_name]
-          targetLabel: ingress
-
-        # Add host label for easier identification
-        - sourceLabels: [__meta_kubernetes_ingress_host]
-          targetLabel: host
-
-        # The actual target to probe goes to __param_target
-        - targetLabel: __address__
-          replacement: {{ .Values.blackboxExporter.service }}.{{ .Values.blackboxExporter.namespace }}.svc:{{ .Values.blackboxExporter.port }}
+      # Filter: Only keep Ingresses with ingressClassName matching our target
+      - sourceLabels:
+        - __meta_kubernetes_ingress_class_name
+        regex: {{ .Values.ingressSelector.ingressClassName }}
+        action: keep
+      # Use the Ingress host as the target
+      - sourceLabels:
+        - __meta_kubernetes_ingress_scheme
+        - __meta_kubernetes_ingress_host
+        - __meta_kubernetes_ingress_path
+        regex: (.+);(.+);(.+)
+        replacement: ${1}://${2}${3}
+        targetLabel: __param_target
+      # Add namespace label
+      - sourceLabels:
+        - __meta_kubernetes_namespace
+        targetLabel: namespace
+      # Add ingress name label
+      - sourceLabels:
+        - __meta_kubernetes_ingress_name
+        targetLabel: ingress
+      # Add host label for easier identification
+      - sourceLabels:
+        - __meta_kubernetes_ingress_host
+        targetLabel: host
+      # The actual target to probe goes to __param_target
+      - targetLabel: __address__
+        replacement: {{ .Values.blackboxExporter.service }}.{{ .Values.blackboxExporter.namespace }}.svc:{{ .Values.blackboxExporter.port }}
