@@ -1,4 +1,4 @@
-local appDef = import './app-definitions.libsonnet';
+local appDef = import '../app-definitions.libsonnet';
 
 # https://github.com/prometheus-community/helm-charts/issues/1500#issuecomment-1030201685
 appDef.helmApplication(
