@@ -8,7 +8,14 @@ appDef.helmApplication(
     sourceTargetRevision="69.6.0",
     helmValues={
         grafana: {
-            enabled: false
+            enabled: true,
+            ingress: {
+                enabled: true,
+                ingressClassName: "traefik",
+                hosts: [
+                    "grafana.avril"
+                ]
+            }
         },
         prometheus: {
             ingress: {
