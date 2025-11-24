@@ -1,0 +1,63 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: {{ include "uptime-monitoring.fullname" . }}-ingress
+  namespace: {{ .Values.blackboxExporter.namespace }}
+  labels:
+    {{- include "uptime-monitoring.labels" . | nindent 4 }}
+    # Required for Prometheus Operator to discover this Probe
+    release: prometheus
+spec:
+  # Reference to the blackbox exporter service
+  prober:
+    url: {{ .Values.blackboxExporter.service }}.{{ .Values.blackboxExporter.namespace }}.svc:{{ .Values.blackboxExporter.port }}
+
+  # Which blackbox exporter module to use
+  module: {{ .Values.probe.module }}
+
+  # How often to probe
+  interval: {{ .Values.probe.interval }}
+  scrapeTimeout: {{ .Values.probe.scrapeTimeout }}
+
+  # Target discovery: all Ingresses matching the selector
+  targets:
+    ingress:
+      # Select Ingresses by labels
+      selector:
+        matchExpressions:
+          - key: ingressClassName
+            operator: In
+            values:
+              - {{ .Values.ingressSelector.ingressClassName }}
+        {{- if .Values.ingressSelector.matchLabels }}
+        matchLabels:
+          {{- toYaml .Values.ingressSelector.matchLabels | nindent 10 }}
+        {{- end }}
+
+      # Search in all namespaces
+      namespaceSelector:
+        any: true
+
+      # Relabel configuration to construct proper URLs
+      relabelingConfigs:
+        # Use the Ingress host as the target
+        - sourceLabels: [__meta_kubernetes_ingress_scheme,__meta_kubernetes_ingress_host,__meta_kubernetes_ingress_path]
+          regex: (.+);(.+);(.+)
+          replacement: ${1}://${2}${3}
+          targetLabel: __param_target
+
+        # Add namespace label
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+
+        # Add ingress name label
+        - sourceLabels: [__meta_kubernetes_ingress_name]
+          targetLabel: ingress
+
+        # Add host label for easier identification
+        - sourceLabels: [__meta_kubernetes_ingress_host]
+          targetLabel: host
+
+        # The actual target to probe goes to __param_target
+        - targetLabel: __address__
+          replacement: {{ .Values.blackboxExporter.service }}.{{ .Values.blackboxExporter.namespace }}.svc:{{ .Values.blackboxExporter.port }}

@@ -1,0 +1,65 @@
+{{- if .Values.alerts.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "uptime-monitoring.fullname" . }}-alerts
+  namespace: {{ .Values.blackboxExporter.namespace }}
+  labels:
+    {{- include "uptime-monitoring.labels" . | nindent 4 }}
+    # Required for Prometheus Operator to discover this rule
+    release: prometheus
+spec:
+  groups:
+    - name: uptime-monitoring
+      interval: 30s
+      rules:
+        # Alert when a service is down
+        - alert: ServiceDown
+          expr: probe_success == 0
+          for: {{ .Values.alerts.downDuration }}
+          labels:
+            severity: {{ .Values.alerts.severity }}
+          annotations:
+            summary: "Service {{ "{{" }} $labels.ingress {{ "}}" }} is down"
+            description: "The service {{ "{{" }} $labels.ingress {{ "}}" }} in namespace {{ "{{" }} $labels.namespace {{ "}}" }} ({{ "{{" }} $labels.host {{ "}}" }}) has been unreachable for more than {{ .Values.alerts.downDuration }}."
+
+        # Alert when SSL certificate will expire soon
+        - alert: SSLCertificateExpiringSoon
+          expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 30
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "SSL certificate for {{ "{{" }} $labels.host {{ "}}" }} expiring soon"
+            description: "SSL certificate for {{ "{{" }} $labels.host {{ "}}" }} will expire in {{ "{{" }} $value | humanizeDuration {{ "}}" }}."
+
+        # Alert when SSL certificate will expire very soon
+        - alert: SSLCertificateExpiringVerySoon
+          expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 7
+          for: 1h
+          labels:
+            severity: critical
+          annotations:
+            summary: "SSL certificate for {{ "{{" }} $labels.host {{ "}}" }} expiring very soon"
+            description: "SSL certificate for {{ "{{" }} $labels.host {{ "}}" }} will expire in {{ "{{" }} $value | humanizeDuration {{ "}}" }}."
+
+        # Alert when probe is taking too long (slow response)
+        - alert: ServiceSlowResponse
+          expr: probe_duration_seconds > 5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Service {{ "{{" }} $labels.ingress {{ "}}" }} responding slowly"
+            description: "The service {{ "{{" }} $labels.ingress {{ "}}" }} ({{ "{{" }} $labels.host {{ "}}" }}) is responding slowly. Current probe duration: {{ "{{" }} $value {{ "}}" }}s."
+
+        # Alert when HTTP status code is not 2xx
+        - alert: ServiceUnhealthyStatusCode
+          expr: probe_http_status_code < 200 or probe_http_status_code >= 300
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Service {{ "{{" }} $labels.ingress {{ "}}" }} returning unhealthy status code"
+            description: "The service {{ "{{" }} $labels.ingress {{ "}}" }} ({{ "{{" }} $labels.host {{ "}}" }}) is returning status code {{ "{{" }} $value {{ "}}" }}."
+{{- end }}

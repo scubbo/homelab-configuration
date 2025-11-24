@@ -1,0 +1,34 @@
+# Uptime monitoring configuration
+
+# Blackbox exporter settings
+blackboxExporter:
+  # Service name of the blackbox exporter
+  service: blackbox-exporter-prometheus-blackbox-exporter
+  # Namespace where blackbox exporter is deployed
+  namespace: prometheus
+  # Port where blackbox exporter is listening
+  port: 9115
+
+# Probe configuration
+probe:
+  # How often to probe each target
+  interval: 30s
+  # Timeout for each probe
+  scrapeTimeout: 10s
+  # HTTP module to use for probing
+  module: http_2xx
+
+# Ingress selector - which Ingresses to monitor
+ingressSelector:
+  # Match all Ingresses with this className
+  ingressClassName: traefik
+  # Additional label selectors (optional)
+  matchLabels: {}
+
+# Alert configuration
+alerts:
+  enabled: true
+  # How long a service must be down before alerting
+  downDuration: 5m
+  # Severity label for alerts
+  severity: warning

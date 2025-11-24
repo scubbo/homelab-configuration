@@ -1,0 +1,7 @@
+apiVersion: v2
+name: uptime-monitoring
+description: Automatic uptime monitoring for all Traefik Ingresses using Blackbox Exporter
+
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
