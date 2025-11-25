@@ -58,6 +58,16 @@ spec:
               {{- end }}
           {{- end }}
     {{- end }}
+    - host: ombi.avril
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "arr-stack.fullname" . }}-ombi
+                port:
+                  number: {{ .Values.service.port }}
     - host: sonarr.avril
       http:
         paths:
@@ -98,16 +108,6 @@ spec:
                 name: {{include "arr-stack.fullname" .}}-prowlarr
                 port:
                   number: {{.Values.service.prowlarrPort}}
-    - host: nzbget.avril
-      http:
-        paths:
-          - path: /
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: {{ include "arr-stack.fullname" . }}-nzbget
-                port:
-                  number: {{ .Values.service.nzbgetWebPort }}
     - host: sabnzbd.avril
       http:
         paths:
