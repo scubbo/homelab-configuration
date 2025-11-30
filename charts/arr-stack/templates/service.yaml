@@ -104,7 +104,7 @@ spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.ytdlpaasPort }}
-      targetPort: 8000
+      targetPort: 8001
       protocol: TCP
   selector:
     {{- include "arr-stack.selectorLabels" . | nindent 4 }}

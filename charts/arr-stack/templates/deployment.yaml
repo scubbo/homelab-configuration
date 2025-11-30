@@ -493,6 +493,8 @@ spec:
               value: "1000"
             - name: TZ
               value: "America/Los_Angeles"
+            - name: PORT
+              value: "8001"
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
