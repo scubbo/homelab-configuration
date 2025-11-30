@@ -45,6 +45,7 @@ service:
   prowlarrPort: 9696
   nzbgetWebPort: 6789
   sabnzbdWebPort: 8080
+  ytdlpaasPort: 8000
 
 ingress:
   enabled: true
@@ -117,6 +118,10 @@ nzbget:
 sabnzbd:
   enabled: true
   tag: "4.5.1"
+
+ytdlpaas:
+  enabled: true
+  tag: "sha-993aac7e564403a253293527c024daf43bb658a5"
 
 volume:
   configNFSServer: rassigma.avril

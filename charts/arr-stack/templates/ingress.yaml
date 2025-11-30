@@ -118,4 +118,14 @@ spec:
                 name: {{ include "arr-stack.fullname" . }}-sabnzbd
                 port:
                   number: {{ .Values.service.sabnzbdWebPort }}
+    - host: yt-dlp-aas.avril
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "arr-stack.fullname" . }}-ytdlpaas
+                port:
+                  number: {{ .Values.service.ytdlpaasPort }}
 {{- end }}
