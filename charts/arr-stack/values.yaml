@@ -121,7 +121,7 @@ sabnzbd:
 
 ytdlpaas:
   enabled: true
-  tag: "sha-993aac7e564403a253293527c024daf43bb658a5"
+  tag: "sha-fb32fc8e40e2cab48e622e9046428a9892a67a89"
 
 volume:
   configNFSServer: rassigma.avril
