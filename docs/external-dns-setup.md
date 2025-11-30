@@ -25,12 +25,14 @@ Create a dedicated API user in OPNsense:
 3. Username: `external-dns-api` (or your choice)
 4. Set a password (required but won't be used for API)
 5. Under **Effective Privileges**, add:
-   - `Services: Unbound DNS: Edit Host and Domain Override`
-   - `Services: Unbound (MVC)`
-   - `Status: DNS Overview`
+   - `Services: Unbound DNS: Edit Host and Domain Override` (required - allows creating/deleting DNS records)
+   - `Services: Unbound (MVC)` (required - allows accessing the API)
+   - `Status: DNS Overview` (required - webhook checks this endpoint on startup)
 6. Click **Save**
 7. Click the **🔑 key icon** next to the user to generate API credentials
 8. **Download the credentials file** (you can only do this once!)
+
+**Important:** All three privileges are required! Without `Status: DNS Overview`, the webhook will fail with a 403 error when trying to check `https://192.168.1.1/api/unbound/service/status`.
 
 The downloaded file will contain:
 ```
