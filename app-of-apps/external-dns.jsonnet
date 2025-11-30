@@ -16,7 +16,7 @@ appDef.helmApplication(
                 env: [
                     {
                         name: "OPNSENSE_HOST",
-                        value: "192.168.1.1"
+                        value: "https://192.168.1.1"
                     },
                     {
                         name: "OPNSENSE_SKIP_TLS_VERIFY",
