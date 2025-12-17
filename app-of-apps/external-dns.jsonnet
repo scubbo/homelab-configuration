@@ -44,7 +44,7 @@ appDef.helmApplication(
                 livenessProbe: {
                     httpGet: {
                         path: "/healthz",
-                        port: "http-wh-metrics"
+                        port: "http-webhook"
                     },
                     initialDelaySeconds: 10,
                     timeoutSeconds: 5
@@ -52,7 +52,7 @@ appDef.helmApplication(
                 readinessProbe: {
                     httpGet: {
                         path: "/readyz",
-                        port: "http-wh-metrics"
+                        port: "http-webhook"
                     },
                     initialDelaySeconds: 10,
                     timeoutSeconds: 5
