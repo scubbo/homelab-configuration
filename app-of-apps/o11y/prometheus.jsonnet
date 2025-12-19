@@ -103,7 +103,7 @@ appDef.helmApplication(
                         telegram_configs: [
                             {
                                 bot_token_file: "/etc/alertmanager/secrets/alertmanager-telegram/bot-token",
-                                chat_id: -1,  // Placeholder - will be overridden by secret
+                                chat_id: 5853047855,
                                 parse_mode: "HTML",
                                 message: |||
                                     {{ if eq .Status "firing" }}🔥{{ else }}✅{{ end }} <b>{{ .Status | toUpper }}</b>
