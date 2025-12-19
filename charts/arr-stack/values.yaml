@@ -7,8 +7,7 @@ replicaCount: 1
 image:
   repository: linuxserver/ombi
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  digest: "sha256:507b2f3fef18177ecc888765dbcd3352f5159ac29d11104e4bdc183826f41fbb"
 
 imagePullSecrets: []
 nameOverride: ""
