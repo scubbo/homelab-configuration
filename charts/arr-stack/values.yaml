@@ -91,6 +91,13 @@ affinity: {}
 # Custom values below here
 ombi:
   enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 
 sonarr:
   enabled: true
@@ -98,18 +105,46 @@ sonarr:
   # https://github.com/Sonarr/Sonarr/issues/5929 / https://old.reddit.com/r/sonarr/comments/15p160j/v4_consoleapp_epic_fail_error/
 #  tag: "develop-version-4.0.0.613"
   tag: "4.0.7"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
 
 radarr:
   enabled: true
   tag: "5.26.0-develop"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
 
 readarr:
   enabled: true
   tag: "0.4.18-develop"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 
 prowlarr:
   enabled: true
   tag: "2.0.5.5160-ls126"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 
 nzbget:
   enabled: true
@@ -118,10 +153,24 @@ nzbget:
 sabnzbd:
   enabled: true
   tag: "4.5.1"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 2
+      memory: 2Gi
 
 ytdlpaas:
   enabled: true
   tag: "sha-fb32fc8e40e2cab48e622e9046428a9892a67a89"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 2
+      memory: 1Gi
 
 volume:
   configNFSServer: rassigma.avril
