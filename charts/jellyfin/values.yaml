@@ -73,6 +73,14 @@ ingress:
 #   limits:
 #     nvidia.com/gpu: 1
 
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 4
+    memory: 6Gi
+
 autoscaling:
   enabled: false
   minReplicas: 1

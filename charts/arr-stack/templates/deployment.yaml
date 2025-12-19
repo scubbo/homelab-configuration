@@ -39,6 +39,20 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3579
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
           env:
             - name: PUID
               value: "1000"
@@ -47,7 +61,7 @@ spec:
             - name: TZ
               value: "America/Los_Angeles"
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.ombi.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /config
               name: ombi-config
@@ -115,6 +129,20 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "lscr.io/linuxserver/sabnzbd:{{ .Values.sabnzbd.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
           env:
             - name: PUID
               value: "1000"
@@ -123,7 +151,7 @@ spec:
             - name: TZ
               value: "America/Los_Angeles"
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.sabnzbd.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /config
               name: sabnzbd-config
@@ -189,6 +217,22 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "lscr.io/linuxserver/radarr:{{ .Values.radarr.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 7878
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
           env:
             - name: PUID
               value: "1000"
@@ -197,7 +241,7 @@ spec:
             - name: TZ
               value: "America/Los_Angeles"
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.radarr.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /config
               name: radarr-config
@@ -263,6 +307,22 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "lscr.io/linuxserver/sonarr:{{ .Values.sonarr.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8989
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
           env:
             - name: PUID
               value: "1000"
@@ -271,7 +331,7 @@ spec:
             - name: TZ
               value: "America/Los_Angeles"
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.sonarr.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /config
               name: sonarr-config
@@ -337,6 +397,22 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "lscr.io/linuxserver/readarr:{{ .Values.readarr.tag | default "develop" }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8787
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
           env:
             - name: PUID
               value: "1000"
@@ -345,7 +421,7 @@ spec:
             - name: TZ
               value: "America/Los_Angeles"
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.readarr.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /config
               name: readarr-config
@@ -411,6 +487,22 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "lscr.io/linuxserver/prowlarr:{{ .Values.prowlarr.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 9696
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
           env:
             - name: PUID
               value: "1000"
@@ -419,7 +511,7 @@ spec:
             - name: TZ
               value: "America/Los_Angeles"
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.prowlarr.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /config
               name: prowlarr-config
@@ -486,6 +578,20 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "ghcr.io/scubbo/yt-dlp-aas:{{ .Values.ytdlpaas.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8001
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
           env:
             - name: PUID
               value: "1000"
@@ -496,7 +602,7 @@ spec:
             - name: PORT
               value: "8001"
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.ytdlpaas.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /data
               name: truenas-data
