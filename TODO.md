@@ -6,3 +6,5 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [X] Correct the names back from "Overseerr" to "Ombi" - turns out I forgot to swap the images in the first place!
 - [ ] Integrate Vault with Kubernetes secrets using Vault Secrets Operator (see [docs/todo/vault-to-k8s-secrets.md](docs/todo/vault-to-k8s-secrets.md))
 - [ ] Consider switching from VSO to ESO if multi-backend support becomes needed (AWS Secrets Manager, GCP, etc.) - see [docs/todo/eso-vs-vso-comparison.md](docs/todo/eso-vs-vso-comparison.md)
+- [ ] Complete Telegram alerting setup: create bot, get chat ID, create `alertmanager-telegram` secret (see [manifests/alertmanager-telegram/README.md](manifests/alertmanager-telegram/README.md))
+- [ ] After confirming monitoring/alerting works: merge `homelab-hardening` branch (health checks, resource limits, deprecated API cleanup, image pinning)
