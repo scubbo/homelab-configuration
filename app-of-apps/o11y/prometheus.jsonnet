@@ -1,6 +1,7 @@
 local appDef = import '../app-definitions.libsonnet';
 
 # https://github.com/prometheus-community/helm-charts/issues/1500#issuecomment-1030201685
+# ServerSideApply required due to CRD annotation size limits
 appDef.helmApplication(
     name="prometheus",
     sourceRepoUrl="https://prometheus-community.github.io/helm-charts",
@@ -128,4 +129,10 @@ appDef.helmApplication(
             }
         }
     }
-)
+) + {
+    spec+: {
+        syncPolicy+: {
+            syncOptions+: ["ServerSideApply=true"]
+        }
+    }
+}
