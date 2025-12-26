@@ -16,7 +16,18 @@ appDef.helmApplication(
                 hosts: [
                     "grafana.avril"
                 ]
-            }
+            },
+            additionalDataSources: [
+                {
+                    name: "Loki",
+                    type: "loki",
+                    access: "proxy",
+                    url: "http://loki-gateway.prometheus.svc.cluster.local",
+                    jsonData: {
+                        maxLines: 1000
+                    }
+                }
+            ]
         },
         prometheus: {
             ingress: {
