@@ -1,6 +1,0 @@
-apiVersion: v2
-name: loki-alerts
-description: Loki-based alerting rules for application logs
-type: application
-version: 0.1.0
-appVersion: "1.0"
