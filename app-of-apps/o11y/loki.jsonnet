@@ -34,7 +34,7 @@ appDef.helmApplication(
                 alertmanager_url: "http://prometheus-kube-prometheus-alertmanager.prometheus.svc.cluster.local:9093",
                 storage: {
                     type: "local",
-                    local: {
+                    "local": {
                         directory: "/rules"
                     }
                 },
