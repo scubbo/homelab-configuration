@@ -6,6 +6,9 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [X] Correct the names back from "Overseerr" to "Ombi" - turns out I forgot to swap the images in the first place!
 - [ ] Integrate Vault with Kubernetes secrets using Vault Secrets Operator (see [docs/todo/vault-to-k8s-secrets.md](docs/todo/vault-to-k8s-secrets.md))
 - [ ] Consider switching from VSO to ESO if multi-backend support becomes needed (AWS Secrets Manager, GCP, etc.) - see [docs/todo/eso-vs-vso-comparison.md](docs/todo/eso-vs-vso-comparison.md)
-- [ ] Complete Telegram alerting setup: create bot, get chat ID, create `alertmanager-telegram` secret (see [manifests/alertmanager-telegram/README.md](manifests/alertmanager-telegram/README.md))
+- [X] Complete Telegram alerting setup: create bot, get chat ID, create `alertmanager-telegram` secret (see [manifests/alertmanager-telegram/README.md](manifests/alertmanager-telegram/README.md))
+- [ ] Investigate rasnu1 Pi - powered off unexpectedly, had no internet connectivity before dying (check power supply, SD card, `dmesg` for under-voltage warnings)
+- [ ] Unseal Vault after restart (`kubectl exec -n vault vault-0 -- vault operator unseal`)
+- [ ] Merge `homelab-hardening` branch after confirming monitoring works (health checks, resource limits, deprecated API cleanup, image pinning)
 - [ ] Install NVIDIA k8s-device-plugin for GPU-accelerated Jellyfin transcoding (see https://github.com/NVIDIA/k8s-device-plugin)
 - [ ] Set up Renovate for automated dependency updates (see https://docs.renovatebot.com/ - consider GitHub App for simplicity or self-hosted CronJob for full control)
