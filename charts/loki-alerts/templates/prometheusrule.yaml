@@ -20,7 +20,7 @@ spec:
             namespace: arr-stack
           annotations:
             summary: "yt-dlp-aas is logging errors"
-            description: "The yt-dlp-aas service has logged {{ $value }} errors in the last 5 minutes. Check logs for details."
+            description: "The yt-dlp-aas service has logged {{ "{{" }} $value {{ "}}" }} errors in the last 5 minutes. Check logs for details."
 
         - alert: YtDlpAas403Errors
           expr: |
@@ -31,7 +31,7 @@ spec:
             namespace: arr-stack
           annotations:
             summary: "yt-dlp-aas encountering 403 errors"
-            description: "The yt-dlp-aas service has encountered {{ $value }} 403 Forbidden errors in the last 5 minutes. This likely means yt-dlp needs an update."
+            description: "The yt-dlp-aas service has encountered {{ "{{" }} $value {{ "}}" }} 403 Forbidden errors in the last 5 minutes. This likely means yt-dlp needs an update."
 
         - alert: YtDlpAasSignatureExtractionFailure
           expr: |
@@ -42,5 +42,5 @@ spec:
             namespace: arr-stack
           annotations:
             summary: "yt-dlp-aas signature extraction failures"
-            description: "The yt-dlp-aas service has encountered {{ $value }} signature extraction failures in the last 5 minutes. This likely means yt-dlp needs an update."
+            description: "The yt-dlp-aas service has encountered {{ "{{" }} $value {{ "}}" }} signature extraction failures in the last 5 minutes. This likely means yt-dlp needs an update."
 {{- end }}
