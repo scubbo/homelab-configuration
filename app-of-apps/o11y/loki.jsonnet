@@ -97,6 +97,12 @@ appDef.helmApplication(
         },
         ruler: {
             enabled: true
+        },
+        sidecar: {
+            rules: {
+                enabled: true,
+                folder: "/rules/fake"
+            }
         }
     }
 )
