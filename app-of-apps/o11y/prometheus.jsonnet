@@ -78,8 +78,8 @@ appDef.helmApplication(
                     group_by: ["alertname", "namespace"],
                     group_wait: "30s",
                     group_interval: "5m",
-                    repeat_interval: "4h",
-                    receiver: "telegram",
+                    repeat_interval: "12h",
+                    receiver: "null",
                     routes: [
                         {
                             matchers: ["alertname = Watchdog"],
@@ -87,10 +87,6 @@ appDef.helmApplication(
                         },
                         {
                             matchers: ["severity = critical"],
-                            receiver: "telegram"
-                        },
-                        {
-                            matchers: ["severity = warning"],
                             receiver: "telegram"
                         }
                     ]
