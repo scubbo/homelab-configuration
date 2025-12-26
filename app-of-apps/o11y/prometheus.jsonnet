@@ -86,6 +86,11 @@ appDef.helmApplication(
                             receiver: "null"
                         },
                         {
+                            // k3s embeds these components - no separate metrics endpoints
+                            matchers: ["alertname =~ KubeSchedulerDown|KubeControllerManagerDown|KubeProxyDown"],
+                            receiver: "null"
+                        },
+                        {
                             matchers: ["severity = critical"],
                             receiver: "telegram"
                         }
