@@ -1,0 +1,71 @@
+local appDef = import '../app-definitions.libsonnet';
+
+// Loki alert rules for yt-dlp-aas monitoring
+//
+// These rules are loaded by Loki's ruler via the k8s-sidecar pattern:
+// - ConfigMaps with label "loki_rule: 1" are automatically discovered
+// - The k8s-sidecar-target-directory annotation places rules in /rules/fake/
+//   (matching Loki's default tenant when auth_enabled: false)
+// - Rules are evaluated every 1 minute and alerts are sent to Alertmanager
+//
+// Label selector explanation:
+// - Uses component="ytdlpaas" instead of app="ytdlpaas"
+// - This matches the pod's app.kubernetes.io/component label from the Helm chart
+appDef.application(
+    name="loki-alerts",
+    namespace="prometheus",
+    manifests=[{
+        apiVersion: "v1",
+        kind: "ConfigMap",
+        metadata: {
+            name: "loki-ytdlpaas-alerts",
+            namespace: "prometheus",
+            labels: {
+                loki_rule: "1"
+            },
+            annotations: {
+                "k8s-sidecar-target-directory": "/rules/fake"
+            }
+        },
+        data: {
+            "ytdlpaas-alerts.yaml": |||
+                groups:
+                  - name: yt-dlp-aas-alerts
+                    interval: 1m
+                    rules:
+                      - alert: YtDlpAasErrors
+                        expr: |
+                          sum(count_over_time({namespace="arr-stack", component="ytdlpaas"} |= "ERROR" [5m])) > 0
+                        for: 1m
+                        labels:
+                          severity: warning
+                          namespace: arr-stack
+                        annotations:
+                          summary: "yt-dlp-aas is logging errors"
+                          description: "The yt-dlp-aas service has logged {{ $value }} errors in the last 5 minutes. Check logs for details."
+
+                      - alert: YtDlpAas403Errors
+                        expr: |
+                          sum(count_over_time({namespace="arr-stack", component="ytdlpaas"} |~ "ERROR.*HTTP Error 403|ERROR.*403 Forbidden" [5m])) > 0
+                        for: 1m
+                        labels:
+                          severity: critical
+                          namespace: arr-stack
+                        annotations:
+                          summary: "yt-dlp-aas encountering 403 errors"
+                          description: "The yt-dlp-aas service has encountered {{ $value }} 403 Forbidden errors in the last 5 minutes. This likely means yt-dlp needs an update."
+
+                      - alert: YtDlpAasSignatureExtractionFailure
+                        expr: |
+                          sum(count_over_time({namespace="arr-stack", component="ytdlpaas"} |= "Signature extraction failed" [5m])) > 0
+                        for: 1m
+                        labels:
+                          severity: critical
+                          namespace: arr-stack
+                        annotations:
+                          summary: "yt-dlp-aas signature extraction failures"
+                          description: "The yt-dlp-aas service has encountered {{ $value }} signature extraction failures in the last 5 minutes. This likely means yt-dlp needs an update."
+            |||
+        }
+    }]
+)

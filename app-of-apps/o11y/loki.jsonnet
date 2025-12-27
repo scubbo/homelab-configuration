@@ -1,5 +1,13 @@
 local appDef = import '../app-definitions.libsonnet';
 
+// Loki configuration for log aggregation and alerting
+//
+// Multi-tenancy configuration:
+// - auth_enabled is set to false for simplicity in single-user homelab
+// - Loki uses a default tenant called "fake" internally even with auth disabled
+// - Alert rules must be placed in /rules/fake/ directory to match this tenant
+// - Alternative: Enable auth_enabled and configure explicit tenant names, but this
+//   adds complexity without benefit for single-user environments
 appDef.helmApplication(
     name="loki",
     sourceRepoUrl="https://grafana.github.io/helm-charts",
