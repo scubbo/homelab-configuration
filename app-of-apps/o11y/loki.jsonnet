@@ -8,12 +8,18 @@ local appDef = import '../app-definitions.libsonnet';
 // - Alert rules must be placed in /rules/fake/ directory to match this tenant
 // - Alternative: Enable auth_enabled and configure explicit tenant names, but this
 //   adds complexity without benefit for single-user environments
-appDef.helmApplication(
+//
+// This uses helmRemotePlusLocalApplication to combine:
+// - Remote Grafana Loki Helm chart
+// - Local alert rule ConfigMaps from charts/loki/
+appDef.helmRemotePlusLocalApplication(
     name="loki",
     sourceRepoUrl="https://grafana.github.io/helm-charts",
     sourceChart="loki",
     sourceTargetRevision="6.49.0",
+    pathToLocal="charts/loki",
     namespace="prometheus",
+    nonHelmApp=true,
     helmValues={
         deploymentMode: "SingleBinary",
         loki: {
