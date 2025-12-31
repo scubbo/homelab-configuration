@@ -19,3 +19,47 @@ Several applications in this setup depend on [democratic-csi](https://github.com
 * `datasetParentName` and `detachedSnapshotsDatasetParentName` - for myself, they were `high-resiliency/k8s/[nfs|iscsi]/[vols|snaps]`, where `high-resiliency` was the name of the pool I made
 * `nfs.shareHost`
 * the `port` for `iscsi.targetPortal` is, by-default, `3260`
+
+## ArgoCD
+
+ArgoCD is installed via Helm (not managed by app-of-apps due to the chicken-and-egg problem):
+
+```bash
+helm install argo-cd argo-cd --repo https://argoproj.github.io/argo-helm -n argocd --create-namespace
+```
+
+### OIDC Authentication with Authentik
+
+ArgoCD is configured to use Authentik for SSO via Dex. Setup requires:
+
+1. **Create Authentik Application/Provider:**
+   - Application name: `ArgoCD`, slug: `argocd`
+   - Provider type: OAuth2/OIDC, Client type: Confidential
+   - Redirect URIs: `https://argo.avril/api/dex/callback` and `http://localhost:8085/auth/callback`
+   - Authorization flow: `implicit-consent`
+
+2. **Create K8s secret with client secret:**
+   ```bash
+   kubectl patch secret argocd-secret -n argocd --type merge -p '{"stringData": {"dex.authentik.clientSecret": "YOUR_SECRET"}}'
+   ```
+
+3. **Upgrade with OIDC values:**
+   ```yaml
+   configs:
+     cm:
+       url: https://argo.avril
+       dex.config: |
+         connectors:
+           - type: oidc
+             id: authentik
+             name: Authentik
+             config:
+               issuer: https://auth.avril/application/o/argocd/
+               clientID: <from authentik>
+               clientSecret: $dex.authentik.clientSecret
+               insecureEnableGroups: true
+               scopes:
+                 - openid
+                 - profile
+                 - email
+   ```
