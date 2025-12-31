@@ -16,3 +16,4 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [ ] Fully backup and test k3s HA Postgres cluster
 - [ ] Configure CloudNative-PG scheduled backups to S3/MinIO for Immich and Authentik databases
 - [ ] Migrate standalone PostgreSQL apps (Ombi?) to CloudNative-PG
+- [ ] Investigate storing democratic-csi Helm values partially in git (non-secret config) with secrets injected separately (Vault, sealed-secrets, or Helm --set flags)
