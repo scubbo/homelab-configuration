@@ -14,3 +14,5 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [ ] Set up Renovate for automated dependency updates (see https://docs.renovatebot.com/ - consider GitHub App for simplicity or self-hosted CronJob for full control)
 - [ ] Set up SSO via Authentik
 - [ ] Fully backup and test k3s HA Postgres cluster
+- [ ] Configure CloudNative-PG scheduled backups to S3/MinIO for Immich and Authentik databases
+- [ ] Migrate standalone PostgreSQL apps (Ombi?) to CloudNative-PG
