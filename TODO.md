@@ -13,8 +13,9 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [ ] Merge `homelab-hardening` branch after confirming monitoring works (health checks, resource limits, deprecated API cleanup, image pinning)
 - [ ] Install NVIDIA k8s-device-plugin for GPU-accelerated Jellyfin transcoding (see https://github.com/NVIDIA/k8s-device-plugin)
 - [ ] Set up Renovate for automated dependency updates (see https://docs.renovatebot.com/ - consider GitHub App for simplicity or self-hosted CronJob for full control)
-- [ ] Set up SSO via Authentik
+- [~] Set up SSO via Authentik (ArgoCD done, Jellyfin/Grafana/others pending)
 - [ ] Fully backup and test k3s HA Postgres cluster
 - [ ] Configure CloudNative-PG scheduled backups to S3/MinIO for Immich and Authentik databases
 - [ ] Migrate standalone PostgreSQL apps (Ombi?) to CloudNative-PG
 - [ ] Investigate storing democratic-csi Helm values partially in git (non-secret config) with secrets injected separately (Vault, sealed-secrets, or Helm --set flags)
+- [ ] Auto-purge Cloudflare cache after publishing a new blog entry
