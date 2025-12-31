@@ -1,5 +1,6 @@
 Scattered TODOs that either don't belong in any particular application, or that I was just too lazy to place there:
 
+- [ ] **PRIORITY**: Configure HTTPS with TLS certificates for ArgoCD and Authentik (use cert-manager with existing ClusterIssuer) - currently using insecureSkipVerify workaround
 - [ ] Try updating Sonarr (if the issue noted in `values.yaml` has been resolved)
 - [X] Move Readarr config onto `iscsi` (NFS seems not to play nice with SQLite), then use [rreading-glasses](https://github.com/blampe/rreading-glasses#usage)
 - [ ] MySQL database for Ombi
@@ -13,7 +14,6 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [ ] Install NVIDIA k8s-device-plugin for GPU-accelerated Jellyfin transcoding (see https://github.com/NVIDIA/k8s-device-plugin)
 - [ ] Set up Renovate for automated dependency updates (see https://docs.renovatebot.com/ - consider GitHub App for simplicity or self-hosted CronJob for full control)
 - [ ] Set up SSO via Authentik
-- [ ] Configure HTTPS with TLS certificates for ArgoCD and Authentik (use cert-manager with existing ClusterIssuer)
 - [ ] Fully backup and test k3s HA Postgres cluster
 - [ ] Configure CloudNative-PG scheduled backups to S3/MinIO for Immich and Authentik databases
 - [ ] Migrate standalone PostgreSQL apps (Ombi?) to CloudNative-PG
