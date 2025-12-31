@@ -601,6 +601,8 @@ spec:
               value: "America/Los_Angeles"
             - name: PORT
               value: "8001"
+            - name: DOWNLOAD_DIR
+              value: "/data/yt-dlp"
           resources:
             {{- toYaml .Values.ytdlpaas.resources | nindent 12 }}
           volumeMounts:
