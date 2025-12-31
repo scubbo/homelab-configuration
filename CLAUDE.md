@@ -75,6 +75,7 @@ Examples of current manual secrets:
 - **Prometheus Stack:** Monitoring (Prometheus, Grafana, AlertManager)
 - **Blackbox Exporter:** HTTP/TCP probing for uptime monitoring
 - **Vault:** Secret management (installed but not yet integrated with apps)
+- **Authentik:** Identity provider for SSO (OIDC) - accessible at `https://auth.avril`
 
 ### Documentation
 

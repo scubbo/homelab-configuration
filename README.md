@@ -54,7 +54,7 @@ ArgoCD is configured to use Authentik for SSO via Dex. Setup requires:
              id: authentik
              name: Authentik
              config:
-               issuer: https://auth.avril/application/o/argocd/
+               issuer: https://auth.avril/application/o/argo-cd/
                clientID: <from authentik>
                clientSecret: $dex.authentik.clientSecret
                insecureEnableGroups: true
