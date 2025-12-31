@@ -82,3 +82,4 @@ Examples of current manual secrets:
 - `/docs/todo/` - Detailed TODO documents for complex future work
 - `/TODO.md` - Simple checklist of pending tasks
 - Individual chart READMEs under `/charts/<name>/README.md`
+- If you add a new tool, library, installation, or technique, you should draft a blog post about it in `~/Code/blogcontent`
