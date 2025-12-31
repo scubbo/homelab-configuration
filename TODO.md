@@ -13,6 +13,7 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [ ] Install NVIDIA k8s-device-plugin for GPU-accelerated Jellyfin transcoding (see https://github.com/NVIDIA/k8s-device-plugin)
 - [ ] Set up Renovate for automated dependency updates (see https://docs.renovatebot.com/ - consider GitHub App for simplicity or self-hosted CronJob for full control)
 - [ ] Set up SSO via Authentik
+- [ ] Configure HTTPS with TLS certificates for ArgoCD and Authentik (use cert-manager with existing ClusterIssuer)
 - [ ] Fully backup and test k3s HA Postgres cluster
 - [ ] Configure CloudNative-PG scheduled backups to S3/MinIO for Immich and Authentik databases
 - [ ] Migrate standalone PostgreSQL apps (Ombi?) to CloudNative-PG
