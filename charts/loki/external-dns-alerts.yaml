@@ -1,0 +1,43 @@
+# Loki alert rules for external-dns monitoring
+#
+# These rules detect when external-dns cannot communicate with the OPNsense API,
+# which prevents automatic DNS record creation for new Ingresses.
+#
+# Uses the same k8s-sidecar pattern as ytdlpaas-alerts - ConfigMaps with
+# label "loki_rule: 1" are automatically loaded by Loki's ruler.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-external-dns-alerts
+  namespace: prometheus
+  labels:
+    loki_rule: "1"
+  annotations:
+    k8s-sidecar-target-directory: "/rules/fake"
+data:
+  external-dns-alerts.yaml: |
+    groups:
+      - name: external-dns-alerts
+        interval: 1m
+        rules:
+          - alert: ExternalDnsApiErrors
+            expr: |
+              sum(count_over_time({namespace="external-dns", container="webhook"} |= "error getting records" [5m])) > 3
+            for: 5m
+            labels:
+              severity: critical
+              namespace: external-dns
+            annotations:
+              summary: "external-dns cannot reach OPNsense API"
+              description: "The external-dns webhook has failed to get records {{ $value }} times in the last 5 minutes. New Ingresses will not get DNS records until this is resolved. Check webhook logs: kubectl logs -n external-dns -l app.kubernetes.io/name=external-dns -c webhook"
+
+          - alert: ExternalDnsConnectionFailure
+            expr: |
+              sum(count_over_time({namespace="external-dns", container="webhook"} |~ "cannot assign requested address|connection timed out|connection refused" [5m])) > 0
+            for: 5m
+            labels:
+              severity: critical
+              namespace: external-dns
+            annotations:
+              summary: "external-dns has network connectivity issues"
+              description: "The external-dns webhook cannot connect to the OPNsense API. This is often fixed by restarting the pod: kubectl rollout restart deployment -n external-dns external-dns"
