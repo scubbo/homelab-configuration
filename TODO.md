@@ -12,5 +12,5 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [ ] Merge `homelab-hardening` branch after confirming monitoring works (health checks, resource limits, deprecated API cleanup, image pinning)
 - [ ] Install NVIDIA k8s-device-plugin for GPU-accelerated Jellyfin transcoding (see https://github.com/NVIDIA/k8s-device-plugin)
 - [ ] Set up Renovate for automated dependency updates (see https://docs.renovatebot.com/ - consider GitHub App for simplicity or self-hosted CronJob for full control)
-- [ ] Set up SSO via Keycloak
+- [ ] Set up SSO via Authentik
 - [ ] Fully backup and test k3s HA Postgres cluster

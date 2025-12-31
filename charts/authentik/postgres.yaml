@@ -1,0 +1,15 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: authentik-database
+spec:
+  instances: 1
+
+  storage:
+    storageClass: freenas-iscsi-csi
+    size: 5Gi
+
+  bootstrap:
+    initdb:
+      database: authentik
+      owner: authentik
