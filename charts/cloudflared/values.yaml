@@ -1,0 +1,15 @@
+replicaCount: 2
+
+# Secret containing the tunnel token (must be pre-created manually)
+# See README.md for creation commands
+secrets:
+  tokenSecret: tunnel-token
+  tokenKey: token
+
+image:
+  repository: cloudflare/cloudflared
+  tag: latest
+  pullPolicy: Always
+
+# Tunnel ingress rules are configured in the Cloudflare Zero Trust dashboard,
+# not in this file. Go to: Zero Trust -> Networks -> Tunnels -> [your tunnel] -> Public Hostnames

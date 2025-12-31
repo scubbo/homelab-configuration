@@ -1,0 +1,5 @@
+apiVersion: v2
+name: cloudflared
+description: Cloudflare Tunnel for exposing services to the Internet
+version: 1.0.0
+appVersion: "latest"
