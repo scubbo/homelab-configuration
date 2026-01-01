@@ -1,6 +1,6 @@
 Scattered TODOs that either don't belong in any particular application, or that I was just too lazy to place there:
 
-- [ ] **PRIORITY**: Configure HTTPS with TLS certificates for ArgoCD and Authentik (use cert-manager with existing ClusterIssuer) - currently using insecureSkipVerify workaround
+- [ ] **PRIORITY**: Configure HTTPS with TLS certificates for ArgoCD, Authentik, and Immich (use cert-manager with existing ClusterIssuer) - currently using insecureSkipVerify workaround
 - [ ] Try updating Sonarr (if the issue noted in `values.yaml` has been resolved)
 - [X] Move Readarr config onto `iscsi` (NFS seems not to play nice with SQLite), then use [rreading-glasses](https://github.com/blampe/rreading-glasses#usage)
 - [ ] MySQL database for Ombi
