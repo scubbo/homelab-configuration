@@ -1,15 +1,37 @@
 replicaCount: 2
 
-# Secret containing the tunnel token (must be pre-created manually)
+tunnel:
+  id: "49342924-73cc-4aed-ba4a-b9bdb5e1dfbb"
+  domain: scubbo.org
+
+accountId: "0e036ef04c085fb110f5e19b056e3c0a"
+
+# Services to expose via the tunnel
+# Each entry creates an ingress rule: <hostname>.<domain> -> <service>:<port>
+# To add a new service, add an entry here and commit - ArgoCD will sync.
+ingress:
+  - hostname: blog
+    service: blog-svc-cip.blog
+    port: 8080
+  - hostname: immich
+    service: immich-server.immich
+    port: 2283
+
+# Secrets (must be pre-created manually in the cloudflared namespace)
 # See README.md for creation commands
 secrets:
-  tokenSecret: tunnel-token
-  tokenKey: token
+  # Token for cloudflared to connect (from Cloudflare dashboard)
+  tunnelToken: tunnel-token
+  tunnelTokenKey: token
+  # API token for managing tunnel config (needs "Cloudflare Tunnel: Edit" permission)
+  apiToken: cloudflare-api-token
+  apiTokenKey: token
 
 image:
   repository: cloudflare/cloudflared
   tag: latest
   pullPolicy: Always
 
-# Tunnel ingress rules are configured in the Cloudflare Zero Trust dashboard,
-# not in this file. Go to: Zero Trust -> Networks -> Tunnels -> [your tunnel] -> Public Hostnames
+initImage:
+  repository: curlimages/curl
+  tag: latest

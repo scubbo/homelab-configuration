@@ -12,7 +12,52 @@ spec:
     metadata:
       labels:
         app: cloudflared
+      annotations:
+        # Force pod restart when ingress config changes
+        checksum/config: {{ .Values.ingress | toJson | sha256sum }}
     spec:
+      # Update tunnel ingress rules via Cloudflare API before starting
+      initContainers:
+      - name: configure-tunnel
+        image: "{{ .Values.initImage.repository }}:{{ .Values.initImage.tag }}"
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          set -e
+          echo "Updating tunnel ingress configuration..."
+
+          # Build the ingress JSON
+          INGRESS_JSON='{"config":{"ingress":['
+          {{- $first := true }}
+          {{- range .Values.ingress }}
+          {{- if not $first }},{{ end }}
+          {{- $first = false }}
+          INGRESS_JSON="${INGRESS_JSON}"'{"hostname":"{{ .hostname }}.{{ $.Values.tunnel.domain }}","service":"http://{{ .service }}.svc.cluster.local:{{ .port }}","originRequest":{}}'
+          {{- end }}
+          INGRESS_JSON="${INGRESS_JSON}"',{"service":"http_status:404"}]}}'
+
+          echo "Sending configuration to Cloudflare API..."
+          HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
+            "https://api.cloudflare.com/client/v4/accounts/{{ .Values.accountId }}/cfd_tunnel/{{ .Values.tunnel.id }}/configurations" \
+            --request PUT \
+            --header "Authorization: Bearer ${CF_API_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data "${INGRESS_JSON}")
+
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "Successfully updated tunnel configuration"
+            cat /tmp/response.txt
+          else
+            echo "Failed to update tunnel configuration (HTTP $HTTP_CODE)"
+            cat /tmp/response.txt
+            exit 1
+          fi
+        env:
+        - name: CF_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secrets.apiToken }}
+              key: {{ .Values.secrets.apiTokenKey }}
       containers:
       - name: cloudflared
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -28,8 +73,8 @@ spec:
         - name: TUNNEL_TOKEN
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.secrets.tokenSecret }}
-              key: {{ .Values.secrets.tokenKey }}
+              name: {{ .Values.secrets.tunnelToken }}
+              key: {{ .Values.secrets.tunnelTokenKey }}
         livenessProbe:
           httpGet:
             path: /ready
