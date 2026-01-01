@@ -5,6 +5,7 @@ tunnel:
   domain: scubbo.org
 
 accountId: "0e036ef04c085fb110f5e19b056e3c0a"
+zoneId: "c86d55d225ed973d5da45239beac2f99"
 
 # Services to expose via the tunnel
 # Each entry creates an ingress rule: <hostname>.<domain> -> <service>:<port>

@@ -16,7 +16,7 @@ spec:
         # Force pod restart when ingress config changes
         checksum/config: {{ .Values.ingress | toJson | sha256sum }}
     spec:
-      # Update tunnel ingress rules via Cloudflare API before starting
+      # Update tunnel ingress rules and DNS records via Cloudflare API before starting
       initContainers:
       - name: configure-tunnel
         image: "{{ .Values.initImage.repository }}:{{ .Values.initImage.tag }}"
@@ -24,7 +24,11 @@ spec:
         args:
         - |
           set -e
-          echo "Updating tunnel ingress configuration..."
+
+          TUNNEL_ID="{{ .Values.tunnel.id }}"
+          TUNNEL_CNAME="${TUNNEL_ID}.cfargotunnel.com"
+
+          echo "=== Updating tunnel ingress configuration ==="
 
           # Build the ingress JSON
           INGRESS_JSON='{"config":{"ingress":['
@@ -36,7 +40,7 @@ spec:
           {{- end }}
           INGRESS_JSON="${INGRESS_JSON}"',{"service":"http_status:404"}]}}'
 
-          echo "Sending configuration to Cloudflare API..."
+          echo "Sending tunnel configuration to Cloudflare API..."
           HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
             "https://api.cloudflare.com/client/v4/accounts/{{ .Values.accountId }}/cfd_tunnel/{{ .Values.tunnel.id }}/configurations" \
             --request PUT \
@@ -46,12 +50,51 @@ spec:
 
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
             echo "Successfully updated tunnel configuration"
-            cat /tmp/response.txt
           else
             echo "Failed to update tunnel configuration (HTTP $HTTP_CODE)"
             cat /tmp/response.txt
             exit 1
           fi
+
+          echo ""
+          echo "=== Ensuring DNS records exist ==="
+
+          # For each hostname, ensure a CNAME record exists pointing to the tunnel
+          {{- range .Values.ingress }}
+          HOSTNAME="{{ .hostname }}.{{ $.Values.tunnel.domain }}"
+          echo "Checking DNS for ${HOSTNAME}..."
+
+          # Check if record already exists
+          EXISTING=$(curl -s \
+            "https://api.cloudflare.com/client/v4/zones/{{ $.Values.zoneId }}/dns_records?type=CNAME&name=${HOSTNAME}" \
+            --header "Authorization: Bearer ${CF_API_TOKEN}" \
+            --header "Content-Type: application/json")
+
+          RECORD_COUNT=$(echo "${EXISTING}" | grep -o '"count":[0-9]*' | grep -o '[0-9]*')
+
+          if [ "${RECORD_COUNT}" = "0" ] || [ -z "${RECORD_COUNT}" ]; then
+            echo "Creating DNS record for ${HOSTNAME}..."
+            HTTP_CODE=$(curl -s -o /tmp/dns_response.txt -w "%{http_code}" \
+              "https://api.cloudflare.com/client/v4/zones/{{ $.Values.zoneId }}/dns_records" \
+              --request POST \
+              --header "Authorization: Bearer ${CF_API_TOKEN}" \
+              --header "Content-Type: application/json" \
+              --data "{\"type\":\"CNAME\",\"name\":\"${HOSTNAME}\",\"content\":\"${TUNNEL_CNAME}\",\"proxied\":true}")
+
+            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+              echo "Created DNS record for ${HOSTNAME}"
+            else
+              echo "Failed to create DNS record (HTTP $HTTP_CODE)"
+              cat /tmp/dns_response.txt
+              # Don't exit - DNS record might already exist in a different form
+            fi
+          else
+            echo "DNS record for ${HOSTNAME} already exists"
+          fi
+          {{- end }}
+
+          echo ""
+          echo "=== Configuration complete ==="
         env:
         - name: CF_API_TOKEN
           valueFrom:

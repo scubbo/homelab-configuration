@@ -4,18 +4,20 @@ Deploys a Cloudflare Tunnel to expose Kubernetes services to the Internet via Cl
 
 ## Prerequisites
 
-### 1. Get Tunnel ID and Account ID
+### 1. Get Tunnel ID, Account ID, and Zone ID
 
 1. Go to [Cloudflare Zero Trust Dashboard](https://one.dash.cloudflare.com/)
 2. Navigate to: Networks → Tunnels
 3. Select your tunnel - the **Tunnel ID** is shown in the URL and details
 4. Your **Account ID** is in the URL: `https://one.dash.cloudflare.com/<account-id>/...`
+5. For **Zone ID**: Go to [Cloudflare Dashboard](https://dash.cloudflare.com/), select your domain, find Zone ID on the right sidebar
 
 Update `values.yaml` with these values:
 ```yaml
 tunnel:
   id: "your-tunnel-id-here"
 accountId: "your-account-id-here"
+zoneId: "your-zone-id-here"
 ```
 
 ### 2. Create the Tunnel Token Secret
@@ -36,6 +38,7 @@ kubectl create secret generic tunnel-token \
 2. Click "Create Token"
 3. Use "Create Custom Token" with these permissions:
    - **Account** → **Cloudflare Tunnel** → **Edit**
+   - **Zone** → **DNS** → **Edit** (for the domain you're using)
 4. Create the secret:
 
 ```bash
@@ -63,10 +66,11 @@ Commit and push - ArgoCD will sync the changes. The init container calls the Clo
 ## How It Works
 
 1. An init container sends the ingress rules to the Cloudflare API
-2. The Cloudflare API updates the tunnel's public hostname configuration
-3. The main cloudflared container connects using the tunnel token
-4. Cloudflare routes incoming requests based on the configured hostnames
-5. When `values.yaml` changes, pods restart (via config checksum annotation) and update the API
+2. The init container also creates DNS CNAME records pointing to the tunnel (if they don't exist)
+3. The Cloudflare API updates the tunnel's public hostname configuration
+4. The main cloudflared container connects using the tunnel token
+5. Cloudflare routes incoming requests based on the configured hostnames
+6. When `values.yaml` changes, pods restart (via config checksum annotation) and update the API
 
 ## Troubleshooting
 
