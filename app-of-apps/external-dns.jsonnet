@@ -11,7 +11,7 @@ appDef.helmApplication(
             webhook: {
                 image: {
                     repository: "ghcr.io/crutonjohn/external-dns-opnsense-webhook",
-                    tag: "v0.1.0"
+                    tag: "v1.0.0"
                 },
                 env: [
                     {
