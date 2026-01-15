@@ -8,7 +8,7 @@ image:
   repository: ghcr.io/scubbo/2024-wedding-media
   pullPolicy: IfNotPresent
   # Tag is configurable - set this to the desired image tag
-  tag: "sha-61e8b624894c60f3fe31b57c4443e7c9c565c956"
+  tag: "sha-fc9c8bca0c6d2fb24dfc7ca32ba192ba12233aff"
 
 imagePullSecrets: []
 nameOverride: ""
