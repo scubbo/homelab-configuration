@@ -44,6 +44,14 @@ spec:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: videos
+              mountPath: /usr/share/nginx/html/videos
+              readOnly: true
+      volumes:
+        - name: videos
+          persistentVolumeClaim:
+            claimName: wedding-media-videos-pvc
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

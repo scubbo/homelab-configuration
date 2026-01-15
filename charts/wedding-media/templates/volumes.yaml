@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: wedding-media-videos-pv
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadOnlyMany
+  nfs:
+    server: galactus.avril
+    path: /mnt/high-resiliency/manual-nfs/personal-media/personal-video/wedding
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wedding-media-videos-pvc
+spec:
+  storageClassName: ""
+  volumeName: wedding-media-videos-pv
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 100Gi
