@@ -17,6 +17,9 @@ ingress:
   - hostname: immich
     service: immich-server.immich
     port: 2283
+  - hostname: wedding-media
+    service: wedding-media.wedding-media
+    port: 80
 
 # Secrets (must be pre-created manually in the cloudflared namespace)
 # See README.md for creation commands
