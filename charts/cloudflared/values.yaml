@@ -20,6 +20,7 @@ ingress:
   - hostname: wedding-media
     service: wedding-media.wedding-media
     port: 80
+    disableChunkedEncoding: true
 
 # Secrets (must be pre-created manually in the cloudflared namespace)
 # See README.md for creation commands

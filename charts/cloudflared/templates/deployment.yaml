@@ -36,7 +36,7 @@ spec:
           {{- range .Values.ingress }}
           {{- if not $first }},{{ end }}
           {{- $first = false }}
-          INGRESS_JSON="${INGRESS_JSON}"'{"hostname":"{{ .hostname }}.{{ $.Values.tunnel.domain }}","service":"http://{{ .service }}.svc.cluster.local:{{ .port }}","originRequest":{}}'
+          INGRESS_JSON="${INGRESS_JSON}"'{"hostname":"{{ .hostname }}.{{ $.Values.tunnel.domain }}","service":"http://{{ .service }}.svc.cluster.local:{{ .port }}","originRequest":{"disableChunkedEncoding":{{ if .disableChunkedEncoding }}true{{ else }}false{{ end }}}}'
           {{- end }}
           INGRESS_JSON="${INGRESS_JSON}"',{"service":"http_status:404"}]}}'
 
