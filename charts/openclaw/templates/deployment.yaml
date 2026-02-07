@@ -46,6 +46,8 @@ spec:
                 secretKeyRef:
                   name: openclaw-credentials
                   key: OPENCLAW_GATEWAY_TOKEN
+            - name: OPENCLAW_GATEWAY_BIND
+              value: "lan"
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
