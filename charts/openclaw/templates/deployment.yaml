@@ -54,10 +54,16 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /home/node
+            - name: config
+              mountPath: /home/node/.openclaw/openclaw.json
+              subPath: openclaw.json
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: {{ include "openclaw.fullname" . }}-data
+        - name: config
+          configMap:
+            name: {{ include "openclaw.fullname" . }}-config
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
