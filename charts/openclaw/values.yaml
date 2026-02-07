@@ -30,13 +30,21 @@ service:
 ingress:
   enabled: true
   className: "traefik"
-  annotations: {}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
   hosts:
     - host: openclaw.avril
       paths:
         - path: /
           pathType: ImplementationSpecific
-  tls: []
+    - host: openclaw.scubbo.org
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: openclaw-tls
+      hosts:
+        - openclaw.scubbo.org
 
 resources:
   requests:
