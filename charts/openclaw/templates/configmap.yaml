@@ -9,7 +9,8 @@ data:
     {
       "gateway": {
         "bind": "lan",
-        "mode": "local"
+        "mode": "local",
+        "trustedProxies": ["10.42.0.0/16"]
       },
       "agents": {
         "defaults": {
