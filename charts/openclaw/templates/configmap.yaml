@@ -30,6 +30,11 @@ data:
           }
         }
       },
+      "channels": {
+        "slack": {
+          "enabled": true
+        }
+      },
       "agents": {
         "defaults": {
           "model": {

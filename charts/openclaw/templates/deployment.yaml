@@ -49,6 +49,16 @@ spec:
                   key: OPENCLAW_GATEWAY_TOKEN
             - name: OPENCLAW_GATEWAY_BIND
               value: "lan"
+            - name: SLACK_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-credentials
+                  key: SLACK_BOT_TOKEN
+            - name: SLACK_APP_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-credentials
+                  key: SLACK_APP_TOKEN
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
