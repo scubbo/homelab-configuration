@@ -35,6 +35,13 @@ data:
           "enabled": true
         }
       },
+      "plugins": {
+        "entries": {
+          "slack": {
+            "enabled": true
+          }
+        }
+      },
       "agents": {
         "defaults": {
           "model": {
