@@ -66,4 +66,5 @@ persistence:
 
 networkPolicy:
   enabled: true
-  anthropicApiCidr: "160.79.104.10/32"
+  llmCidr: "192.168.1.219/32"
+  llmPort: 8080

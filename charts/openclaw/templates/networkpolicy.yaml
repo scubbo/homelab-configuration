@@ -18,11 +18,11 @@ spec:
           protocol: UDP
         - port: 53
           protocol: TCP
-    # Allow HTTPS to Anthropic API
+    # Allow traffic to LLM provider
     - to:
         - ipBlock:
-            cidr: {{ .Values.networkPolicy.anthropicApiCidr }}
+            cidr: {{ .Values.networkPolicy.llmCidr }}
       ports:
-        - port: 443
+        - port: {{ .Values.networkPolicy.llmPort }}
           protocol: TCP
 {{- end }}
