@@ -12,10 +12,28 @@ data:
         "mode": "local",
         "trustedProxies": ["10.42.1.11"]
       },
+      "models": {
+        "providers": {
+          "ollama": {
+            "baseUrl": "http://alpha.avril:8080/v1",
+            "apiKey": "ollama-local",
+            "api": "openai-completions",
+            "models": [{
+              "id": "Qwen3-30B-A3B-Instruct-2507-Q6_K.gguf",
+              "name": "Qwen3-30B-A3B-Instruct-2507",
+              "reasoning": false,
+              "input": ["text"],
+              "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+              "contextWindow": 32768,
+              "maxTokens": 32768
+            }]
+          }
+        }
+      },
       "agents": {
         "defaults": {
           "model": {
-            "primary": "anthropic/claude-sonnet-4-5-20250929"
+            "primary": "ollama/Qwen3-30B-A3B-Instruct-2507-Q6_K.gguf"
           }
         }
       }
