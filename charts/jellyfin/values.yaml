@@ -66,20 +66,15 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-# https://github.com/NVIDIA/k8s-device-plugin?tab=readme-ov-file#running-gpu-jobs
-# resources:
-#   requests:
-#     nvidia.com/gpu: 1
-#   limits:
-#     nvidia.com/gpu: 1
-
 resources:
   requests:
     cpu: 500m
     memory: 1Gi
+    nvidia.com/gpu: 1
   limits:
     cpu: 4
     memory: 6Gi
+    nvidia.com/gpu: 1
 
 autoscaling:
   enabled: false
@@ -100,7 +95,7 @@ metricsImage:
   repository: gitea.scubbo.org/scubbo/jellyfin-library-count-prometheus-exporter
   tag: latest
 
-# runtimeClassName: nvidia
+runtimeClassName: nvidia
 
 metrics:
   apiUrl: "http://jellyfin.avril"

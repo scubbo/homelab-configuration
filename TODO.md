@@ -11,7 +11,7 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [ ] Investigate rasnu1 Pi - Tailscale offline (34+ days), DNS broken due to Tailscale resolver configured but not connected. Node cordoned. Check power supply, SD card, `dmesg` for under-voltage warnings, and fix Tailscale connectivity
 - [ ] Unseal Vault after restart (`kubectl exec -n vault vault-0 -- vault operator unseal`)
 - [ ] Merge `homelab-hardening` branch after confirming monitoring works (health checks, resource limits, deprecated API cleanup, image pinning)
-- [ ] Install NVIDIA k8s-device-plugin for GPU-accelerated Jellyfin transcoding (see https://github.com/NVIDIA/k8s-device-plugin)
+- [X] Install NVIDIA k8s-device-plugin for GPU-accelerated Jellyfin transcoding (see https://github.com/NVIDIA/k8s-device-plugin)
 - [ ] Set up Renovate for automated dependency updates (see https://docs.renovatebot.com/ - consider GitHub App for simplicity or self-hosted CronJob for full control)
 - [~] Set up SSO via Authentik (ArgoCD done, Jellyfin/Grafana/others pending)
 - [ ] Fully backup and test k3s HA Postgres cluster
