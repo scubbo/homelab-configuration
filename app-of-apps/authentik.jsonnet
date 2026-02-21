@@ -22,7 +22,14 @@ appDef.helmRemotePlusLocalApplication(
             ingress: {
                 enabled: true,
                 ingressClassName: "traefik",
-                hosts: ["auth.avril"]
+                annotations: {
+                    "cert-manager.io/cluster-issuer": "letsencrypt-prod"
+                },
+                hosts: ["auth.avril", "auth.scubbo.org"],
+                tls: [{
+                    secretName: "authentik-tls",
+                    hosts: ["auth.scubbo.org"]
+                }]
             },
             volumes: [
                 {

@@ -1,0 +1,42 @@
+# ArgoCD Helm values with TLS enabled
+#
+# Prerequisites:
+#   1. Authentik must have TLS working at https://auth.scubbo.org first
+#   2. Update the Authentik OIDC provider's redirect URIs to include https://argo.scubbo.org/api/dex/callback
+#   3. Create DNS CNAME: argo.scubbo.org -> k8s-ingress.scubbo.org in Cloudflare (DNS only, not proxied)
+#
+# Apply with:
+#   helm upgrade argo-cd argo-cd --repo https://argoproj.github.io/argo-helm -n argocd -f manifests/argocd/values-tls.yaml
+
+global:
+  domain: argo.scubbo.org
+
+configs:
+  cm:
+    url: https://argo.scubbo.org
+    dex.config: |
+      connectors:
+        - type: oidc
+          id: authentik
+          name: Authentik
+          config:
+            issuer: https://auth.scubbo.org/application/o/argo-cd/
+            clientID: D2EwryoCqtv4aCjDF05DC6yCHLzWN6AaVp1zGYV2
+            clientSecret: $dex.authentik.clientSecret
+            insecureEnableGroups: true
+            scopes:
+              - openid
+              - profile
+              - email
+  rbac:
+    policy.csv: |
+      g, , role:admin
+    policy.default: role:admin
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    tls: true
