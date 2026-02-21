@@ -28,12 +28,17 @@ configs:
               - openid
               - profile
               - email
+  params:
+    # ArgoCD serves HTTP internally; TLS is terminated at the ingress
+    server.insecure: true
   rbac:
     policy.csv: |
       g, , role:admin
     policy.default: role:admin
 
 server:
+  extraArgs:
+    - --insecure
   ingress:
     enabled: true
     ingressClassName: traefik
