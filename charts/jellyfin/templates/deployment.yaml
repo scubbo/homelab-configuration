@@ -76,8 +76,7 @@ spec:
           persistentVolumeClaim:
             claimName: jf-config-pvc
         - name: jf-cache
-          persistentVolumeClaim:
-            claimName: jf-cache-pvc
+          emptyDir: {}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

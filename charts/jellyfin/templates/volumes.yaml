@@ -13,18 +13,6 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: jf-cache-pvc
-spec:
-  storageClassName: "freenas-nfs-csi"
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 10G
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
   name: jf-truenas-media-pvc
 spec:
   storageClassName: ""
