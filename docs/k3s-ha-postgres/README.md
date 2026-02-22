@@ -2,6 +2,17 @@
 
 This document describes the external PostgreSQL database that serves as the k3s cluster's datastore (replacing the default embedded etcd/SQLite).
 
+## Configuration Snapshots
+
+This directory contains snapshots of the configuration files deployed on epsilon. These may drift from the live configuration - always check epsilon for the authoritative version.
+
+| File | Source on epsilon |
+|------|-------------------|
+| [docker-compose.yaml](docker-compose.yaml) | `/home/scubbo/k3s-ha-postgres/docker-compose.yaml` |
+| [backup.sh](backup.sh) | `/home/scubbo/k3s-ha-postgres/backup.sh` |
+| [k3s-postgres-docker.service](k3s-postgres-docker.service) | `/etc/systemd/system/k3s-postgres-docker.service` |
+| [crontab-entry.txt](crontab-entry.txt) | `crontab -l` (scubbo user) |
+
 ## Architecture
 
 The k3s cluster uses PostgreSQL as its datastore via the [kine](https://github.com/k3s-io/kine) adapter. This provides:

@@ -1,0 +1,4 @@
+# Snapshot of scubbo@epsilon crontab entry for k3s-ha-postgres backup
+# Last updated: 2026-02-22
+# Runs every 5 days at 5:00 AM
+0 5 */5 * * /home/scubbo/k3s-ha-postgres/backup.sh 2>&1 | logger -t k3s-ha-postgres-backup

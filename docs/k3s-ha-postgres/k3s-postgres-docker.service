@@ -1,0 +1,12 @@
+# Snapshot of epsilon:/etc/systemd/system/k3s-postgres-docker.service
+# Last updated: 2026-02-22
+[Unit]
+Description=Start the Postgres Docker Container that supports k3s cluster
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/docker compose up
+ExecStop=/usr/bin/docker compose down
+WorkingDirectory=/home/scubbo/k3s-ha-postgres

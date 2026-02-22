@@ -1,0 +1,11 @@
+# Snapshot of epsilon:/home/scubbo/k3s-ha-postgres/docker-compose.yaml
+# Last updated: 2026-02-22
+services:
+  pg:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: <REDACTED>
+    volumes:
+      - /home/scubbo/k3s-ha-postgres-data:/var/lib/postgresql/data
