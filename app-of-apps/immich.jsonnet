@@ -75,10 +75,22 @@
                             }
                         },
                         "machine-learning": {
+                            controllers: {
+                                main: {
+                                    containers: {
+                                        main: {
+                                            env: {
+                                                HF_HUB_DISABLE_XET: "1"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
                             persistence: {
                                 cache: {
                                     enabled: true,
                                     size: "10Gi",
+                                    type: "persistentVolumeClaim",
                                     storageClass: "freenas-iscsi-csi"
                                 }
                             }
