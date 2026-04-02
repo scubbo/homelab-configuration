@@ -2,9 +2,9 @@
 
 ## Overview
 
-This deployment uses [external-dns](https://github.com/kubernetes-sigs/external-dns) with the [OPNsense webhook provider](https://github.com/crutonjohn/external-dns-opnsense-webhook) to automatically create DNS records in OPNsense's Unbound DNS service when Kubernetes Ingresses are created.
+This deployment uses [external-dns](https://github.com/kubernetes-sigs/external-dns) with the [OPNsense webhook provider](https://github.com/crutonjohn/external-dns-opnsense-webhook) to automatically create DNS records in OPNsense's Unbound DNS service when Kubernetes Ingresses are created. Host Overrides are created in Unbound (port 5353), which sits behind AdGuard Home (port 53) on the same OPNsense router.
 
-**Status:** Using crutonjohn's webhook v0.1.0 (marked as "NOT FIT FOR PRODUCTION USE" but acceptable for homelab)
+**Status:** Using crutonjohn's webhook v1.0.0
 
 ## How It Works
 
@@ -64,12 +64,12 @@ The external-dns deployment is defined in `/app-of-apps/external-dns.jsonnet` an
 | Setting | Value | Purpose |
 |---------|-------|---------|
 | `provider.name` | `webhook` | Use webhook provider |
-| `provider.webhook.image` | `ghcr.io/crutonjohn/external-dns-opnsense-webhook:v0.1.0` | OPNsense webhook |
+| `provider.webhook.image` | `ghcr.io/crutonjohn/external-dns-opnsense-webhook:v1.0.0` | OPNsense webhook |
 | `sources` | `["ingress", "service", "crd"]` | Watch these resource types |
 | `policy` | `sync` | Automatically create AND delete records |
 | `registry` | `noop` | Don't use TXT records for ownership |
 | `domainFilters` | `["avril"]` | ONLY manage `*.avril` domains |
-| `OPNSENSE_HOST` | `https://router.avril` | Your OPNsense URL |
+| `OPNSENSE_HOST` | `https://192.168.1.1` | OPNsense URL (hardcoded IP to avoid circular DNS dependency) |
 | `OPNSENSE_SKIP_TLS_VERIFY` | `"true"` | Ignore self-signed cert |
 
 ## Important Warnings ⚠️
@@ -164,7 +164,7 @@ This is expected behavior! External-DNS with `policy: sync` will delete any `*.a
 
 - [ ] Migrate secret to Vault using External Secrets Operator
 - [ ] Consider using `policy: upsert-only` if deletion is too aggressive
-- [ ] Monitor for updates to the webhook (currently v0.1.0)
+- [ ] Monitor for updates to the webhook (currently v1.0.0)
 - [ ] Investigate if ownership tracking can be added somehow
 
 ## References
