@@ -11,7 +11,7 @@ appDef.helmApplication(
             webhook: {
                 image: {
                     repository: "ghcr.io/scubbo/external-dns-opnsense-webhook",
-                    tag: "fix-idempotent-overrides"
+                    tag: "653e24a"
                 },
                 env: [
                     {
