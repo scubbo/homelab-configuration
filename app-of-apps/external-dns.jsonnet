@@ -10,8 +10,8 @@ appDef.helmApplication(
             name: "webhook",
             webhook: {
                 image: {
-                    repository: "ghcr.io/crutonjohn/external-dns-opnsense-webhook",
-                    tag: "v1.0.0"
+                    repository: "ghcr.io/scubbo/external-dns-opnsense-webhook",
+                    tag: "fix-idempotent-overrides"
                 },
                 env: [
                     {
