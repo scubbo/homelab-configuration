@@ -34,9 +34,9 @@ secrets:
 
 image:
   repository: cloudflare/cloudflared
-  tag: latest
-  pullPolicy: Always
+  tag: "2026.3.0"
+  pullPolicy: IfNotPresent
 
 initImage:
   repository: curlimages/curl
-  tag: latest
+  tag: "8.19.0"

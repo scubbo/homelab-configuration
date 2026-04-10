@@ -92,7 +92,7 @@ tolerations: []
 affinity: {}
 
 metricsImage:
-  repository: gitea.scubbo.org/scubbo/jellyfin-library-count-prometheus-exporter
+  repository: ghcr.io/scubbo/jellyfin-library-count-prometheus-exporter
   tag: latest
 
 runtimeClassName: nvidia
