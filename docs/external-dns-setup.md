@@ -76,18 +76,32 @@ The external-dns deployment is defined in `/app-of-apps/external-dns.jsonnet` an
 
 ### Ownership Tracking
 
-The OPNsense API does not support TXT records for ownership tracking. This means:
+The OPNsense webhook does not support TXT records for ownership tracking. This means:
 
 - External-DNS assumes it owns **ALL** `*.avril` records
-- If you have manually-created `*.avril` records, they **WILL BE DELETED** when external-dns syncs
+- Any manually-created `*.avril` Unbound host override **WILL BE DELETED** when external-dns syncs
 - The `domainFilters: ["avril"]` setting is CRITICAL to prevent managing other domains
 
-### Recommended Approach
+### Adding Non-Ingress DNS Records
 
-1. **Before deployment:** Backup all existing Unbound host overrides
-2. **Delete manual `*.avril` records:** Remove any manually-created DNS entries for `*.avril`
-3. **Deploy external-dns:** Let it manage all `*.avril` records automatically
-4. **Keep other domains manual:** Any non-`*.avril` domains won't be touched
+For hostnames that are not Kubernetes Ingresses (e.g. NAS boxes, routers, other LAN hosts), do **not** create Unbound host overrides manually — they will be deleted on the next sync. Instead, declare them as `DNSEndpoint` CRDs in `charts/external-dns/`. External-dns watches these via its `crd` source and will create and maintain the corresponding Unbound record.
+
+Example (`charts/external-dns/my-host-dns-endpoint.yaml`):
+
+```yaml
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: my-host
+  namespace: external-dns
+spec:
+  endpoints:
+    - dnsName: my-host.avril
+      recordTTL: 3600
+      recordType: A
+      targets:
+        - 192.168.1.x
+```
 
 ## Usage
 
@@ -158,14 +172,12 @@ kubectl logs -n external-dns -l app.kubernetes.io/name=external-dns -c webhook
 
 ### Records being deleted unexpectedly
 
-This is expected behavior! External-DNS with `policy: sync` will delete any `*.avril` records it doesn't recognize as being managed by a current Ingress.
+External-DNS with `policy: sync` will delete any `*.avril` Unbound record it doesn't recognize as being managed by a Kubernetes source (Ingress, Service, or DNSEndpoint CRD). If a record you added manually keeps disappearing, declare it as a `DNSEndpoint` CRD in `charts/external-dns/` instead — see "Adding Non-Ingress DNS Records" above.
 
 ## Future Improvements
 
 - [ ] Migrate secret to Vault using External Secrets Operator
-- [ ] Consider using `policy: upsert-only` if deletion is too aggressive
-- [ ] Monitor for updates to the webhook (currently v1.0.0)
-- [ ] Investigate if ownership tracking can be added somehow
+- [ ] Monitor for updates to the webhook
 
 ## References
 

@@ -1,10 +1,11 @@
 local appDef = import './app-definitions.libsonnet';
 
-appDef.helmApplication(
+appDef.helmRemotePlusLocalApplication(
     name="external-dns",
     sourceChart="external-dns",
     sourceRepoUrl="https://kubernetes-sigs.github.io/external-dns/",
     sourceTargetRevision="1.15.0",
+    nonHelmApp=true,
     helmValues={
         provider: {
             name: "webhook",
