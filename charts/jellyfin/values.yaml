@@ -98,13 +98,8 @@ metricsImage:
 runtimeClassName: nvidia
 
 metrics:
+  enabled: false
   apiUrl: "http://jellyfin.avril"
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: kubernetes.io/arch
-            operator: In
-            values:
-            - arm64
+  apiKeySecret:
+    name: jellyfin-metrics-api-key
+    key: api-key

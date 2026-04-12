@@ -65,6 +65,23 @@ spec:
               name: jf-config
             - mountPath: /cache
               name: jf-cache
+        {{- if .Values.metrics.enabled }}
+        - name: metrics
+          image: "{{ .Values.metricsImage.repository }}:{{ .Values.metricsImage.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics
+              containerPort: 8555
+              protocol: TCP
+          env:
+            - name: API_URL
+              value: {{ .Values.metrics.apiUrl | quote }}
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.metrics.apiKeySecret.name }}
+                  key: {{ .Values.metrics.apiKeySecret.key }}
+        {{- end }}
       tolerations:
         - key: face
           operator: Equal
