@@ -91,7 +91,10 @@
                                     enabled: true,
                                     size: "10Gi",
                                     type: "persistentVolumeClaim",
-                                    storageClass: "freenas-iscsi-csi"
+                                    storageClass: "freenas-iscsi-csi",
+                                    // iSCSI only supports RWO. RollingUpdate maxSurge can briefly create 2 pods,
+                                    // but for a model cache the scheduling delay until PVC is released is acceptable.
+                                    accessMode: "ReadWriteOnce"
                                 }
                             }
                         },
