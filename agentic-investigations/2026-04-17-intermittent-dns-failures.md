@@ -37,12 +37,30 @@ Candidate causes still under investigation:
 3. **AdGuard Home filter list update** — brief CPU/IO spike during scheduled blocklist refresh causing query processing delay
 
 ## Active monitoring
-Background monitor running on laptop (PID 38904, log at `/tmp/dns_monitor.log`).
-Checks `dig @192.168.1.1 github.com` every 5s AND pings 192.168.1.1 simultaneously on failure.
-- If next failure shows ping ALSO timing out → Wi-Fi/LAN packet loss
-- If next failure shows ping succeeding → DNS-specific (AdGuard Home or Unbound hang)
 
-Check log: `cat /tmp/dns_monitor.log`
+Script is checked in at `agentic-investigations/scripts/dns_monitor.sh`.
+
+### If you are a future agent picking this up:
+
+1. **Check if the monitor is still running:**
+   ```bash
+   pgrep -f dns_monitor.sh
+   ```
+   If not running, start it:
+   ```bash
+   nohup agentic-investigations/scripts/dns_monitor.sh &>/tmp/dns_monitor_stdout.log &
+   ```
+
+2. **Check the failure log:**
+   ```bash
+   cat /tmp/dns_monitor.log
+   ```
+
+3. **Interpret results:**
+   - Failures where `ping=TIMEOUT` → Wi-Fi/LAN packet loss, not a DNS-specific issue
+   - Failures where `ping=time=Xms` (ping succeeds) → AdGuard Home or Unbound hang on OPNsense
+
+4. **If the log is empty or missing** (e.g. after a reboot), restart the monitor and wait for the next failure window (typically every 10 min–1 hr).
 
 ## OPNsense file locations
 - AdGuard Home binary: `/usr/local/AdGuardHome/AdGuardHome` (v0.107.73)
