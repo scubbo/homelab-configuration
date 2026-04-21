@@ -36,6 +36,23 @@ Candidate causes still under investigation:
 2. **Unbound brief hang** — Unbound briefly unresponsive while AdGuard Home waits, causing AdGuard Home to not respond within 2s
 3. **AdGuard Home filter list update** — brief CPU/IO spike during scheduled blocklist refresh causing query processing delay
 
+## Key findings from monitor log (2026-04-20)
+
+**Ping is ALWAYS solid during DNS failures** — conclusively rules out Wi-Fi/LAN packet loss. The issue is DNS-specific within OPNsense.
+
+**~60-second periodicity** within failure windows: failures logged roughly every 60 seconds (with ~12 successful checks between each), and ~10-minute clean gaps between failure windows. Strongly suggests a scheduled task is involved.
+
+**Two failure modes:**
+- `DNS=EMPTY/TIMEOUT` with ping solid → something in the DNS stack (AdGuard Home or Unbound) is the culprit
+- Original script couldn't distinguish SERVFAIL vs NXDOMAIN vs block — script updated (see below)
+
+**Next hypothesis:** Something running on a ~10-minute schedule in AdGuard Home or Unbound causes brief DNS failures (every 60s within the window). Check `AdGuardHome.yaml` for scheduled tasks and Unbound's upstream config.
+
+**To check on OPNsense:**
+```bash
+cat /usr/local/AdGuardHome/AdGuardHome.yaml
+```
+
 ## Active monitoring
 
 Script is checked in at `agentic-investigations/scripts/dns_monitor.sh`.
