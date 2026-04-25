@@ -98,7 +98,7 @@ metricsImage:
 runtimeClassName: nvidia
 
 metrics:
-  enabled: false
+  enabled: true
   apiUrl: "http://jellyfin.avril"
   apiKeySecret:
     name: jellyfin-metrics-api-key
