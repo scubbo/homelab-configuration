@@ -10,6 +10,12 @@ spec:
     - port: {{ .Values.service.port }}
       targetPort: 8096
       protocol: TCP
+    {{- if .Values.metrics.enabled }}
+    - name: metrics
+      port: 8555
+      targetPort: 8555
+      protocol: TCP
+    {{- end }}
   sessionAffinity: ClientIP
   selector:
     {{- include "jellyfin.selectorLabels" . | nindent 4 }}
