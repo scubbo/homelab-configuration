@@ -1,0 +1,28 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: dns-health-alerts
+  namespace: prometheus
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: dns-health
+      interval: 30s
+      rules:
+        - alert: DNSProbeFailure
+          expr: probe_success{probe_type="dns"} == 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "DNS server {{ $labels.instance }} failing"
+            description: "DNS probe for {{ $labels.instance }} has been failing for 2m."
+        - alert: DNSProbeHighLatency
+          expr: probe_duration_seconds{probe_type="dns"} > 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "DNS server {{ $labels.instance }} responding slowly"
+            description: "DNS probe for {{ $labels.instance }} averaging {{ $value | humanizeDuration }} response time."

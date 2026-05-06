@@ -73,3 +73,45 @@ Background monitor ran for ~24h logging DNS failures with simultaneous ping to O
 2. If large (>100MB), stop adguardhome, truncate, restart
 3. Check monitor log: `cat /tmp/dns_monitor.log` (restart monitor if not running — see script above)
 4. Verify AdGuard Home config hasn't reverted: `grep -A3 "querylog:" /usr/local/AdGuardHome/AdGuardHome.yaml`
+
+---
+
+## Follow-up investigation (2026-05-06)
+
+### Symptoms
+Issue recurred. Monitor log (running since 2026-04-20, updated script since 2026-04-24) showed:
+- `unbound=TIMEOUT` on ~70% of direct Unbound probes (port 5353 from laptop at 192.168.1.217)
+- `DNS=TIMEOUT` and `DNS=SERVFAIL` still occurring end-to-end
+- `adguard=OK | unbound=TIMEOUT` pattern: AdGuard cache masking most Unbound failures
+
+### Investigation findings
+
+**Cleared suspects:**
+- Unbound ratelimit — no `ratelimit` in `/var/unbound/unbound.conf`
+- Unbound accessibility — confirmed binding on `*:5353`, responds in 0ms from localhost via `drill`
+- DNSBL module pipe — uses `O_NONBLOCK`, only for query logging, not blocklist lookups; not a latency source
+- DNSSEC — `module-config: "python iterator"` (no validator); `harden-dnssec-stripped: no`; not involved in SERVFAILs
+
+**Root causes identified:**
+
+1. **AdGuard `ratelimit: 20` per `/24` subnet** — unchanged from April. Every DNS query from any device on `192.168.1.0/24` counts against a shared 20 queries/second cap. A single browser page load fires 30-50+ DNS queries simultaneously, causing the excess to be silently dropped → client sees TIMEOUT. This is the primary driver of failures.
+
+2. **Tiny Unbound caches** — `msg-cache-size: 4m`, `rrset-cache-size: 8m`. With multiple devices, the cache thrashes, generating more upstream queries and amplifying ratelimit pressure.
+
+3. **`prefetch: no` + `serve-expired: no`** — every TTL expiry causes a blocking lookup rather than a background refresh.
+
+4. **No `forward-addr` in unbound.conf** — Unbound does full recursive resolution. Combined with small caches, cold lookups are slow.
+
+**Note on `unbound=TIMEOUT` monitoring readings:** Unbound IS receiving and processing queries from 192.168.1.217 (visible in resolver logs). The 70% timeout rate in the monitor likely reflects domains not in Unbound's small cache forcing slow recursive lookups that exceed the probe timeout.
+
+### Recommended fixes
+
+| What | Where | Value |
+|---|---|---|
+| Raise ratelimit | AdGuard Home GUI → DNS Settings | `0` (unlimited) or `100` |
+| Larger message cache | OPNsense → Services → Unbound DNS → Advanced | `msg-cache-size: 32m` |
+| Larger RRset cache | Same | `rrset-cache-size: 64m` |
+| Enable prefetch | Same | `prefetch: yes` |
+| Enable serve-expired | Same | `serve-expired: yes` |
+
+The ratelimit change is the highest-impact single fix.

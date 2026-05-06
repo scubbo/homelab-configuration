@@ -50,6 +50,16 @@ appDef.helmApplication(
                     icmp: {
                         preferred_ip_protocol: "ip4"
                     }
+                },
+                dns_udp: {
+                    prober: "dns",
+                    timeout: "5s",
+                    dns: {
+                        query_name: "github.com",
+                        query_type: "A",
+                        transport_protocol: "udp",
+                        preferred_ip_protocol: "ip4"
+                    }
                 }
             }
         },
