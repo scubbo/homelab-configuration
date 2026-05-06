@@ -115,3 +115,17 @@ Issue recurred. Monitor log (running since 2026-04-20, updated script since 2026
 | Enable serve-expired | Same | `serve-expired: yes` |
 
 The ratelimit change is the highest-impact single fix.
+
+### Changes applied (2026-05-06 11:00)
+
+All four fixes applied:
+
+| What | Where | Value |
+|---|---|---|
+| Raise ratelimit | AdGuard Home GUI → DNS Settings | `100` |
+| Larger message cache | OPNsense → Services → Unbound DNS → Advanced | `msg-cache-size: 32m` |
+| Larger RRset cache | Same | `rrset-cache-size: 64m` |
+| Enable prefetch | Same | `prefetch: yes` |
+| Enable serve-expired | Same | `serve-expired: yes` |
+
+Prometheus DNS probes (Blackbox Exporter) also added for AdGuard (:53) and Unbound (:5353) — catches total unreachability but not ratelimit drops specifically (probe fires 1 query/30s, far below any ratelimit threshold). AdGuard Home does not expose a Prometheus metrics endpoint as of v0.107.73.
