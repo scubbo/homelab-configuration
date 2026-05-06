@@ -1,0 +1,81 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "jellyfin.fullname" . }}-dashboard
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "jellyfin.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  jellyfin.json: |
+    {
+      "title": "Jellyfin Library",
+      "uid": "jellyfin-library",
+      "schemaVersion": 38,
+      "refresh": "5m",
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Movies",
+          "id": 1,
+          "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+          "targets": [{ "expr": "jellyfin_MovieCount", "instant": true, "datasource": { "type": "prometheus" } }],
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" }
+        },
+        {
+          "type": "stat",
+          "title": "Series",
+          "id": 2,
+          "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
+          "targets": [{ "expr": "jellyfin_SeriesCount", "instant": true, "datasource": { "type": "prometheus" } }],
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" }
+        },
+        {
+          "type": "stat",
+          "title": "Episodes",
+          "id": 3,
+          "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
+          "targets": [{ "expr": "jellyfin_EpisodeCount", "instant": true, "datasource": { "type": "prometheus" } }],
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" }
+        },
+        {
+          "type": "stat",
+          "title": "Songs",
+          "id": 4,
+          "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
+          "targets": [{ "expr": "jellyfin_SongCount", "instant": true, "datasource": { "type": "prometheus" } }],
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" }
+        },
+        {
+          "type": "stat",
+          "title": "Albums",
+          "id": 5,
+          "gridPos": { "x": 16, "y": 0, "w": 4, "h": 4 },
+          "targets": [{ "expr": "jellyfin_AlbumCount", "instant": true, "datasource": { "type": "prometheus" } }],
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" }
+        },
+        {
+          "type": "stat",
+          "title": "Artists",
+          "id": 6,
+          "gridPos": { "x": 20, "y": 0, "w": 4, "h": 4 },
+          "targets": [{ "expr": "jellyfin_ArtistCount", "instant": true, "datasource": { "type": "prometheus" } }],
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" }
+        },
+        {
+          "type": "timeseries",
+          "title": "Library Growth Over Time",
+          "id": 7,
+          "gridPos": { "x": 0, "y": 4, "w": 24, "h": 10 },
+          "targets": [
+            { "expr": "jellyfin_MovieCount", "legendFormat": "Movies", "datasource": { "type": "prometheus" } },
+            { "expr": "jellyfin_SeriesCount", "legendFormat": "Series", "datasource": { "type": "prometheus" } },
+            { "expr": "jellyfin_EpisodeCount", "legendFormat": "Episodes", "datasource": { "type": "prometheus" } },
+            { "expr": "jellyfin_SongCount", "legendFormat": "Songs", "datasource": { "type": "prometheus" } }
+          ],
+          "options": { "tooltip": { "mode": "multi" } }
+        }
+      ]
+    }
+{{- end }}
