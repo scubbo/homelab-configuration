@@ -68,7 +68,7 @@ spec:
         {{- if .Values.metrics.enabled }}
         - name: metrics
           image: "{{ .Values.metricsImage.repository }}:{{ .Values.metricsImage.tag }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: metrics
               containerPort: 8555
