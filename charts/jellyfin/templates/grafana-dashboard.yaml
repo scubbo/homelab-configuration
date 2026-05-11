@@ -84,7 +84,7 @@ data:
           "targets": [{
             "expr": "sum by(user, media_type) (jellyfin_playback_watch_time_seconds)",
             "instant": true,
-            "legendFormat": "{{user}} — {{media_type}}",
+            "legendFormat": "{{ "{{" }}user{{ "}}" }} — {{ "{{" }}media_type{{ "}}" }}",
             "datasource": { "type": "prometheus" }
           }],
           "options": { "tooltip": { "mode": "multi" }, "stacking": { "mode": "none" } },
@@ -98,7 +98,7 @@ data:
           "targets": [{
             "expr": "sum by(user, genre) (jellyfin_playback_genre_watch_time_seconds)",
             "instant": true,
-            "legendFormat": "{{user}} — {{genre}}",
+            "legendFormat": "{{ "{{" }}user{{ "}}" }} — {{ "{{" }}genre{{ "}}" }}",
             "datasource": { "type": "prometheus" }
           }],
           "options": { "tooltip": { "mode": "multi" }, "stacking": { "mode": "none" } },
@@ -112,7 +112,7 @@ data:
           "targets": [{
             "expr": "sum by(user, series) (jellyfin_playback_series_watch_time_seconds)",
             "instant": true,
-            "legendFormat": "{{user}} — {{series}}",
+            "legendFormat": "{{ "{{" }}user{{ "}}" }} — {{ "{{" }}series{{ "}}" }}",
             "datasource": { "type": "prometheus" }
           }],
           "options": { "tooltip": { "mode": "multi" }, "stacking": { "mode": "none" } },
