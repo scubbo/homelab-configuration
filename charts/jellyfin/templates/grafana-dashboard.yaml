@@ -75,6 +75,48 @@ data:
             { "expr": "jellyfin_SongCount", "legendFormat": "Songs", "datasource": { "type": "prometheus" } }
           ],
           "options": { "tooltip": { "mode": "multi" } }
+        },
+        {
+          "type": "barchart",
+          "title": "Watch Time by User & Media Type",
+          "id": 8,
+          "gridPos": { "x": 0, "y": 14, "w": 24, "h": 8 },
+          "targets": [{
+            "expr": "sum by(user, media_type) (jellyfin_playback_watch_time_seconds)",
+            "instant": true,
+            "legendFormat": "{{user}} — {{media_type}}",
+            "datasource": { "type": "prometheus" }
+          }],
+          "options": { "tooltip": { "mode": "multi" }, "stacking": { "mode": "none" } },
+          "fieldConfig": { "defaults": { "unit": "s" } }
+        },
+        {
+          "type": "barchart",
+          "title": "Watch Time by Genre",
+          "id": 9,
+          "gridPos": { "x": 0, "y": 22, "w": 12, "h": 10 },
+          "targets": [{
+            "expr": "sum by(user, genre) (jellyfin_playback_genre_watch_time_seconds)",
+            "instant": true,
+            "legendFormat": "{{user}} — {{genre}}",
+            "datasource": { "type": "prometheus" }
+          }],
+          "options": { "tooltip": { "mode": "multi" }, "stacking": { "mode": "none" } },
+          "fieldConfig": { "defaults": { "unit": "s" } }
+        },
+        {
+          "type": "barchart",
+          "title": "Watch Time by Series",
+          "id": 10,
+          "gridPos": { "x": 12, "y": 22, "w": 12, "h": 10 },
+          "targets": [{
+            "expr": "sum by(user, series) (jellyfin_playback_series_watch_time_seconds)",
+            "instant": true,
+            "legendFormat": "{{user}} — {{series}}",
+            "datasource": { "type": "prometheus" }
+          }],
+          "options": { "tooltip": { "mode": "multi" }, "stacking": { "mode": "none" } },
+          "fieldConfig": { "defaults": { "unit": "s" } }
         }
       ]
     }
