@@ -1,21 +1,19 @@
 apiVersion: monitoring.coreos.com/v1
 kind: Probe
 metadata:
-  name: dns-health
+  name: wan-health
   namespace: prometheus
   labels:
     release: prometheus
 spec:
   prober:
     url: blackbox-exporter-prometheus-blackbox-exporter.prometheus.svc:9115
-  module: dns_udp
+  module: icmp
   interval: 10s
   scrapeTimeout: 5s
   targets:
     staticConfig:
       static:
-        - 192.168.1.1:53
-        - 192.168.1.1:5353
-        - 1.1.1.1:53
+        - 1.1.1.1
       labels:
-        probe_type: dns
+        probe_type: wan
