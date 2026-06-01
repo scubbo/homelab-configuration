@@ -17,7 +17,7 @@ spec:
             severity: critical
           annotations:
             summary: "WAN connectivity lost"
-            description: "ICMP probe to {{ $labels.instance }} failing — OPNsense may have lost internet connectivity."
+            description: "TCP probe to {{ $labels.instance }} failing — OPNsense may have lost internet connectivity."
         - alert: LocalDNSDown
           expr: probe_success{probe_type="dns", instance=~"192\\.168\\..*"} == 0 and on() probe_success{probe_type="wan"} == 1
           for: 2m
