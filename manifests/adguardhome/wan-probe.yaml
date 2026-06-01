@@ -14,6 +14,6 @@ spec:
   targets:
     staticConfig:
       static:
-        - 1.1.1.1:443
+        - 8.8.8.8:443
       labels:
         probe_type: wan
