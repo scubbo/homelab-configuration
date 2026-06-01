@@ -8,12 +8,12 @@ metadata:
 spec:
   prober:
     url: blackbox-exporter-prometheus-blackbox-exporter.prometheus.svc:9115
-  module: icmp
+  module: tcp_connect
   interval: 10s
   scrapeTimeout: 5s
   targets:
     staticConfig:
       static:
-        - 1.1.1.1
+        - 1.1.1.1:443
       labels:
         probe_type: wan
