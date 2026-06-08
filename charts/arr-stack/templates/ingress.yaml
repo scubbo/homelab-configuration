@@ -111,3 +111,31 @@ spec:
                 port:
                   number: {{ .Values.service.ytdlpaasPort }}
 {{- end }}
+---
+{{ if .Values.ytdlpaas.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-ytdlpaas-tls
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: yt-dlp-aas.scubbo.org
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "arr-stack.fullname" . }}-ytdlpaas
+                port:
+                  number: {{ .Values.service.ytdlpaasPort }}
+  tls:
+    - secretName: ytdlpaas-tls
+      hosts:
+        - yt-dlp-aas.scubbo.org
+{{ end }}
