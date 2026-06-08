@@ -162,7 +162,7 @@ sabnzbd:
 
 ytdlpaas:
   enabled: true
-  tag: "sha-95d3afd95cbf82be06c7ce72c057b6c40e9bf809"
+  tag: "sha-6e784c3e5674af853223c549d5dafee79bb0dbd9"
   resources:
     requests:
       cpu: 100m
