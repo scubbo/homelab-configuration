@@ -115,3 +115,56 @@ Issue recurred. Monitor log (running since 2026-04-20, updated script since 2026
 | Enable serve-expired | Same | `serve-expired: yes` |
 
 The ratelimit change is the highest-impact single fix.
+
+---
+
+## Follow-up investigation (2026-06-07)
+
+### Symptoms
+Issue recurred despite previous fixes. Firefox showing "Server Not Found" intermittently. `flush_cache` still fixing it temporarily. Prometheus blackbox exporter (querying 192.168.1.1:5353 every 10s) showed Unbound failing in windows roughly every 1-2 hours.
+
+### Prometheus data revealed the real pattern
+With step=10s resolution, each "failure window" is actually **4 brief ~10-second outages, one per minute for 4 minutes** — not a continuous outage. This is a cascade of 4 Unbound restarts triggered in sequence.
+
+### Root cause: external-dns webhook TTL mismatch causing continuous Unbound restarts
+
+**The chain:**
+
+1. `external-dns` (k8s namespace `external-dns`) reconciles every 1 minute (`--interval=1m`)
+2. It uses a webhook sidecar (`ghcr.io/scubbo/external-dns-opnsense-webhook`) to register DNS entries in OPNsense Unbound via the OPNsense API
+3. The `galactus` DNSEndpoint CRD (`charts/external-dns/galactus-dns-endpoint.yaml`) specified `recordTTL: 3600`
+4. OPNsense Unbound host overrides do not support per-record TTLs — the webhook returns TTL=0 for all records
+5. Every reconcile: external-dns sees desired TTL=3600 vs actual TTL=0 → triggers update (delete + recreate) → calls `/api/unbound/service/reconfigure` → **Unbound restarts**
+6. Each restart triggers a cascade: OPNsense configd flushes cache, regenerates templates, triggering 3 more restarts at 60-second intervals before state stabilizes
+
+**Evidence:** webhook logs showed `galactus.avril` being deleted and recreated with a new UUID every single minute, 24/7.
+
+### Resolution
+
+Removed `recordTTL: 3600` from `charts/external-dns/galactus-dns-endpoint.yaml`. With no TTL specified, external-dns desires TTL=0, matching what OPNsense returns → no more spurious updates → no more restart cascade.
+
+Also deleted `/var/unbound/data/unbound.duckdb` (13MB DuckDB stats database) while Unbound was running — safe, running process kept its file handle, fresh empty database created on next restart.
+
+### Additional findings
+
+**Unbound DNSBL Python module is hardcoded:** `/usr/local/etc/inc/plugins.inc.d/unbound.inc` line 206 always sets `$module_config = 'python ';`. No GUI toggle exists to disable it. With no blocklist URLs configured it is redundant (AdGuard handles blocking). Not removed — requires editing a core OPNsense system file that would be overwritten on firmware updates.
+
+**OPNsense Unbound restart triggers (beyond external-dns):**
+- Hourly at top of hour: `newsyslog` log rotation triggers OPNsense config-changed event
+- GUI actions: saving OPNsense settings always restarts Unbound
+
+### Key file locations (additions)
+- Unbound PHP plugin (generates unbound.conf): `/usr/local/etc/inc/plugins.inc.d/unbound.inc`
+- Unbound main config (generated, do not edit): `/var/unbound/unbound.conf`
+- Unbound DuckDB stats database: `/var/unbound/data/unbound.duckdb` (safe to delete while Unbound running)
+- configd action definitions: `/usr/local/opnsense/service/conf/actions.d/actions_unbound.conf`
+- configd logs (daily): `/var/log/configd/configd_YYYYMMDD.log`
+- external-dns app definition: `app-of-apps/external-dns.jsonnet`
+- external-dns webhook image: `ghcr.io/scubbo/external-dns-opnsense-webhook` (deployed: `653e24a`, latest: `360ccff` as of 2025-12-08 — includes memory leak fix in DeleteHostOverride)
+
+### If restarts recur
+1. Check webhook logs: `kubectl logs deployment/external-dns -n external-dns -c webhook --tail=50 | grep -E "reconfigure|create:|delete:|update:"`
+2. If something is being deleted+recreated every minute, check for `recordTTL` mismatches: `kubectl get dnsendpoint -A -o yaml | grep recordTTL`
+3. Check Prometheus for failure pattern: query `probe_success{instance="192.168.1.1:5353"}` with step=10s
+4. Check configd for restart storm: `grep -E "Stopping|Starting" /var/log/configd/configd_$(date +%Y%m%d).log | tail -20`
+5. If external-dns is the cause, scale it down: `kubectl scale deployment external-dns -n external-dns --replicas=0`
