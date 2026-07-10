@@ -1,0 +1,15 @@
+# Models to pull, one per line. Blank lines and lines starting with # are ignored.
+# Provisioned on `docker compose up` by the model-loader service.
+#
+# Browse the library and current tags at https://ollama.com/library
+# (tags move fast — if a tag 404s, check the site for the current name.)
+
+# --- Daily driver: Qwen3 30B MoE. ~3B active params/token => very fast on the 5090. ---
+qwen3:30b-a3b
+
+# --- Uncomment what you want. Each is a multi-GB download. ---
+# qwen3-coder:30b     # coding / projects
+# gpt-oss:20b         # agentic workflows, clean tool-calling (Apache-2.0)
+# qwen3:8b            # small + snappy for quick throwaway tasks
+# gemma3:27b          # multimodal (image input)
+# deepseek-r1:32b     # heavier step-by-step reasoning

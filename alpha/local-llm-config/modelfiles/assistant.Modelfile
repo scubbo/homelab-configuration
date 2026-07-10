@@ -1,0 +1,12 @@
+# Example custom model built on the daily driver.
+# The filename (assistant) becomes the model name: `ollama run assistant`.
+# Edit this and re-run `docker compose up model-loader` to rebuild it.
+#
+# NOTE: FROM must reference a model you actually pull in models.txt.
+FROM qwen3:30b-a3b
+
+PARAMETER temperature 0.6
+PARAMETER num_ctx 32768
+
+SYSTEM """You are a concise, technically precise assistant. Prefer correct, actionable
+answers over hedging. When you are unsure or lack information, say so plainly."""
