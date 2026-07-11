@@ -113,6 +113,29 @@ model, and chat.
   ```
 - **CLI:** `docker compose exec ollama ollama run qwen3:30b`
 
+## Finding & adding models
+
+**Find them:** browse [ollama.com/library](https://ollama.com/library) — that's the catalog.
+Each model page has a **Tags** tab listing the exact pullable tag names and their sizes; pick
+one that fits your VRAM budget (see [VRAM tips](#vram-tips-32gb-budget)). There is no real
+`ollama search` CLI — the website is the discovery tool. Mind the tag naming (e.g. the 30B MoE
+is `qwen3:30b`, not `-a3b`).
+
+**Add one — three ways, most reproducible first:**
+
+1. **Declarative (keeps it in git — do this for anything you want to keep):** add the tag to
+   `models.txt`, then re-run the loader, and commit `models.txt` so a fresh deploy pulls it too:
+   ```bash
+   docker compose up -d model-loader
+   ```
+2. **One-off via CLI:** `docker compose exec ollama ollama pull <model:tag>`
+   — *not* recorded in `models.txt`, so it won't survive a from-scratch redeploy.
+3. **From Open WebUI:** type the exact tag in the model selector → "Pull … from Ollama.com",
+   or **Admin Settings → Models**. Same "not in `models.txt`" caveat.
+
+Downloaded models just sit on disk; only *loaded* ones consume VRAM (`OLLAMA_MAX_LOADED_MODELS`
+sets how many stay resident at once).
+
 ## Tweak & redeploy
 
 | To change...                    | Edit...                     | Then run...                          |
@@ -132,13 +155,32 @@ model, and chat.
   fine for two sub-30B MoE models, watch `nvidia-smi` to confirm you fit.
 - **`OLLAMA_KEEP_ALIVE`** trades responsiveness vs. freeing VRAM for other apps/games.
 
-## Reaching it from other machines
+## Reaching it on the LAN (`alpha.avril`)
 
-`OLLAMA_HOST=0.0.0.0` already binds the API to all interfaces in the container. To hit it
-from elsewhere on your LAN you'll need to allow the port through the Windows firewall
-(WSL2 forwards `localhost`, but LAN access to `:11434`/`:3000` needs a firewall rule, and
-sometimes a `netsh portproxy` entry). If you later want it behind Traefik on `.avril` with a
-`DNSEndpoint` like your other services, that's a natural follow-up — say the word.
+Two pieces make the UI reachable at `http://alpha.avril:3000` from any device:
+
+1. **DNS** — `alpha.avril` → this box's LAN IP, via `charts/external-dns/alpha-dns-endpoint.yaml`
+   (the cluster's external-dns writes it into OPNsense). Cluster-managed, so it deploys through
+   ArgoCD like the other `.avril` records.
+2. **Host → container** — Docker publishes `:3000` inside the WSL2 VM, which Windows only
+   forwards from *localhost*. To reach it from the LAN, run `expose-openwebui.ps1` from an
+   **elevated** PowerShell on the Windows host:
+   ```powershell
+   powershell.exe -ExecutionPolicy Bypass -File .\expose-openwebui.ps1
+   ```
+   It re-derives WSL's current IP, sets a `netsh` portproxy (`LAN:3000` → container), and
+   ensures an inbound firewall rule.
+
+   **Access is LAN-only.** The proxy binds to this host's LAN IP (not other interfaces like
+   Tailscale), and the firewall rule admits only sources on the local subnet (`-LanCidr`,
+   default `192.168.1.0/24` — pass your own if it differs). The public internet can't reach
+   it regardless: the script touches only the host, never the router, so no port is forwarded.
+
+> **Windows 10 caveat:** mirrored WSL networking — which would make this automatic — needs
+> Windows 11 22H2+. On Windows 10 the WSL NAT IP can change across reboots, so if the UI stops
+> responding from the LAN after a reboot, just re-run `expose-openwebui.ps1`; it re-points the
+> proxy at the current IP. (Want it fully hands-off? A boot-time scheduled task can re-run it
+> for you — ask and we'll add one.)
 
 ## Upgrade path
 
