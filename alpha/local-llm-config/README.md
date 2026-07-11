@@ -203,3 +203,10 @@ cache, and keep the OpenAI-compatible API so nothing downstream changes.
 - **`bind: address already in use` on `:11434` or `:3000`:** another process owns the port —
   commonly a native Ollama. `sudo systemctl disable --now ollama` (or stop the Windows Ollama
   app), then `docker compose up -d`.
+- **`CUDA error: unknown error` / "model runner has unexpectedly stopped":** intermittent CUDA
+  init flakiness on the WSL2 + Docker + 50-series (Blackwell) path, often preceded by a
+  `GPU discovery watchdog timed out` warning. Recover with `docker compose restart ollama`; if
+  `nvidia-smi` in WSL itself fails/hangs, `wsl --shutdown` from Windows then `docker compose up -d`.
+  GPU init runs on every model load, so `OLLAMA_KEEP_ALIVE=-1` in `.env` (load once, stay
+  resident) cuts the re-init exposure. If it keeps happening, try running Ollama natively in WSL
+  (one fewer virtualization layer) with Open WebUI still in Docker.
