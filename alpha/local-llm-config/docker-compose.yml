@@ -2,7 +2,6 @@ services:
   # Inference server. Exposes the native + OpenAI-compatible API on :11434.
   ollama:
     image: ollama/ollama:latest
-    container_name: ollama
     restart: unless-stopped
     ports:
       - "11434:11434"
@@ -32,7 +31,6 @@ services:
   # modelfiles/*.Modelfile, then exits. Re-run any time with `docker compose up model-loader`.
   model-loader:
     image: ollama/ollama:latest
-    container_name: ollama-model-loader
     depends_on:
       ollama:
         condition: service_healthy
@@ -48,7 +46,6 @@ services:
   # ChatGPT-like web UI for daily use. http://localhost:3000
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
-    container_name: open-webui
     restart: unless-stopped
     depends_on:
       ollama:

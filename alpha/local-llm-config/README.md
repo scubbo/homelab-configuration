@@ -27,9 +27,26 @@ local-llm-config/
 > Versions below are from early 2026 — the RTX 5090 (Blackwell) needs a recent driver, so
 > grab the current release rather than trusting a pinned number here.
 
-**1. NVIDIA driver — on Windows only.**
-Install the latest GeForce driver from nvidia.com. It ships the WSL CUDA driver automatically.
-**Do NOT install any NVIDIA driver *inside* WSL** — that breaks the GPU projection.
+**1. NVIDIA driver — on the Windows host only.**
+The WSL CUDA driver ships with the Windows driver. **Never install an NVIDIA driver *inside*
+WSL** — that breaks the GPU projection.
+
+Headless over SSH (no desktop)? UAC can't display a prompt, so you need an already-elevated
+shell. Windows OpenSSH usually gives an admin account a full token — confirm from PowerShell:
+```powershell
+whoami /groups | findstr /i "High Mandatory"    # a line here means you're elevated
+```
+Then install via Chocolatey (the bootstrap is one line):
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+choco upgrade nvidia-display-driver -y
+```
+**After any driver install/update, restart the WSL VM** so it picks up the new libraries,
+or `nvidia-smi` inside WSL will segfault:
+```powershell
+wsl --shutdown        # from Windows; reopen WSL afterward
+```
+Verify with `nvidia-smi` in both PowerShell and WSL — both should list the GPU.
 
 **2. WSL2 + Ubuntu.** In an admin PowerShell:
 ```powershell
@@ -70,6 +87,11 @@ You should see your 5090 listed. If not, see Troubleshooting below before contin
 
 ## First run
 
+> **If this box already ran Ollama natively** (a WSL `ollama.service` or the Windows app), it
+> holds port 11434 and the containerized `ollama` won't start (`bind: address already in use`).
+> Disable it first — `sudo systemctl disable --now ollama` in WSL. Existing models stay on disk
+> (`~/.ollama`), just not visible to the container.
+
 From this directory, inside WSL:
 ```bash
 cp env.example .env           # optional: only needed if you want to change the defaults
@@ -89,7 +111,7 @@ model, and chat.
     -H "Content-Type: application/json" \
     -d '{"model":"qwen3:30b","messages":[{"role":"user","content":"hello"}]}'
   ```
-- **CLI:** `docker exec -it ollama ollama run qwen3:30b`
+- **CLI:** `docker compose exec ollama ollama run qwen3:30b`
 
 ## Tweak & redeploy
 
@@ -134,3 +156,8 @@ cache, and keep the OpenAI-compatible API so nothing downstream changes.
 - **UI can't reach models:** check `docker compose logs ollama` and that the healthcheck is
   green (`docker compose ps`).
 - **A model tag 404s:** the tag moved — check https://ollama.com/library for the current name.
+- **`nvidia-smi` segfaults in WSL but works in Windows PowerShell:** the WSL VM is holding a
+  stale driver after an install/update. Run `wsl --shutdown` from Windows, then reopen WSL.
+- **`bind: address already in use` on `:11434` or `:3000`:** another process owns the port —
+  commonly a native Ollama. `sudo systemctl disable --now ollama` (or stop the Windows Ollama
+  app), then `docker compose up -d`.
