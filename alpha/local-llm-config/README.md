@@ -76,7 +76,7 @@ cp env.example .env           # optional: only needed if you want to change the 
 docker compose up -d          # starts ollama + open-webui, and runs model-loader once
 docker compose logs -f model-loader   # watch the model(s) download
 ```
-First launch pulls the default model (`qwen3:30b-a3b`, ~18-20GB) — give it time. When the
+First launch pulls the default model (`qwen3:30b`, ~18-20GB) — give it time. When the
 loader exits cleanly, open **http://localhost:3000**, create your admin account, pick the
 model, and chat.
 
@@ -87,9 +87,9 @@ model, and chat.
   ```bash
   curl http://localhost:11434/v1/chat/completions \
     -H "Content-Type: application/json" \
-    -d '{"model":"qwen3:30b-a3b","messages":[{"role":"user","content":"hello"}]}'
+    -d '{"model":"qwen3:30b","messages":[{"role":"user","content":"hello"}]}'
   ```
-- **CLI:** `docker exec -it ollama ollama run qwen3:30b-a3b`
+- **CLI:** `docker exec -it ollama ollama run qwen3:30b`
 
 ## Tweak & redeploy
 

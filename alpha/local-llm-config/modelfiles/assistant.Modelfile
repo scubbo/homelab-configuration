@@ -3,7 +3,7 @@
 # Edit this and re-run `docker compose up model-loader` to rebuild it.
 #
 # NOTE: FROM must reference a model you actually pull in models.txt.
-FROM qwen3:30b-a3b
+FROM qwen3:30b
 
 PARAMETER temperature 0.6
 PARAMETER num_ctx 32768

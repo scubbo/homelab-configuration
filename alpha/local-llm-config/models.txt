@@ -5,7 +5,7 @@
 # (tags move fast — if a tag 404s, check the site for the current name.)
 
 # --- Daily driver: Qwen3 30B MoE. ~3B active params/token => very fast on the 5090. ---
-qwen3:30b-a3b
+qwen3:30b
 
 # --- Uncomment what you want. Each is a multi-GB download. ---
 # qwen3-coder:30b     # coding / projects
