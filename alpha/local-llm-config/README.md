@@ -113,6 +113,29 @@ model, and chat.
   ```
 - **CLI:** `docker compose exec ollama ollama run qwen3:30b`
 
+## Finding & adding models
+
+**Find them:** browse [ollama.com/library](https://ollama.com/library) — that's the catalog.
+Each model page has a **Tags** tab listing the exact pullable tag names and their sizes; pick
+one that fits your VRAM budget (see [VRAM tips](#vram-tips-32gb-budget)). There is no real
+`ollama search` CLI — the website is the discovery tool. Mind the tag naming (e.g. the 30B MoE
+is `qwen3:30b`, not `-a3b`).
+
+**Add one — three ways, most reproducible first:**
+
+1. **Declarative (keeps it in git — do this for anything you want to keep):** add the tag to
+   `models.txt`, then re-run the loader, and commit `models.txt` so a fresh deploy pulls it too:
+   ```bash
+   docker compose up -d model-loader
+   ```
+2. **One-off via CLI:** `docker compose exec ollama ollama pull <model:tag>`
+   — *not* recorded in `models.txt`, so it won't survive a from-scratch redeploy.
+3. **From Open WebUI:** type the exact tag in the model selector → "Pull … from Ollama.com",
+   or **Admin Settings → Models**. Same "not in `models.txt`" caveat.
+
+Downloaded models just sit on disk; only *loaded* ones consume VRAM (`OLLAMA_MAX_LOADED_MODELS`
+sets how many stay resident at once).
+
 ## Tweak & redeploy
 
 | To change...                    | Edit...                     | Then run...                          |
