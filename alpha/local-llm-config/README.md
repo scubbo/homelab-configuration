@@ -132,13 +132,27 @@ model, and chat.
   fine for two sub-30B MoE models, watch `nvidia-smi` to confirm you fit.
 - **`OLLAMA_KEEP_ALIVE`** trades responsiveness vs. freeing VRAM for other apps/games.
 
-## Reaching it from other machines
+## Reaching it on the LAN (`alpha.avril`)
 
-`OLLAMA_HOST=0.0.0.0` already binds the API to all interfaces in the container. To hit it
-from elsewhere on your LAN you'll need to allow the port through the Windows firewall
-(WSL2 forwards `localhost`, but LAN access to `:11434`/`:3000` needs a firewall rule, and
-sometimes a `netsh portproxy` entry). If you later want it behind Traefik on `.avril` with a
-`DNSEndpoint` like your other services, that's a natural follow-up — say the word.
+Two pieces make the UI reachable at `http://alpha.avril:3000` from any device:
+
+1. **DNS** — `alpha.avril` → this box's LAN IP, via `charts/external-dns/alpha-dns-endpoint.yaml`
+   (the cluster's external-dns writes it into OPNsense). Cluster-managed, so it deploys through
+   ArgoCD like the other `.avril` records.
+2. **Host → container** — Docker publishes `:3000` inside the WSL2 VM, which Windows only
+   forwards from *localhost*. To reach it from the LAN, run `expose-openwebui.ps1` from an
+   **elevated** PowerShell on the Windows host:
+   ```powershell
+   powershell.exe -ExecutionPolicy Bypass -File .\expose-openwebui.ps1
+   ```
+   It re-derives WSL's current IP, sets a `netsh` portproxy (`LAN:3000` → container), and
+   ensures an inbound firewall rule.
+
+> **Windows 10 caveat:** mirrored WSL networking — which would make this automatic — needs
+> Windows 11 22H2+. On Windows 10 the WSL NAT IP can change across reboots, so if the UI stops
+> responding from the LAN after a reboot, just re-run `expose-openwebui.ps1`; it re-points the
+> proxy at the current IP. (Want it fully hands-off? A boot-time scheduled task can re-run it
+> for you — ask and we'll add one.)
 
 ## Upgrade path
 

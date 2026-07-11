@@ -1,3 +1,6 @@
 # The bootstrap script runs in a Linux container; force LF so a Windows checkout
 # (autocrlf) doesn't inject CRs that break /bin/sh.
 *.sh text eol=lf
+
+# PowerShell runs on the Windows host; keep CRLF.
+*.ps1 text eol=crlf
