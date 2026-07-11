@@ -148,6 +148,11 @@ Two pieces make the UI reachable at `http://alpha.avril:3000` from any device:
    It re-derives WSL's current IP, sets a `netsh` portproxy (`LAN:3000` → container), and
    ensures an inbound firewall rule.
 
+   **Access is LAN-only.** The proxy binds to this host's LAN IP (not other interfaces like
+   Tailscale), and the firewall rule admits only sources on the local subnet (`-LanCidr`,
+   default `192.168.1.0/24` — pass your own if it differs). The public internet can't reach
+   it regardless: the script touches only the host, never the router, so no port is forwarded.
+
 > **Windows 10 caveat:** mirrored WSL networking — which would make this automatic — needs
 > Windows 11 22H2+. On Windows 10 the WSL NAT IP can change across reboots, so if the UI stops
 > responding from the LAN after a reboot, just re-run `expose-openwebui.ps1`; it re-points the
