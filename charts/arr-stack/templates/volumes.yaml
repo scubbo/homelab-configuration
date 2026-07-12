@@ -42,6 +42,21 @@ spec:
 ---
 {{- end }}
 
+{{ if .Values.lidarr.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "arr-stack.fullname" $ }}-lidarr-config-iscsi-pvc
+spec:
+  storageClassName: "freenas-iscsi-csi"
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+{{- end}}
+
 {{ if .Values.ombi.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim

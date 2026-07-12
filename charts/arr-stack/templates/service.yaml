@@ -49,6 +49,22 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: {{ include "arr-stack.fullname" . }}-lidarr
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.lidarrPort }}
+      targetPort: 8686
+      protocol: TCP
+  selector:
+    {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: lidarr
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: {{ include "arr-stack.fullname" . }}-readarr
   labels:
     {{- include "arr-stack.labels" . | nindent 4 }}
