@@ -70,6 +70,16 @@ spec:
                 name: {{ include "arr-stack.fullname" . }}-radarr
                 port:
                   number: {{ .Values.service.radarrPort }}
+    - host: lidarr.avril
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "arr-stack.fullname" . }}-lidarr
+                port:
+                  number: {{ .Values.service.lidarrPort }}
     - host: readarr.avril
       http:
         paths:

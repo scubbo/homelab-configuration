@@ -40,6 +40,7 @@ service:
   port: 3579
   sonarrPort: 8989
   radarrPort: 7878
+  lidarrPort: 8686
   readarrPort: 8787
   prowlarrPort: 9696
   nzbgetWebPort: 6789
@@ -115,6 +116,17 @@ sonarr:
 radarr:
   enabled: true
   tag: "5.26.0-develop"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+
+lidarr:
+  enabled: true
+  tag: "3.1.0"
   resources:
     requests:
       cpu: 100m
