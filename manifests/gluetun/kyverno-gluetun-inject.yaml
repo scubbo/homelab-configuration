@@ -52,22 +52,12 @@ spec:
             - name: VPN_SERVICE_PROVIDER
               value: "protonvpn"
             - name: VPN_TYPE
-              value: "openvpn"
-            - name: OPENVPN_USER
+              value: "wireguard"
+            - name: WIREGUARD_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
                   name: gluetun-protonvpn
-                  key: username
-            - name: OPENVPN_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: gluetun-protonvpn
-                  key: password
-            # Clamp inner TCP MSS so OpenVPN's encapsulated packets stay within the
-            # 1500-byte path MTU. Without this, bulk NNTP transfers fragment and throughput
-            # collapses to a fraction of the link's capacity while small packets still pass.
-            - name: OPENVPN_MSSFIX
-              value: "1400"
+                  key: wireguard-private-key
             - name: SERVER_COUNTRIES
               value: "Netherlands"
             - name: FIREWALL_OUTBOUND_SUBNETS
