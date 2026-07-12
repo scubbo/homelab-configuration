@@ -63,6 +63,11 @@ spec:
                 secretKeyRef:
                   name: gluetun-protonvpn
                   key: password
+            # Clamp inner TCP MSS so OpenVPN's encapsulated packets stay within the
+            # 1500-byte path MTU. Without this, bulk NNTP transfers fragment and throughput
+            # collapses to a fraction of the link's capacity while small packets still pass.
+            - name: OPENVPN_MSSFIX
+              value: "1400"
             - name: SERVER_COUNTRIES
               value: "Netherlands"
             - name: FIREWALL_OUTBOUND_SUBNETS
