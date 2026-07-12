@@ -8,6 +8,11 @@
 # on-disk leaf certs are still valid — e.g. you ran `k3s certificate rotate`
 # by hand, or the certs simply auto-rotated on a restart.
 #
+# It ALSO refreshes ArgoCD's own stored copy of the admin client cert (in the
+# argocd `cluster-*` secret) and restarts the application controller. Rotating
+# k3s does NOT update that copy, so after a rotation ArgoCD 401s against the API
+# while still showing a stale "Healthy" — this is the fix. Skip with --no-argocd.
+#
 # With --rotate it also drives the on-node rotation on BOTH servers, sequentially
 # and HA-safely (rotate primary -> refresh laptop creds -> verify -> rotate
 # secondary -> verify). The on-node steps use `ssh -t` so interactive sudo can
@@ -104,6 +109,38 @@ refresh_local_kubeconfig() {
   ssh "${SSH_USER}@${PRIMARY}" "rm -f ${STAGE_PATH}"
 }
 
+# ArgoCD authenticates to the cluster with its OWN copy of the admin client cert,
+# held in the argocd `cluster-*` secret at .data.config -> tlsClientConfig.{certData,keyData}.
+# k3s rotation does not touch it, so it goes stale (ArgoCD 401s under a stale "Healthy").
+# Copy the fresh cert/key from the just-installed kubeconfig in and bounce the controller.
+refresh_argocd_cluster_cert() {
+  local ns=argocd want="https://${PRIMARY}:${PORT}" secret="" s
+  for s in $(kubectl get secrets -n "$ns" -l argocd.argoproj.io/secret-type=cluster \
+               -o jsonpath='{.items[*].metadata.name}' 2>/dev/null); do
+    if [ "$(kubectl get secret "$s" -n "$ns" -o jsonpath='{.data.server}' | base64 -d)" = "$want" ]; then
+      secret="$s"; break
+    fi
+  done
+  if [ -z "$secret" ]; then
+    echo "WARN: no argocd cluster secret targets ${want}; skipping in-cluster cert refresh" >&2
+    return 0
+  fi
+  say "Refreshing ArgoCD's in-cluster admin cert (secret ${secret})"
+  # kubeconfig stores cert/key as base64(PEM); argocd's certData/keyData use the same
+  # encoding, so they copy across verbatim.
+  local certB64 keyB64 new_cfg
+  certB64=$(kubectl config view --raw -o jsonpath='{.users[0].user.client-certificate-data}')
+  keyB64=$(kubectl config view --raw -o jsonpath='{.users[0].user.client-key-data}')
+  new_cfg=$(kubectl get secret "$secret" -n "$ns" -o jsonpath='{.data.config}' | base64 -d \
+    | jq --arg c "$certB64" --arg k "$keyB64" \
+        '.tlsClientConfig.certData=$c | .tlsClientConfig.keyData=$k' \
+    | base64 | tr -d '\n')
+  kubectl patch secret "$secret" -n "$ns" --type merge \
+    -p "$(jq -cn --arg cfg "$new_cfg" '{data:{config:$cfg}}')"
+  say "Restarting argo-cd-argocd-application-controller so it reconnects"
+  kubectl rollout restart statefulset argo-cd-argocd-application-controller -n "$ns"
+}
+
 if [ "$DO_ROTATE" -eq 1 ]; then
   rotate_node "$PRIMARY"          # 1. rotate the endpoint node
   refresh_local_kubeconfig        # 2. get working laptop creds before verifying more
@@ -115,7 +152,8 @@ else
 fi
 
 if [ "$DO_ARGOCD" -eq 1 ]; then
-  say "Re-logging into argocd (${ARGOCD_SERVER}) via SSO — opens a browser"
+  refresh_argocd_cluster_cert     # the important, easily-missed one (masked "Healthy")
+  say "Re-logging into argocd CLI (${ARGOCD_SERVER}) via SSO — opens a browser"
   argocd login "$ARGOCD_SERVER" --grpc-web --sso
 fi
 

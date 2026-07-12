@@ -66,6 +66,23 @@ for s in "${SERVERS[@]}"; do
     | openssl x509 2>/dev/null || true)
   report "$s" "$(printf '%s' "$pem" | cert_days)"
 done
+echo
+
+# ArgoCD keeps its OWN copy of the admin client cert in an argocd cluster secret. k3s
+# rotation does not update it, so it can silently go stale (ArgoCD 401s while still
+# showing "Healthy"). Surface it here. Needs read access to secrets in argocd (skipped
+# gracefully if kubectl can't reach the cluster / lacks permission).
+echo "ArgoCD in-cluster stored admin cert:"
+argo_secret=$(kubectl get secrets -n argocd -l argocd.argoproj.io/secret-type=cluster \
+  -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+if [ -n "$argo_secret" ]; then
+  argo_pem=$(kubectl get secret "$argo_secret" -n argocd -o jsonpath='{.data.config}' 2>/dev/null \
+    | base64 -d 2>/dev/null | jq -r '.tlsClientConfig.certData' 2>/dev/null \
+    | base64 -d 2>/dev/null || true)
+  report "$argo_secret" "$(printf '%s' "$argo_pem" | cert_days)"
+else
+  echo "  (skipped — kubectl could not read argocd cluster secret)"
+fi
 
 echo
 if [ "$worst_ok" -ne 0 ]; then

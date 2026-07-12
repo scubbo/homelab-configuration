@@ -12,6 +12,10 @@ fresh kubeconfig to the laptop. k3s regenerates expiring leaf certs **on restart
 they are within 90 days of expiry (or already expired), or immediately via
 `k3s certificate rotate`.
 
+**Don't forget ArgoCD:** it keeps its *own* copy of the admin client cert in the argocd
+`cluster-*` secret, which rotation does **not** update — it then 401s behind a stale
+"Healthy". Step 6 of Runbook A refreshes it (the scripts do this automatically).
+
 Scripts referenced here live in [`scripts/`](scripts/):
 - [`k3s_cert_check.sh`](scripts/k3s_cert_check.sh) — read-only, no-sudo expiry check (laptop + live endpoints).
 - [`k3s_refresh_kubeconfig.sh`](scripts/k3s_refresh_kubeconfig.sh) — laptop one-shot; optional `--rotate` drives both servers.
@@ -73,6 +77,23 @@ Scripts referenced here live in [`scripts/`](scripts/):
   argocd --core app list          # or: argocd context kubernetes
   ```
 
+### ⚠️ ArgoCD's in-cluster admin cert (the masked failure — do NOT skip)
+The CLI token above is the *laptop's* problem. Separately, **the ArgoCD server itself
+authenticates to `https://epsilon:6443` with its OWN copy of the admin client cert**, stored
+in the cluster secret **`cluster-epsilon-2535046729`** (namespace `argocd`), at
+`.data.config` → `tlsClientConfig.{certData,keyData}` (verified 2026-07-12; there is exactly
+one such `argocd.argoproj.io/secret-type=cluster` secret, targeting `https://epsilon:6443`).
+
+**`k3s certificate rotate` does NOT update this copy.** After a rotation the stored cert is
+stale and ArgoCD **401s** against the API — but this is **masked by a stale "Healthy"
+status** in the UI, so it looks fine until you notice nothing is syncing. It must be
+refreshed explicitly (step 6 below). `k3s_cert_check.sh` reports this cert's expiry as its
+last row so staleness is visible.
+
+> Note (encoding): the kubeconfig stores the cert/key as base64(PEM), and ArgoCD's
+> `certData`/`keyData` use the **same** base64(PEM) encoding — so they copy across verbatim,
+> no re-encoding of the PEM needed.
+
 ---
 
 ## Runbook A — manual refresh (both nodes, HA-safe)
@@ -123,7 +144,22 @@ exit
 kubectl get nodes                                     # both Ready?
 ```
 
-### 6. Re-login argocd
+### 6. Refresh ArgoCD's in-cluster admin cert (the masked one — see warning above)
+Copy the fresh cert/key from the now-valid kubeconfig into the cluster secret, then restart
+the application controller so it reconnects:
+```bash
+CERT=$(kubectl config view --raw -o jsonpath='{.users[0].user.client-certificate-data}')
+KEY=$(kubectl config view --raw -o jsonpath='{.users[0].user.client-key-data}')
+NEWCFG=$(kubectl get secret cluster-epsilon-2535046729 -n argocd -o jsonpath='{.data.config}' \
+  | base64 -d \
+  | jq --arg c "$CERT" --arg k "$KEY" '.tlsClientConfig.certData=$c | .tlsClientConfig.keyData=$k' \
+  | base64 | tr -d '\n')
+kubectl patch secret cluster-epsilon-2535046729 -n argocd --type merge \
+  -p "$(jq -cn --arg cfg "$NEWCFG" '{data:{config:$cfg}}')"
+kubectl rollout restart statefulset argo-cd-argocd-application-controller -n argocd
+```
+
+### 7. Re-login the argocd CLI
 ```bash
 argocd login argo.scubbo.org --grpc-web --sso         # or just use: argocd --core app list
 ```
@@ -137,6 +173,9 @@ Same procedure, scripted (see the script header for flags):
 # Full HA rotate of epsilon + culex, then refresh laptop + argocd (prompts for sudo):
 ./agentic-investigations/scripts/k3s_refresh_kubeconfig.sh --rotate
 ```
+The script refreshes **both** the laptop kubeconfig **and** ArgoCD's in-cluster admin cert
+(step 6 above) by default, then re-logins the CLI. `--no-argocd` skips both argocd steps.
+
 Check status any time (read-only, no sudo):
 ```bash
 ./agentic-investigations/scripts/k3s_cert_check.sh          # warns if <90 days left
@@ -194,6 +233,23 @@ a different `OnCalendar` (e.g. `Sun 05:00`).
 captured in this repo (document it in the runbook + a node README). Restart still only
 rotates the node it runs on — but that's exactly right, since on-disk certs are per-node.
 
+> **⚠️ This does NOT fix ArgoCD's stored cert.** A proactive `systemctl restart k3s`
+> rotates the on-disk leaves but leaves ArgoCD's `cluster-*` secret copy stale (masked
+> "Healthy", see the warning above). The epsilon guard runs as root, so it *can* also
+> refresh ArgoCD after rotating — append to `k3s-cert-guard.sh` on epsilon only:
+> ```bash
+> # after the restart, using root's in-cluster kubeconfig via `k3s kubectl`:
+> C=$(k3s kubectl config view --raw -o jsonpath='{.users[0].user.client-certificate-data}')
+> K=$(k3s kubectl config view --raw -o jsonpath='{.users[0].user.client-key-data}')
+> CFG=$(k3s kubectl get secret cluster-epsilon-2535046729 -n argocd -o jsonpath='{.data.config}' \
+>   | base64 -d | jq --arg c "$C" --arg k "$K" '.tlsClientConfig.certData=$c|.tlsClientConfig.keyData=$k' \
+>   | base64 | tr -d '\n')
+> k3s kubectl patch secret cluster-epsilon-2535046729 -n argocd --type merge \
+>   -p "$(jq -cn --arg cfg "$CFG" '{data:{config:$cfg}}')"
+> k3s kubectl rollout restart statefulset argo-cd-argocd-application-controller -n argocd
+> ```
+> Or skip this entirely by adopting the strategic alternative below (no stored cert at all).
+
 ### Option 2: unconditional monthly `systemctl restart k3s` timer
 Same timer, but restart every month regardless. Simpler script (no openssl check) but
 11 of 12 restarts are pointless API blips (a restart outside the 90-day window rotates
@@ -217,7 +273,29 @@ also pages, as a backstop to the guard.
 servers? If yes, I'll capture the exact files + install steps here (and/or a node README)
 so it's reproducible — but I won't apply anything to the nodes without a green light.
 
+### Strategic alternative — make ArgoCD's client cert disappear entirely
+ArgoCD runs **inside this cluster**, so it doesn't need an external admin client cert at
+all. Re-registering its cluster connection to the **in-cluster endpoint**
+`https://kubernetes.default.svc` backed by its **ServiceAccount token** (auto-rotated by
+Kubernetes) eliminates the stale-cert failure mode above — there'd be no `certData`/`keyData`
+to expire. The laptop kubeconfig refresh is still needed for `kubectl`, but ArgoCD would be
+immune.
+
+**Why it's not a drive-by change:** all **27** ArgoCD Applications currently set
+`spec.destination.server: https://epsilon:6443` (verified 2026-07-12). Pointing the cluster
+registration at `https://kubernetes.default.svc` means either migrating those destinations
+too (they must match a registered cluster) or registering the in-cluster endpoint as an
+additional cluster and moving apps over. Since app destinations are defined across the
+`app-of-apps/` jsonnet, this is a real IaC change + a one-time in-cluster re-registration.
+
+**Recommendation:** worth doing as a follow-up — it's the only option that removes the
+failure class rather than papering over it — but it's a bigger change than the cert-guard,
+so **propose separately and get Jack's sign-off before starting.** Not attempted here.
+
 ## Follow-ups
 - [ ] Jack to approve/deny the Option 1 on-node cert-guard timer.
 - [ ] (If approved) document the deployed unit/script + install steps and note it in `TODO.md`.
-- [ ] Consider a blackbox/Prometheus probe on API cert expiry as a monitoring backstop.
+- [ ] Consider a blackbox/Prometheus probe on API cert expiry as a monitoring backstop
+      (should also cover ArgoCD's stored cert — `k3s_cert_check.sh` already reports it).
+- [ ] Evaluate the strategic alternative (re-register ArgoCD to `kubernetes.default.svc` +
+      ServiceAccount) as a separate proposal — removes the ArgoCD stale-cert class entirely.
