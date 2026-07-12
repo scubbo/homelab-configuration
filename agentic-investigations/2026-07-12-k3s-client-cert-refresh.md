@@ -265,9 +265,74 @@ manual/break-glass path regardless of what we automate.
 
 ### Recommendation
 **Option 1** for prevention (weekly guard on each node, staggered), keeping the scripts in
-this repo as the break-glass path and as `k3s_cert_check.sh` for visibility. Optionally
-wire `k3s_cert_check.sh` into the existing blackbox/monitoring stack so a near-expiry cert
-also pages, as a backstop to the guard.
+this repo as the break-glass path and as `k3s_cert_check.sh` for visibility — **paired with
+the independent expiry probe below.** A preventer you can't observe is one you'll assume
+works right up until the year it doesn't, so the surfacing matters as much as the mechanism.
+
+### Surfacing the guard to an operator
+The guard *acts* about once a year but *runs* every week, so **51 of 52 runs are deliberate
+no-ops** that log "OK, N days left." That weekly no-op is the heartbeat that proves the
+guard is alive — which is exactly what we monitor on. Three layers, in increasing order of
+independence from the guard itself:
+
+**1. On the node (systemd-native, zero setup):**
+```bash
+systemctl list-timers k3s-cert-guard.timer   # LAST run, NEXT run — is it even scheduled?
+systemctl status  k3s-cert-guard.service      # last exit code; failures show in `systemctl --failed`
+journalctl -u     k3s-cert-guard.service      # full decision log (guard uses `logger`)
+```
+Good when you're already on the box; useless once you've walked away. Note: journald
+`Storage=auto` on both servers (verified 2026-07-12) → history may not survive a reboot
+unless `/var/log/journal` exists. Set `Storage=persistent` if we lean on the journal.
+
+**2. Prometheus textfile metric (heartbeat + decision — self-reported):**
+Have the guard write `/var/lib/node_exporter/textfile_collector/k3s_cert_guard.prom`:
+```
+k3s_cert_guard_last_run_seconds       <ts>
+k3s_cert_guard_cert_expiry_seconds    <ts>
+k3s_cert_guard_last_action{action="restart"|"noop"} 1
+```
+Alert on **two** conditions: expiry approaching **and** the metric going *stale* (>8 days
+since `last_run`) — the latter catches the timer being disabled/broken. **Delta:** the
+`prometheus-prometheus-node-exporter` DaemonSet does **not** currently enable the textfile
+collector (no `--collector.textfile.directory` arg, no textfile hostPath mount — verified
+2026-07-12). Enabling it is a small GitOps change to the prometheus values + a host dir
+mounted through node-exporter's existing rootfs mount. Self-reported, so it can't tell you
+the guard is *dead* — hence layer 3.
+
+**3. Independent blackbox expiry probe (the real safety net):**
+A blackbox `probe_ssl_earliest_cert_expiry` against `epsilon:6443` and `culex:6443`. This
+watches the *outcome* and does **not** trust the guard to report anything. Because the
+serving cert and the client-admin leaf rotate together (verified: identical `notAfter`), a
+forward jump in serving-cert expiry is a valid "rotation happened" signal.
+
+**Delta (concrete):** `charts/uptime-monitoring/` already ships the exact alert we want —
+`SSLCertificateExpiringSoon`/`VerySoon` on `(probe_ssl_earliest_cert_expiry - time())/86400
+< 30|7` — but its `Probe` targets **Ingresses only** (`targets.ingress`,
+`ingressClassName: traefik`). The API endpoint is a raw `host:6443`, not an Ingress, so it
+isn't covered today. Add a static-target `Probe` reusing the same rules:
+```yaml
+# new Probe (namespace prometheus, label release: prometheus)
+spec:
+  prober: { url: <blackbox-exporter>.prometheus.svc:<port> }
+  module: tcp_connect_tls      # 6443 is raw TLS, NOT http — needs a TLS tcp module,
+                               # not the http module the ingress probe uses
+  targets:
+    staticConfig:
+      static: ["epsilon:6443", "culex:6443"]
+```
+The existing `SSLCertificateExpiringSoon` rule is generic on `probe_ssl_earliest_cert_expiry`,
+so it fires for these targets automatically once they're scraped.
+
+**Not covered by any probe:** ArgoCD's stored cert lives in a Secret, not on a TLS port, so
+blackbox can't see it. It's surfaced only by the layer-2 textfile route (or by running
+`k3s_cert_check.sh`, whose last row reports it), or made moot by the strategic
+re-registration below.
+
+**Recommended surfacing:** guard (prevention) **+** layer 3 blackbox probe (independent
+detection) is the high-value 80% and reuses kit already deployed. Add layer 2 only if we
+want "did the guard fire, and what did it decide" visibility. All of this is GitOps/IaC
+(prometheus values, a `Probe`, alert rules) — **not attempted here; proposed for review.**
 
 **Decision needed from Jack:** OK to add the Option 1 timer + guard script to both
 servers? If yes, I'll capture the exact files + install steps here (and/or a node README)
@@ -295,7 +360,8 @@ so **propose separately and get Jack's sign-off before starting.** Not attempted
 ## Follow-ups
 - [ ] Jack to approve/deny the Option 1 on-node cert-guard timer.
 - [ ] (If approved) document the deployed unit/script + install steps and note it in `TODO.md`.
-- [ ] Consider a blackbox/Prometheus probe on API cert expiry as a monitoring backstop
-      (should also cover ArgoCD's stored cert — `k3s_cert_check.sh` already reports it).
+- [ ] Add the surfacing described above: an independent blackbox `Probe` on
+      `epsilon:6443`/`culex:6443` (reusing the existing `SSLCertificateExpiring*` rules),
+      and optionally the node-exporter textfile heartbeat metric.
 - [ ] Evaluate the strategic alternative (re-register ArgoCD to `kubernetes.default.svc` +
       ServiceAccount) as a separate proposal — removes the ArgoCD stale-cert class entirely.
