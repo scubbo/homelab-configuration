@@ -67,6 +67,7 @@ Examples of current manual secrets:
 - **External domain:** `.scubbo.org` (managed via Cloudflare)
 - **DNS resolution chain:** AdGuard Home (port 53 on OPNsense at 192.168.1.1) → Unbound DNS (port 5353 on OPNsense) → upstream recursive resolution. AdGuard Home handles filtering/blocking; Unbound handles recursive resolution and `.avril` Host Overrides.
 - **Tailscale MagicDNS:** Devices running Tailscale use `100.100.100.100` as their primary resolver, which handles Tailscale hostnames and forwards other queries to the network's DNS (OPNsense).
+- **external-dns:** Automatically registers `.avril` DNS records in OPNsense/Unbound via the `external-dns-opnsense-webhook` provider. Its sources are `ingress`, `service`, and `crd` (`domainFilters: ["avril"]`), so **any `.avril` host on an Ingress is registered automatically — do NOT tell Jack to add a manual Unbound Host Override for it.** Explicit `DNSEndpoint` CRDs in `charts/external-dns/` are only needed for bare hosts that aren't backed by an Ingress (e.g. `galactus.avril` → a raw IP).
 - **Ingress Controller:** Traefik (all Ingresses use `ingressClassName: traefik`)
 - **Cluster endpoint:** `https://epsilon:6443`
 - **Storage servers:** Dynamically-created PVCs via `freenas-iscsi-csi` and `freenas-nfs-csi` Storage Classes (installed separately). As a backup, also NFS at `rassigma.avril` and `rasnu2.avril`
