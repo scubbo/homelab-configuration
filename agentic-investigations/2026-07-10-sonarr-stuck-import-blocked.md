@@ -129,6 +129,7 @@ curl -sSk -H "X-Api-Key: $SK" -X DELETE "$B/queue/<id>?removeFromClient=true&blo
 1. **Renew laptop cluster creds** (recurs ~annually, early July): rotate the k3s client cert on
    `epsilon` and copy the fresh `/etc/rancher/k3s/k3s.yaml` to `~/.kube/config` (fixing the
    `server:` from `127.0.0.1` to `epsilon`). Re-login argocd. Requires Jack's sudo.
+   → Full runbook + scripts: [`2026-07-12-k3s-client-cert-refresh.md`](2026-07-12-k3s-client-cert-refresh.md).
 2. **Recurrence:** the "matched by ID" block returns for any interactive-search grab whose
    release name doesn't cleanly parse (year-mismatch shows are the classic trigger). No
    permanent fix — a one-time manual import clears it.
