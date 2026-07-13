@@ -10,15 +10,21 @@ appDef.helmApplication(
         runtimeClassName: "nvidia",
         // Advertise the single P1000 as 2 schedulable GPUs so Tdarr's transcode node can
         // co-schedule with Jellyfin (which reserves one exclusively). This is time-based
-        // sharing only - there is NO VRAM isolation on the 4GB card, so Tdarr avoids runtime
-        // collisions via its own off-hours scheduler + a 1-worker GPU cap (see charts/tdarr).
-        sharing: {
-            timeSlicing: {
-                resources: [{
-                    name: "nvidia.com/gpu",
-                    replicas: 2
-                }]
-            }
+        // sharing only - there is NO VRAM isolation on the 4GB card. Contention is minimised
+        // (not eliminated) by Tdarr's off-hours scheduler + a 1-worker GPU cap, and trends to
+        // zero as the library becomes all-H.264 and Jellyfin stops transcoding (see charts/tdarr).
+        // The chart reads time-slicing from a config-file ConfigMap, not a top-level `sharing` key.
+        config: {
+            map: {
+                default: |||
+                    version: v1
+                    sharing:
+                      timeSlicing:
+                        resources:
+                          - name: nvidia.com/gpu
+                            replicas: 2
+                |||,
+            },
         },
         affinity: {
             nodeAffinity: {
