@@ -45,6 +45,18 @@ BR-DISK files are raw Blu-ray disc images (`.iso`). They require the `bluray:` F
 carry very high bitrates (~60 Mbps), and are almost never direct-playable. They will always
 transcode, and that transcode is slow even with GPU acceleration.
 
+### Codec: prefer x264 (H.264), avoid x265/HEVC
+
+The same direct-play logic applies to the video codec. Browsers — notably Chrome — cannot
+decode HEVC/x265, so an x265 file forces a server-side transcode (and if hardware transcode is
+not working, playback just hangs). x264/H.264 direct-plays everywhere, browsers included.
+
+A Radarr Custom Format `HEVC (x265)` (release-title regex `\b(x265|h.?265|hevc)\b`) scores
+`-50` in the HD-1080p profile, with `minFormatScore = -100`. x264 is therefore always
+preferred; x265 is grabbed only when it is the sole option — a soft fallback rather than a hard
+reject, so obscure titles are not left unmet. BR-DISK, Trash Groups, and Bad Codec stay
+hard-rejected (scores at or below -1000, under the -100 threshold).
+
 ## Adding New Movies
 
 When adding a movie in Radarr, always select the **HD-1080p** quality profile. The UI remembers
