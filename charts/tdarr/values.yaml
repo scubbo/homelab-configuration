@@ -1,0 +1,110 @@
+# Default values for tdarr.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/haveagitgat/tdarr
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "2.83.01"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 1000
+
+# The Tdarr image starts as root and drops to PUID/PGID (set via env), so we do not pin
+# runAsUser here - doing so would break its internal privilege drop.
+securityContext: {}
+
+service:
+  type: ClusterIP
+  # Web UI + API.
+  webUIPort: 8265
+  # Server <-> node channel. The internal node talks to this over localhost; exposing it on the
+  # Service lets external Tdarr nodes attach later without a chart change.
+  serverPort: 8266
+
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations: {}
+  hosts:
+    - host: tdarr.avril
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+# nvidia.com/gpu is requested so the pod schedules onto the P1000. This requires the
+# nvidia-device-plugin to advertise >= 2 GPUs (time-slicing) so Tdarr can co-schedule with
+# Jellyfin. Runtime GPU contention is instead avoided by Tdarr's own off-hours scheduler and a
+# 1-worker GPU cap (see README) - time-slicing gives no VRAM isolation on this 4GB card.
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+    nvidia.com/gpu: 1
+  limits:
+    cpu: 4
+    memory: 6Gi
+    nvidia.com/gpu: 1
+
+nodeSelector:
+  kubernetes.io/arch: amd64
+  kubernetes.io/hostname: epsilon
+
+tolerations: []
+
+affinity: {}
+
+runtimeClassName: nvidia
+
+# PUID/PGID/TZ match the arr-stack + Jellyfin file ownership on the shared media NFS export.
+# NVIDIA_* expose the P1000 to the transcode node. internalNode runs the transcode node inside
+# the server container (single pod).
+env:
+  TZ: America/Los_Angeles
+  PUID: "1000"
+  PGID: "1000"
+  serverIP: 0.0.0.0
+  serverPort: "8266"
+  webUIPort: "8265"
+  internalNode: "true"
+  inContainer: "true"
+  nodeName: InternalNode
+  NVIDIA_VISIBLE_DEVICES: all
+  NVIDIA_DRIVER_CAPABILITIES: all
+
+persistence:
+  # Server DB, configs and logs. Block storage (iSCSI), same class Jellyfin/arr use for config.
+  config:
+    storageClassName: "freenas-iscsi-csi"
+    size: 5G
+  # The movie library, over the same TrueNAS NFS export the arr-stack and Jellyfin use. Mounted
+  # read-write (Tdarr replaces files in place) at /data, so the Radarr root folder path
+  # (/data/media/movies) is identical inside Tdarr.
+  media:
+    server: galactus.avril
+    path: /mnt/low-resiliency-with-read-cache/ombi-data/
+    size: 20T
+
+# Transcode scratch/temp. emptyDir keeps the heavy source-read + output-write on epsilon's local
+# disk instead of thrashing the shared media NFS export.
+transcodeCache:
+  mountPath: /temp
