@@ -21,20 +21,23 @@ All movies should use this profile. Allowed qualities (in ascending preference o
 | HDTV-1080p | Acceptable but lowest preference |
 | WEBDL-1080p | Good |
 | WEBRip-1080p | Good |
-| Bluray-1080p | Preferred encode source |
-| Remux-1080p | Best — lossless 1080p rip, larger file but no quality loss vs BR-DISK |
+| Bluray-1080p | **Best allowed** — encode source, visually near-transparent at ~5-15 GB |
+
+`Remux-1080p` is **not allowed** (see below) — lossless, but ~3x the size for no perceptible 1080p gain.
 
 **Cutoff:** Bluray-1080p — Radarr stops searching for upgrades once this quality is reached.
 
 **Upgrades allowed:** No — once a file meets the cutoff, don't replace it.
 
-### Why Remux-1080p is allowed but Remux-2160p is not
+### Why Remux-1080p is not allowed
 
-Remux-1080p is a lossless rip of a Blu-ray disc in a standard container (MKV). It's larger than
-an encode but avoids the transcoding problems of BR-DISK and plays well on all clients.
+Remux-1080p is a lossless Blu-ray rip (MKV). At 1080p it direct-plays fine, but files run
+25-42 GB — roughly 3x a Bluray-1080p encode (~5-15 GB) that is visually near-transparent at
+normal viewing distances. Across a large library the storage and download-time cost outweighs
+the imperceptible 1080p quality gain, so it is excluded.
 
-Remux-2160p is 4K HDR content — same situation as a BR-DISK from a client compatibility
-perspective. Avoid.
+Remux-2160p is 4K HDR content — same client-compatibility/transcoding problem as BR-DISK.
+Avoid.
 
 ### Why BR-DISK is not allowed
 
