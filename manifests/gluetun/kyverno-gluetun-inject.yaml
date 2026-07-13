@@ -59,7 +59,7 @@ spec:
                   name: gluetun-protonvpn
                   key: wireguard-private-key
             - name: SERVER_COUNTRIES
-              value: "Canada"
+              value: "Netherlands"
             - name: FIREWALL_OUTBOUND_SUBNETS
               value: "10.0.0.0/8,192.168.0.0/16"
             ports:
