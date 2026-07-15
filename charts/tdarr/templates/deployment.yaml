@@ -29,6 +29,24 @@ spec:
       {{- if .Values.runtimeClassName }}
       runtimeClassName: {{ .Values.runtimeClassName }}
       {{- end }}
+      initContainers:
+        # Install our local transcode plugin into Tdarr's Local plugins dir (on the config PVC)
+        # on every start, so it stays in sync with the chart and survives a PVC rebuild.
+        - name: install-local-plugins
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          command:
+            - sh
+            - -c
+            - >
+              mkdir -p /app/server/Tdarr/Plugins/Local &&
+              cp /plugin-src/*.js /app/server/Tdarr/Plugins/Local/ &&
+              chown -R {{ .Values.env.PUID }}:{{ .Values.env.PGID }} /app/server/Tdarr/Plugins/Local
+          volumeMounts:
+            - mountPath: /app/server
+              name: tdarr-config
+              subPath: server
+            - mountPath: /plugin-src
+              name: tdarr-local-plugins-src
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -86,6 +104,9 @@ spec:
             claimName: tdarr-truenas-media-pvc
         - name: tdarr-transcode-cache
           emptyDir: {}
+        - name: tdarr-local-plugins-src
+          configMap:
+            name: {{ include "tdarr.fullname" . }}-local-plugins
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
