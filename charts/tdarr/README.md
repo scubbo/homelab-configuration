@@ -1,149 +1,108 @@
-# Tdarr — keep the movie library browser-playable (H.264)
+# Tdarr — keep the movie library browser-Direct-Play (H.264 MP4)
 
-Tdarr watches the movie library and transcodes any video that is **not H.264/AVC** into
-H.264 (via the P1000's NVENC), replacing the file in place. The end state: every stored movie
-Direct-Plays in a web browser through Jellyfin, with **zero runtime transcoding**. See
-`docs/todo/tdarr-pre-transcode-deployment.md` for the full rationale and the decisions behind
-this deployment.
+Non-technical users play movies in a **web browser** via Jellyfin. For a movie to start
+**instantly with no server-side transcode**, the *stored file* must be all of:
 
-This chart deploys a single pod running the Tdarr **server + an internal transcode node**
-(`internalNode=true`). It is reachable at `http://tdarr.avril`.
+| Requirement | Why |
+|---|---|
+| **H.264** video | Browsers can't reliably decode HEVC/AV1 → spin. |
+| **AAC** audio | Browsers can't decode DTS/TrueHD/(often)AC3 → forces an audio transcode. |
+| **MP4** container | **Browsers can't Direct Play MKV** — they need it remuxed. MP4 plays natively. |
+| **`+faststart`** | Moves the `moov` atom to the front so playback starts without downloading the whole file. |
+| **≲ 12 Mbps** | A 25–40 Mbps Blu-ray remux is too fat to stream and buffers even as clean MP4. |
+
+Miss *any* one and the browser spins. Tdarr watches the library and normalises every movie to
+that shape, replacing the file in place. End state: instant browser Direct Play, zero runtime
+transcode. Reachable at `http://tdarr.avril`.
+
+## The plugin (baked into this chart)
+
+`charts/tdarr/plugins/Tdarr_Plugin_scubbo_hevc_to_h264.js` is shipped as a **ConfigMap** and an
+**init-container** copies it into Tdarr's `Local` plugins dir on every start (so it survives a
+config-PVC rebuild and stays in sync with git). Its logic:
+
+- **HEVC** (8 *or* 10-bit) or **over-cap H264** → transcode to H.264 MP4, GPU-decoded, 10-bit
+  downconverted inside CUDA (`scale_cuda=format=yuv420p`), capped at **12 Mbps**, `+faststart`.
+- **Under-cap H264 in a non-MP4 container** → fast **remux** to MP4 (no re-encode).
+- **Under-cap H264 already in MP4** → skip.
+- Audio: copy if already AAC, else re-encode to AAC. Subtitles: **dropped** (MP4 can't hold ASS/PGS,
+  and extracting many tracks at play-time is itself a slow-start cause).
+- AV1 / mpeg4 → **left untouched** (browsers handle AV1; mpeg4 is rare).
+
+> The 10-bit `scale_cuda` step is essential: the P1000's `h264_nvenc` is 8-bit only, and most of
+> the library's HEVC is 10-bit. Without it every 10-bit transcode fails with
+> *"Impossible to convert between the formats … h264_nvenc"*.
 
 ## What the chart wires up
 
-- **GPU**: `runtimeClassName: nvidia`, `nvidia.com/gpu: 1`, and `NVIDIA_VISIBLE_DEVICES=all` /
+- **GPU**: `runtimeClassName: nvidia`, `nvidia.com/gpu: 1`, `NVIDIA_VISIBLE_DEVICES=all` /
   `NVIDIA_DRIVER_CAPABILITIES=all` — the same P1000 (node `epsilon`) Jellyfin uses.
 - **Media**: the shared TrueNAS NFS export (`galactus.avril:/mnt/low-resiliency-with-read-cache/ombi-data/`)
-  mounted **read-write** at `/data`, so the movie library is at `/data/media/movies` — the exact
-  path Radarr uses. This is the same export Jellyfin and the arr-stack already write to as
-  UID/GID 1000, so **no new NFS-server setup is required**.
-- **Config**: an iSCSI (`freenas-iscsi-csi`) PVC holding `/app/server`, `/app/configs`, `/app/logs`.
-- **Transcode scratch**: an `emptyDir` at `/temp` — node-local disk on epsilon, so the heavy
-  source-read + output-write does **not** thrash the shared media NFS.
+  mounted **RW** at `/data` → library at `/data/media/movies`. Same export Jellyfin/arr write to as
+  UID/GID 1000, so **no new NFS-server setup**.
+- **Config**: iSCSI (`freenas-iscsi-csi`) PVC holding `/app/server`, `/app/configs`, `/app/logs`.
+- **Transcode scratch**: `emptyDir` at `/temp` (node-local, keeps heavy I/O off the media NFS).
+- **Local plugin**: ConfigMap `…-local-plugins` + `install-local-plugins` init-container.
 
-## Prerequisite: GPU time-slicing (in this same change)
+## Prerequisite: GPU time-slicing
 
-The P1000 is reserved *exclusively* by Jellyfin. For Tdarr's pod to even schedule onto the GPU,
-`app-of-apps/nvidia-device-plugin.jsonnet` advertises the card as **2** slots
-(`sharing.timeSlicing.replicas: 2`). This is *time-based* sharing with **no VRAM isolation** on
-the 4 GB card, so runtime collisions are instead avoided by Tdarr's **off-hours schedule** and a
-**1-worker GPU cap** (configured below), not by Kubernetes.
-
-After deploy, confirm both are true:
+The P1000 is otherwise held exclusively by Jellyfin. `app-of-apps/nvidia-device-plugin.jsonnet`
+advertises it as **2** slots via the device-plugin's config-file ConfigMap
+(`config.map.default → sharing.timeSlicing.replicas: 2`) so Tdarr can co-schedule. Time-based
+sharing only — no VRAM isolation on the 4 GB card; runtime contention is managed by the schedule
+(below). Confirm after deploy:
 
 ```bash
 kubectl describe node epsilon | grep nvidia.com/gpu   # Capacity/Allocatable should show 2
-kubectl -n jellyfin get pods                            # Jellyfin still Running (unchanged)
-kubectl -n tdarr get pods                               # tdarr pod Running, not Pending
+kubectl -n jellyfin get pods                            # Jellyfin still Running
+kubectl -n tdarr get pods                               # tdarr Running, not Pending
 ```
 
-If the Tdarr pod is stuck `Pending` with `Insufficient nvidia.com/gpu`, the device-plugin
-DaemonSet on epsilon has not picked up the time-slicing config yet.
+## Post-deploy configuration (Tdarr UI, one-time)
 
-## Post-deploy configuration (Tdarr UI)
+Libraries/plugins/schedule/workers live in Tdarr's DB, not files — configure once at
+`http://tdarr.avril`.
 
-Tdarr stores libraries, plugins and schedules in its own DB, not in files — so these are one-time
-UI steps after the pod is up. Open `http://tdarr.avril`.
-
-### 1. Add the movie library
-
-- **Libraries → + → Add** with **Source** = `/data/media/movies`.
-- **Transcode cache**: `/temp`.
-- Leave **Process Library = ON**.
-
-### 2. Transcode settings — non-H.264 → H.264, tone-map HDR, convert lossless audio
-
-The three decisions this implements (per the plan):
-
-| Concern | Decision |
-|---|---|
-| Video | Only touch files whose video codec **≠ H.264**; encode `h264_nvenc` (~CQ 21-23 / ~8-12 Mbps 1080p). Skip files already H.264 (no generation loss). |
-| HDR | **Tone-map HDR → SDR** (browser-first). Without tone-mapping, colors wash out. |
-| Audio | Convert **lossless** (TrueHD / DTS-HD MA) → **AC3 5.1**; leave already-compatible AAC/AC3 as-is. |
-
-Tone-mapping and conditional audio are cleanest with a **Tdarr Flow** (the node-based pipeline):
-a video node set to `h264_nvenc` with an HDR-tone-map step, plus an audio node that transcodes
-only non-AC3/AAC tracks to AC3. The classic-plugin route (e.g. the "Migz Transcode Using Nvidia
-GPU" + a Migz audio plugin) covers the video/audio codec swap but tone-mapping needs a Flow node
-or a community tone-map plugin. **Verify the exact node/plugin names against the running Tdarr
-version's plugin library** — Tdarr's plugin catalog changes between releases.
-
-Container stays **MKV** — Jellyfin remuxes MKV→fMP4 for browsers with no transcode.
-
-### 3. Off-hours schedule + 1-worker GPU cap
-
-- On the **node** (and/or the library) open the **Schedule** grid and enable **only** your
-  overnight hours (e.g. ~1am–8am), leaving daytime hours disabled.
-- ⚠️ **Timezone gotcha**: Tdarr's scheduler has historically run on **UTC, not local time**. We
-  are `America/Los_Angeles` (UTC-7/-8), so offset the enabled cells accordingly — e.g. local 1am
-  ≈ UTC 08:00/09:00. **Watch when workers actually start** and adjust; newer versions may respect
-  local time, so verify rather than assume.
-- Set the **GPU/transcode worker limit to 1** so at most one transcode ever touches the P1000.
-- Workers finish their current file before the schedule pauses them (they don't kill mid-file).
-
-### 4. Scope: normalize the whole library
-
-Let Tdarr scan and process the **entire existing library** (not just new grabs). It will work
-through the backlog over successive overnight windows. Expect this to take a while — it's a
-single 4 GB GPU limited to off-hours with 1 worker, over a shared NFS export.
-
-## Escape hatch — force-transcode one movie now
-
-To push a freshly-grabbed movie through immediately, outside the overnight window:
-
-1. In the UI **search bar**, find the file and **move it to the top of the queue** (new scans are
-   auto-prioritized to the top anyway).
-2. Ensure **Process Library = ON**.
-3. Manually **bump the transcode worker limit** on the node (the worker-limit buttons override the
-   idle schedule) — use a **transcode** worker, not a general worker (general workers clear health
-   checks first).
-4. Drop the worker limit back to 0 (or let the schedule take over) when it's done.
-
-> A file that already meets requirements (already H.264) is marked **Not required** and skipped —
-> there is no native "force re-encode an already-compliant file" button.
+1. **Library** → add **Source** `/data/media/movies`, transcode cache `/temp`, Process Library **ON**.
+2. **Transcode Options** → add the Local plugin (paste ID, type **Local**):
+   `Tdarr_Plugin_scubbo_hevc_to_h264`. This one plugin does everything above — no Migz/Smoove/Flow
+   needed. (If it doesn't resolve, hit **Sync node plugins** on the Flows page.)
+3. **Filters** → **Resolutions to skip**: `4KUHD`. 4K Dolby-Vision files error on transcode *and*
+   won't browser-play anyway — handle them by re-grabbing 1080p (see stragglers).
+4. **Staging** → tick **Auto accept successful transcodes** (else finished transcodes never
+   replace the source).
+5. **Workers** (node panel):
+   - **Transcode GPU = 1** — does the HEVC/over-bitrate encodes.
+   - **Transcode CPU = 1** — does the remuxes. A remux is `-c:v copy` = a *CPU* task; without a CPU
+     worker those files sit forever at **"Require CPU Worker."**
+6. **Schedule** (node/library) → enable only overnight hours so Tdarr doesn't fight Jellyfin/downloads
+   for GPU + NFS. ⚠️ **The scheduler runs on UTC** — offset from `America/Los_Angeles` accordingly
+   and *watch when workers actually start*.
 
 ## Confirming correct operation
 
-Three independent signals that it's actually working:
-
-1. **Tdarr UI** (`http://tdarr.avril`) — the library card shows a rising **Transcoded** count and
-   per-file status **Transcode success**; the **Transcodes** tab lists each completed file with its
-   before/after codec and space saved. A file already H.264 shows **Not required** (correct — it was
-   skipped, not failed).
-
-2. **Codec on disk** — spot-check a processed file with `ffprobe` (bundled in the Tdarr image; the
-   media is at `/data` inside the pod). Adjust the binary path if `ffprobe` isn't on `PATH` for your
-   image version:
+1. **On disk** — a processed file should be `.mp4`, `h264`, `aac`, ≲12 Mbps, faststart:
    ```bash
    POD=$(kubectl -n tdarr get pod -l app.kubernetes.io/name=tdarr -o name)
-   # Video codec -> expect: h264
-   kubectl -n tdarr exec $POD -- ffprobe -v error -select_streams v:0 \
-     -show_entries stream=codec_name -of default=nk=1:nw=1 "/data/media/movies/<Movie>/<file>.mkv"
-   # Audio codec(s) -> expect: aac / ac3 (no truehd / dts-hd)
-   kubectl -n tdarr exec $POD -- ffprobe -v error -select_streams a \
-     -show_entries stream=codec_name -of default=nk=1:nw=1 "/data/media/movies/<Movie>/<file>.mkv"
+   F="/data/media/movies/<Movie>/<file>.mp4"
+   kubectl -n tdarr exec $POD -- ffprobe -v error -show_entries stream=codec_type,codec_name \
+     -of csv=p=0 "$F"                                  # expect: h264/video, aac/audio
+   kubectl -n tdarr exec $POD -- ffprobe -v error -show_entries format=bit_rate \
+     -of default=nk=1:nw=1 "$F"                        # expect: < ~13000000
    ```
+2. **Jellyfin** — play in a browser: **Dashboard → Playback** should show **Direct Play**, and it
+   should start in a couple of seconds (no ffmpeg spawned in the jellyfin pod).
 
-3. **Jellyfin play method** — the real acceptance test. Play the movie in **Chrome**, then in
-   Jellyfin **Dashboard → Playback (active devices)** the stream's **Play method** should read
-   **Direct Play** (not "Transcode" / "Direct Stream"). Direct Play = success.
+## Notes / gotchas (hard-won)
 
-Also confirm Radarr did not re-import-loop: the movie still shows once, with its file present (no
-duplicate and no flip to "missing"), after Tdarr replaced the file.
-
-## Acceptance criteria
-
-1. An existing x265 library file is auto-transcoded to H.264 and replaced in place; Radarr still
-   tracks the movie (same path/filename → no re-import loop).
-2. A newly-grabbed x265 fallback is normalized to H.264 within a reasonable window.
-3. Jellyfin plays the result in **Chrome** as **Direct Play** (no runtime transcode).
-4. Tdarr transcoding never starves a live Jellyfin playback (off-hours schedule + 1-worker cap).
-
-## Notes / gotchas
-
-- **No VRAM isolation**: time-slicing shares GPU *time*, not the 4 GB of VRAM. The off-hours
-  schedule is what actually keeps Tdarr and a live Jellyfin transcode off the card simultaneously.
-- **Shared NFS**: download/unpack/library/transcode-read all share one export; SAB unpack already
-  saturates it. Off-hours scheduling doubles as I/O-contention avoidance.
-- **Radarr**: `upgradeAllowed=false`, so Tdarr's in-place file change does not trigger a
-  re-download; keep the same path + filename.
+- **The spin had four stacked causes**: HEVC codec, MKV container, missing faststart, and (for
+  remuxes) excessive bitrate. Fixing only the codec is not enough.
+- **No VRAM isolation** from time-slicing — the overnight schedule is what keeps Tdarr and a live
+  Jellyfin transcode off the 4 GB card at once.
+- **Shared NFS**: library + downloads + transcode-read all hit one export. A big download backlog
+  (SAB) will crawl the remux queue — pause SAB or schedule off-hours.
+- **Stragglers not handled by the plugin**: AV1 (left as-is — browsers play it); mpeg4/AVI (rare);
+  4K UHD / Blu-ray-disc (ISO) rips (skipped — re-grab as 1080p via Radarr, which is blocked from
+  disc releases by a "Must Not Contain" release profile).
+- **Subtitles are dropped.** If you want them back, convert text tracks to `mov_text` on the MP4
+  (image/PGS subs can't go in MP4); do it selectively to avoid the play-time extraction stall.
