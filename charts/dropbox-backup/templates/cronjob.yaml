@@ -40,9 +40,9 @@ spec:
                   cp /config/rclone.conf /tmp/rclone.conf
                   rclone sync "{{ .Values.rclone.remote }}:{{ .Values.rclone.sourcePath }}" /data/mirror \
                     --config /tmp/rclone.conf \
-                    --fast-list \
                     --transfers {{ .Values.rclone.transfers }} \
-                    --checkers {{ .Values.rclone.checkers }}
+                    --checkers {{ .Values.rclone.checkers }} \
+                    --tpslimit {{ .Values.rclone.tpslimit }}
               resources:
                 {{- toYaml .Values.resources | nindent 16 }}
               volumeMounts:
