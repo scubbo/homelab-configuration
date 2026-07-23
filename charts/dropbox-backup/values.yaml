@@ -32,14 +32,17 @@ rclone:
   # the path within Dropbox to mirror ("/" = the entire Dropbox).
   remote: dropbox
   sourcePath: "/"
-  # Dropbox rate-limits aggressively (especially a Development-status app) and
-  # returns HTML error pages under heavy concurrency, which rclone surfaces as
-  # "invalid character '<'". Keep concurrency modest and cap transactions/sec.
-  # `--fast-list` is deliberately NOT used: it loads the entire recursive listing
-  # into memory and OOM-kills the container on a large Dropbox.
-  transfers: 4
+  # The mirror downloads large, incompressible files (multi-GB GoPro videos etc.)
+  # to the NFS-backed mirror. rclone can download faster than the kernel flushes
+  # those writes to galactus, and under cgroup v2 the dirty page cache counts
+  # against the container's memory limit. --bwlimit caps the download so writeback
+  # keeps pace, keeping the page cache bounded (see the memory limit comment).
+  # --tpslimit and modest concurrency also keep a Development-status Dropbox app
+  # under its rate limits. (--fast-list is intentionally omitted.)
+  transfers: 2
   checkers: 8
   tpslimit: 12
+  bwlimit: "70M"
 
 restic:
   image:
@@ -64,6 +67,9 @@ resources:
     memory: 512Mi
   limits:
     cpu: "2"
-    # Headroom above the expected footprint now that --fast-list is gone; without
-    # fast-list rclone lists lazily per-directory so memory stays well under this.
-    memory: 4Gi
+    # The rclone mirror step accumulates dirty NFS write-cache (see rclone comment).
+    # The kernel only flushes hard once global dirty pages reach dirty_background
+    # (~10% of node RAM); observed peak is ~6.8Gi. This ceiling sits above even the
+    # kernel's dirty_ratio hard-throttle point (~20% of RAM), so the writer is
+    # throttled before the container can OOM, even if galactus writeback stalls.
+    memory: 16Gi
