@@ -32,8 +32,14 @@ rclone:
   # the path within Dropbox to mirror ("/" = the entire Dropbox).
   remote: dropbox
   sourcePath: "/"
-  transfers: 8
-  checkers: 16
+  # Dropbox rate-limits aggressively (especially a Development-status app) and
+  # returns HTML error pages under heavy concurrency, which rclone surfaces as
+  # "invalid character '<'". Keep concurrency modest and cap transactions/sec.
+  # `--fast-list` is deliberately NOT used: it loads the entire recursive listing
+  # into memory and OOM-kills the container on a large Dropbox.
+  transfers: 4
+  checkers: 8
+  tpslimit: 12
 
 restic:
   image:
@@ -58,4 +64,6 @@ resources:
     memory: 512Mi
   limits:
     cpu: "2"
-    memory: 2Gi
+    # Headroom above the expected footprint now that --fast-list is gone; without
+    # fast-list rclone lists lazily per-directory so memory stays well under this.
+    memory: 4Gi
