@@ -1,0 +1,61 @@
+# Default values for dropbox-backup.
+
+# Cron schedule for the backup job. Defaults to 03:17 daily (off the :00 mark
+# to avoid coinciding with every other on-the-hour job on the cluster).
+schedule: "17 3 * * *"
+
+# Name of the manually-created Secret holding `rclone.conf` and `restic-password`.
+# This Secret is NEVER stored in git — see README.md and secret.example.yaml.
+secretName: dropbox-backup-secrets
+
+nfs:
+  server: galactus.avril
+  path: /mnt/high-resiliency/manual-nfs/backups/dropbox-backups
+  # Advisory only: NFS PVs do not enforce a quota. The real limit is the size of
+  # the galactus dataset. Capacity monitoring is handled by the observability
+  # fast-follow (restic-exporter + galactus disk metrics), not by this number.
+  capacity: 500Gi
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+
+rclone:
+  image:
+    repository: rclone/rclone
+    tag: "1.68.2"
+  # `remote` is the name of the remote as defined in rclone.conf; `sourcePath` is
+  # the path within Dropbox to mirror ("/" = the entire Dropbox).
+  remote: dropbox
+  sourcePath: "/"
+  transfers: 8
+  checkers: 16
+
+restic:
+  image:
+    repository: restic/restic
+    tag: "0.17.3"
+  # Stable hostname recorded on every snapshot. This MUST be fixed: each CronJob
+  # pod gets a random hostname, and restic groups snapshots by host when applying
+  # its `forget` retention policy. Without a fixed host, every run would land in
+  # its own group and retention would misbehave.
+  host: dropbox-backup
+
+# Decaying retention applied by `restic forget` after each backup.
+retention:
+  daily: 7
+  weekly: 4
+  monthly: 12
+  yearly: 3
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 2Gi

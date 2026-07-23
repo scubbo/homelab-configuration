@@ -1,0 +1,5 @@
+# Never commit real secret material — only secret.example.yaml is tracked.
+rclone.conf
+secret.yaml
+secret.yml
+!secret.example.yaml

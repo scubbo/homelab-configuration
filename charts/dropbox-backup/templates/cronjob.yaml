@@ -1,0 +1,106 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dropbox-backup
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  # Never let two backup runs overlap on the shared mirror/repo.
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          initContainers:
+            # Mirror Dropbox to a persistent directory on the NAS. Because the
+            # mirror persists between runs, only deltas are transferred each night.
+            # If this step fails the pod fails and restic never runs, so a broken
+            # sync can never produce a snapshot of a half-mirrored tree.
+            - name: rclone-sync
+              image: "{{ .Values.rclone.image.repository }}:{{ .Values.rclone.image.tag }}"
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              env:
+                - name: HOME
+                  value: /tmp
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  # rclone refreshes the Dropbox OAuth token in-memory and tries
+                  # to persist it back to its config file; copy the read-only
+                  # Secret mount to a writable path so that write never errors.
+                  cp /config/rclone.conf /tmp/rclone.conf
+                  rclone sync "{{ .Values.rclone.remote }}:{{ .Values.rclone.sourcePath }}" /data/mirror \
+                    --config /tmp/rclone.conf \
+                    --fast-list \
+                    --transfers {{ .Values.rclone.transfers }} \
+                    --checkers {{ .Values.rclone.checkers }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: rclone-config
+                  mountPath: /config
+                  readOnly: true
+          containers:
+            # Snapshot the mirror into the (encrypted, deduplicated) restic repo,
+            # then apply the decaying retention policy and verify repo integrity.
+            - name: restic-backup
+              image: "{{ .Values.restic.image.repository }}:{{ .Values.restic.image.tag }}"
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              env:
+                - name: RESTIC_REPOSITORY
+                  value: /data/repo
+                - name: RESTIC_CACHE_DIR
+                  value: /cache
+                - name: RESTIC_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.secretName }}
+                      key: restic-password
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  if [ ! -e "$RESTIC_REPOSITORY/config" ]; then
+                    echo "Initialising restic repository at $RESTIC_REPOSITORY"
+                    restic init
+                  fi
+                  restic backup /data/mirror --host {{ .Values.restic.host }} --tag dropbox
+                  restic forget --host {{ .Values.restic.host }} --tag dropbox \
+                    --keep-daily {{ .Values.retention.daily }} \
+                    --keep-weekly {{ .Values.retention.weekly }} \
+                    --keep-monthly {{ .Values.retention.monthly }} \
+                    --keep-yearly {{ .Values.retention.yearly }} \
+                    --prune
+                  restic check
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: cache
+                  mountPath: /cache
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: dropbox-backup-pvc
+            - name: rclone-config
+              secret:
+                secretName: {{ .Values.secretName }}
+                items:
+                  - key: rclone.conf
+                    path: rclone.conf
+            - name: cache
+              emptyDir: {}
