@@ -134,11 +134,91 @@ restic restore <snapshot-id> --target /data/restore   # or `latest`
 
 ## Observability
 
-Backup/capacity monitoring (did the last run succeed? is the repo nearing the dataset limit?)
-is a planned fast-follow using `restic-exporter` (repo size + last-snapshot age) plus galactus
-disk metrics and an AlertManager rule. Note that the `500Gi` on the PV is **advisory only** —
-NFS PVs don't enforce a quota, and static NFS PVs report no capacity metrics to Kubernetes; the
-real limit is the galactus dataset.
+An unchecked backup is a broken backup, so the chart ships three things that watch it: an
+exporter that publishes repo health as metrics, a weekly restore drill that *proves*
+restorability, and a set of alerts wired to Telegram.
+
+### restic-exporter
+
+The nightly backup is a short-lived CronJob with nothing to scrape, so a long-lived
+`restic-exporter` Deployment (`exporter.enabled`) opens the repo once an hour
+(`exporter.refreshInterval`) and exposes metrics scraped via a `ServiceMonitor`. It mounts the
+repo over its own inline NFS volume — not the `ReadWriteOnce` PVC — so it need not co-locate on
+the backup pod's node. Its reads only take a *shared* restic lock; the nightly `forget --prune`
+takes an exclusive one, so every nightly restic command uses `--retry-lock 5m` to wait out the
+overlap instead of erroring.
+
+Key metrics:
+
+| Metric | Meaning |
+|---|---|
+| `restic_backup_timestamp`   | Unix time of the last snapshot — the primary health signal (its age) |
+| `restic_snapshots_total`    | number of snapshots in the repo |
+| `restic_size_total`         | on-disk repo size (dedup+compressed) — the growth/capacity trend |
+| `restic_check_success`      | `1` if the hourly `restic check` passed, `0` if the repo failed integrity |
+
+A Grafana dashboard (`dashboard.enabled`, ConfigMap labelled `grafana_dashboard: "1"`, titled
+**Dropbox Backup**) charts all of the above plus the nightly-job and restore-drill last-success
+ages.
+
+### Restore drill
+
+`restic check` proves repo *integrity*; it does **not** prove the data can actually be restored.
+A weekly `restore-drill` CronJob (`restoreDrill.enabled`, Sun 04:47) restores one real file
+end-to-end (read → decrypt → decompress → hash-verify → write) and asserts it's non-empty. Set
+`restoreDrill.canaryPath` to a small, always-present file to keep the restore light and
+deterministic; left empty, the drill auto-selects the first non-empty file in the latest
+snapshot. Run it on demand with:
+
+```bash
+kubectl create job --from=cronjob/dropbox-backup-restore-drill drill-test -n dropbox-backup
+kubectl logs -n dropbox-backup job/drill-test          # shows the canary restored & verified
+```
+
+This is *automated* verification. It does not replace an occasional **manual** full-restore
+spot-check — the `DropboxBackupManualDrillReminder` alert below is a deliberate monthly nudge to
+do exactly that by hand.
+
+### Alerts
+
+`prometheusrule.yaml` (`alerting.enabled`) defines the rules below. **Every alert is
+`severity: critical` on purpose**: AlertManager forwards only `critical` to Telegram and silently
+drops `warning`/`info`, so anything we actually want to see must be `critical`. Each carries a
+`namespace: dropbox-backup` label and a `summary` annotation (that's what the Telegram message
+renders).
+
+| Alert | Fires when |
+|---|---|
+| `DropboxBackupStale`              | no fresh snapshot within `alerting.staleAfterSeconds` (26h) — the main "backup stopped producing snapshots" signal; self-clears on the next good snapshot |
+| `DropboxBackupCheckFailed`        | `restic check` reported repo corruption (`restic_check_success == 0`) |
+| `DropboxBackupExporterDown`       | the exporter is unreachable, so the two metric-based alerts above are blind |
+| `DropboxBackupJobFailed`          | a recently-*started* dropbox-backup Job (nightly or drill) failed outright |
+| `DropboxRestoreDrillStale`        | no successful restore drill within `alerting.drillStaleAfterSeconds` (8d) — the scariest signal: the repo may not be restorable |
+| `DropboxBackupManualDrillReminder`| a calendar reminder (not a failure) on `alerting.manualDrillReminder.{dayOfMonth,hour}` (UTC) to do a manual full-restore spot-check |
+
+### Capacity
+
+Real "nearing capacity" alerting needs galactus-side dataset metrics and is a separate
+follow-up (see `/TODO.md`). The `500Gi` on the PV is **advisory only** — NFS PVs don't enforce a
+quota and static NFS PVs report no capacity metrics to Kubernetes; the real limit is the
+galactus dataset. `restic_size_total` gives a client-side view of repo growth in the meantime.
+
+## Gotchas
+
+Hard-won operational notes from getting this running:
+
+- **Dropbox app scopes + re-authorize.** The `rclone sync` needs a Dropbox app with the right
+  scopes (`files.content.read`, `files.metadata.read`, plus `account_info.read`). If you change
+  an app's scopes *after* authorizing, you **must re-run the OAuth flow** — the existing
+  `refresh_token` keeps the old scopes and syncs fail with permission errors until re-authorized.
+  Prefer your own "Scoped access / Full Dropbox" app: Dropbox rate-limits rclone's shared client
+  ID hard on large syncs.
+- **NFS dirty-page-cache OOM.** The mirror writes large incompressible files to NFS. rclone can
+  download faster than the kernel flushes those writes to galactus, and under cgroup v2 the dirty
+  page cache counts against the container's memory limit — so an unbounded sync OOM-kills the pod
+  even though little is truly "in use". `rclone.bwlimit` caps the download so writeback keeps
+  pace, and the container `memory` limit (16Gi) sits above the kernel's dirty-ratio throttle
+  point, so the writer is throttled before it can OOM. Tune both together if you change either.
 
 ## Data durability
 

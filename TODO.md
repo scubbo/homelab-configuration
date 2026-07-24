@@ -20,6 +20,8 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [~] Set up SSO via Authentik (ArgoCD done, Jellyfin/Grafana/others pending)
 - [X] Fully backup and test k3s HA Postgres cluster (see [docs/k3s-ha-postgres/](docs/k3s-ha-postgres/))
 - [ ] Configure CloudNative-PG scheduled backups to S3/MinIO for Immich and Authentik databases
+- [X] Verify `dropbox-backup` restores actually work — an unchecked backup is a broken backup. Shipped in the observability fast-follow: restic-exporter metrics, `DropboxBackupStale`/`CheckFailed`/`ExporterDown`/`JobFailed` alerts, a weekly restore-drill CronJob, and a monthly manual-restore reminder alert. See `charts/dropbox-backup/README.md#observability`.
+- [ ] `dropbox-backup` capacity alerting — the deferred half of its observability. `restic_size_total` trends repo growth client-side, but real "dataset nearing capacity" alerting needs galactus-side metrics (a node-exporter/textfile `df` on the NFS dataset, or client-side `df` on the mount). Wire that into a `critical` alert so a full NAS dataset can't silently start failing backups.
 - [ ] Migrate standalone PostgreSQL apps (Ombi?) to CloudNative-PG
 - [ ] Investigate storing democratic-csi Helm values partially in git (non-secret config) with secrets injected separately (Vault, sealed-secrets, or Helm --set flags)
 - [X] Auto-purge Cloudflare cache after publishing a new blog entry (ArgoCD PostSync hook in blog-deployment repo)

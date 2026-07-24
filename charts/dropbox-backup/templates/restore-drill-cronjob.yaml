@@ -1,0 +1,88 @@
+{{- if .Values.restoreDrill.enabled }}
+# An unchecked backup is a broken backup. `restic check` (run by the nightly job
+# and the exporter) only proves repo *integrity*; it does not prove the data can
+# actually be restored. This drill restores a real file end-to-end (read →
+# decrypt → decompress → hash-verify → write) every week. A green run is genuine
+# proof of restorability; a failure surfaces as a failed Job and alerts.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dropbox-backup-restore-drill
+spec:
+  schedule: {{ .Values.restoreDrill.schedule | quote }}
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: restore-drill
+              image: "{{ .Values.restic.image.repository }}:{{ .Values.restic.image.tag }}"
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              env:
+                - name: HOME
+                  value: /tmp
+                - name: RESTIC_REPOSITORY
+                  value: /data/repo
+                - name: RESTIC_CACHE_DIR
+                  value: /cache
+                - name: RESTIC_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.secretName }}
+                      key: restic-password
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  # Restore a configured canary path if set, otherwise auto-select
+                  # the first non-empty file in the latest snapshot. Point
+                  # restoreDrill.canaryPath at a small, always-present file to keep
+                  # the weekly restore light and deterministic.
+                  CANARY="{{ .Values.restoreDrill.canaryPath }}"
+                  if [ -z "$CANARY" ]; then
+                    echo "No canaryPath configured; auto-selecting the first non-empty file from latest snapshot"
+                    CANARY=$(restic ls latest --host {{ .Values.restic.host }} --retry-lock 5m --json \
+                      | jq -r 'select(.type=="file" and .size>0) | .path' | head -1)
+                  fi
+                  if [ -z "$CANARY" ]; then
+                    echo "ERROR: could not determine a canary file to restore" >&2
+                    exit 1
+                  fi
+                  echo "Restoring canary: $CANARY"
+                  rm -rf /tmp/restore
+                  restic restore latest --host {{ .Values.restic.host }} --retry-lock 5m \
+                    --include "$CANARY" --target /tmp/restore
+                  if [ ! -s "/tmp/restore$CANARY" ]; then
+                    echo "ERROR: restored file /tmp/restore$CANARY is missing or empty" >&2
+                    exit 1
+                  fi
+                  echo "Restore drill OK: $(wc -c < "/tmp/restore$CANARY") bytes restored and verified for $CANARY"
+              resources:
+                {{- toYaml .Values.restoreDrill.resources | nindent 16 }}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: cache
+                  mountPath: /cache
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: data
+              nfs:
+                server: {{ .Values.nfs.server }}
+                path: {{ .Values.nfs.path }}
+            - name: cache
+              emptyDir: {}
+            - name: tmp
+              emptyDir: {}
+{{- end }}
