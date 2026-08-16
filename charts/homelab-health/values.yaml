@@ -1,0 +1,3 @@
+# No configurable values yet; the chart ships a single Grafana dashboard
+# ConfigMap picked up by the kube-prometheus-stack Grafana sidecar.
+{}
