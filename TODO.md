@@ -26,3 +26,4 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [ ] Implement selective Cloudflare cache purging (purge only changed URLs instead of everything)
 - [ ] Investigate network-booting the Pis (to avoid SD card failures and simplify node rebuilds)
 - [X] Build a general Homelab Health Dashboard in Grafana - single pane for service uptime, node health, storage, download pipeline (SABnzbd speed/queue), VPN tunnel health, cert expiry (see `charts/homelab-health/`)
+- [ ] Split node vs pod DNS: keep Tailscale-managed resolv.conf on nodes, but point kubelet at a clean resolv.conf (no ts.net search domain) via `kubelet-arg: ["resolv-conf=/etc/rancher/k3s/pod-resolv.conf"]` on epsilon+culex, then remove the ndots:1 workaround from arr-stack pods
