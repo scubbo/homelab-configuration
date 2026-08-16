@@ -58,8 +58,13 @@ spec:
                 secretKeyRef:
                   name: gluetun-protonvpn
                   key: wireguard-private-key
+            # Canada rather than Netherlands: NNTP through Proton NL exits is
+            # throttled to ~0.4 MB/s (any usenetserver farm, port 563 or 443)
+            # while plain HTTP through the same tunnel sustains 11 MB/s. A
+            # different exit region tests whether the shaping is NL-specific.
+            # See agentic-investigations/2026-07-12-gluetun-vpn-throughput-collapse.md
             - name: SERVER_COUNTRIES
-              value: "Netherlands"
+              value: "Canada"
             - name: FIREWALL_OUTBOUND_SUBNETS
               value: "10.0.0.0/8,192.168.0.0/16"
             ports:
