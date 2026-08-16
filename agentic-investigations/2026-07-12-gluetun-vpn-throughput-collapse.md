@@ -178,7 +178,31 @@ stacked problems, neither of them the July one:
 - Note: VPN cycle causes ~1 min of DNS failures in the pod (healthcheck churn) — wait
   it out before concluding anything.
 
-### Problem 2: usenetserver fr7 backend slow (still open, provider-side)
+### Problem 2: NNTP-specific throttling through Proton NL exits (still open)
+
+**Update 2026-08-16: NOT the fr7 farm.** Runtime tests via SAB's server config API
+eliminated both farm and port:
+
+| Target (all through the same NL tunnel) | Result |
+|---|---|
+| news.fr7.usenetserver.com:563 (geo-DNS default from NL) | ~0.4-1.1 MB/s |
+| news.fr7.usenetserver.com:443 | barely connects (1/20 conns) |
+| news.iad.usenetserver.com:563 (US farm, forced) | ~0.3-0.5 MB/s, 20/20 conns |
+| news.iad.usenetserver.com:443 | ~0.3-0.5 MB/s, 20/20 conns |
+| Plain HTTP single stream (leaseweb) | 11 MB/s |
+
+So the throttle applies to NNTP-over-TLS from the Proton NL exit regardless of
+destination farm/port, while bulk HTTP is unaffected. Remaining hypotheses:
+(a) Proton NL shaping this traffic pattern (many small TLS streams), or
+(b) usenetserver throttling VPN-source IPs / the account across all farms.
+Note July 13 hit 35 MB/s NNTP on the same account+exit+farm, so this shaping
+started somewhere in the intervening month. Next test: SERVER_COUNTRIES →
+Canada (different exit IP range + geo-DNS routes to a NA farm). If Canada is
+equally slow, suspect account-level throttling and contact usenetserver.
+
+(Original notes below predate the farm/port elimination.)
+
+#### Original notes (2026-08-15): usenetserver fr7 backend slow
 - With the tunnel proven at 11 MB/s (CDN single-stream), SAB NNTP still only sustains
   0.4-1.1 MB/s across 20 conns (~55 KB/s/conn).
 - `news.usenetserver.com` CNAMEs to `news.fr7.usenetserver.com` (185.90.196.64/96/128).
