@@ -219,3 +219,20 @@ equally slow, suspect account-level throttling and contact usenetserver.
 - WG sessions degrade over weeks; gluetun's healthcheck catches *dead* tunnels, not
   *slow* ones. Consider periodic VPN cycle (CronJob hitting the gluetun control server)
   or scheduled rollout restart of the gluetun-sidecar deployments.
+
+### Side-quest (2026-08-16): Tailscale search domain breaks DNS in fresh musl pods
+After the Canada switch + pod restart, SAB reported "Server name does not
+resolve" for ALL external names (google.com included), while nslookup worked.
+Root cause chain: Tailscale rewrites epsilon's /etc/resolv.conf with
+`search coin-pangolin.ts.net`; kubelet copies node search domains into pod
+resolv.conf AT POD CREATION (so only pods created after Tailscale's rewrite
+are affected - the 34-day-old pod predated it); ts.net is a real public
+domain answering NOERROR-with-no-records for names beneath it; musl's
+resolver treats NOERROR-empty as a definitive miss and aborts the search walk
+under ndots:5 without ever querying the bare name. Absolute names
+(trailing dot) resolved fine, confirming the mechanism - but pointing SAB at
+"news.usenetserver.com." fails TLS hostname validation, so that is not a
+workaround. Fix: `dnsConfig: {options: [{name: ndots, value: "1"}]}` on the
+sabnzbd/ytdlpaas pod specs. Broader fix to consider: `tailscale set
+--accept-dns=false` on the nodes so kubelet never inherits the ts.net search
+domain (affects every musl pod created while it's present).

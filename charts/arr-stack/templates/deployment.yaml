@@ -117,6 +117,17 @@ spec:
         gluetun-vpn: "true"
     spec:
       hostname: sabnzbd
+      # kubelet copies the node's DNS search domains (including Tailscale's
+      # coin-pangolin.ts.net) into the pod. ts.net is a real public domain
+      # that answers NOERROR-with-no-records for names under it, and musl's
+      # resolver treats that as a definitive miss and aborts the search walk,
+      # so external hostnames fail to resolve under the default ndots:5.
+      # ndots:1 makes any dotted name query absolute-first, sidestepping the
+      # search domains entirely.
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -656,6 +667,11 @@ spec:
         gluetun-vpn: "true"
     spec:
       hostname: ytdlpaas
+      # Same DNS search-domain fix as the sabnzbd pod above.
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
