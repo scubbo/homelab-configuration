@@ -1,0 +1,13 @@
+# The dashboard JSON lives in dashboards/ and is included via .Files.Get so
+# Grafana's own curly-brace legend syntax never collides with Helm templating.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homelab-health-dashboard
+  labels:
+    app.kubernetes.io/name: homelab-health
+    # Picked up by the kube-prometheus-stack Grafana dashboard sidecar
+    grafana_dashboard: "1"
+data:
+  homelab-health.json: |-
+{{ .Files.Get "dashboards/homelab-health.json" | indent 4 }}

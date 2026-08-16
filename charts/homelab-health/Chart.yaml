@@ -1,0 +1,7 @@
+apiVersion: v2
+name: homelab-health
+description: Single-pane Grafana dashboard for overall homelab health - service uptime, node health, storage, download pipeline, and cert expiry
+
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
