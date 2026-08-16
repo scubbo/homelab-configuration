@@ -1,0 +1,103 @@
+{{ if and .Values.sabnzbd.enabled .Values.sabnzbd.metrics.enabled }}
+# Exposes SABnzbd queue/speed statistics to Prometheus via exportarr.
+# Runs as a separate deployment (NOT a sidecar in the sabnzbd pod) so metrics
+# collection survives sabnzbd restarts and stays outside the gluetun VPN.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-sabnzbd-exporter
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sabnzbd-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "arr-stack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: sabnzbd-exporter
+  template:
+    metadata:
+      labels:
+        {{- include "arr-stack.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: sabnzbd-exporter
+    spec:
+      containers:
+        - name: exportarr
+          image: "ghcr.io/onedr0p/exportarr:{{ .Values.sabnzbd.metrics.exporterTag }}"
+          args: ["sabnzbd"]
+          env:
+            - name: PORT
+              value: "9707"
+            - name: URL
+              value: "http://{{ include "arr-stack.fullname" . }}-sabnzbd:{{ .Values.service.sabnzbdWebPort }}"
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.sabnzbd.metrics.apiKeySecret }}
+                  key: api-key
+          ports:
+            - name: metrics
+              containerPort: 9707
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-sabnzbd-exporter
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sabnzbd-exporter
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 9707
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    {{- include "arr-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: sabnzbd-exporter
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-sabnzbd-exporter
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: sabnzbd-exporter
+    # Required for Prometheus Operator to discover this monitor
+    release: prometheus
+spec:
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "arr-stack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: sabnzbd-exporter
+{{ end }}

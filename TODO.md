@@ -25,3 +25,4 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [X] Auto-purge Cloudflare cache after publishing a new blog entry (ArgoCD PostSync hook in blog-deployment repo)
 - [ ] Implement selective Cloudflare cache purging (purge only changed URLs instead of everything)
 - [ ] Investigate network-booting the Pis (to avoid SD card failures and simplify node rebuilds)
+- [ ] Build a general Homelab Health Dashboard in Grafana - single pane for service uptime, node health, storage, download pipeline (SABnzbd speed/queue), VPN tunnel health, cert expiry. Closest existing: the uptime-monitoring dashboard (reachability only) and Jellyfin library dashboard.

@@ -1,0 +1,44 @@
+{{ if and .Values.sabnzbd.enabled .Values.sabnzbd.metrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-sabnzbd-alerts
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+    # Required for Prometheus Operator to discover this rule
+    release: prometheus
+spec:
+  groups:
+    - name: sabnzbd
+      interval: 30s
+      rules:
+        # Downloads are running but far below the tunnel's known capacity.
+        # The usual culprit is a degraded long-lived WireGuard session in the
+        # gluetun sidecar (throughput collapses ~1000x while the tunnel still
+        # passes healthchecks); cycling the VPN session or restarting the pod
+        # fixes it. See
+        # agentic-investigations/2026-07-12-gluetun-vpn-throughput-collapse.md
+        - alert: SabnzbdSlowDownloads
+          expr: |
+            (sabnzbd_queue_length > 0)
+            and (sabnzbd_paused == 0)
+            and (avg_over_time(sabnzbd_speed_bps[30m]) < {{ .Values.sabnzbd.metrics.slowSpeedBytesPerSec }})
+          for: 1h
+          labels:
+            severity: critical
+          annotations:
+            summary: "SABnzbd downloading unusually slowly"
+            description: "SABnzbd has a non-empty, unpaused queue but its 30m average download speed is {{ "{{" }} $value | humanize {{ "}}" }}B/s (threshold: {{ .Values.sabnzbd.metrics.slowSpeedBytesPerSec | int }} B/s). Likely a degraded gluetun WireGuard session - restart the sabnzbd deployment."
+
+        # The exporter is running but cannot collect from SABnzbd (bad API
+        # key, sabnzbd down, etc). Exporter-down-entirely is covered by the
+        # kube-prometheus-stack TargetDown alert.
+        - alert: SabnzbdExporterError
+          expr: sabnzbd_collector_error > 0
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "SABnzbd metrics collection failing"
+            description: "The SABnzbd exporter cannot collect stats from SABnzbd. Download-speed alerting is blind until this is fixed."
+{{ end }}

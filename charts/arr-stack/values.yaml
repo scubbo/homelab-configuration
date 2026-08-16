@@ -164,6 +164,18 @@ nzbget:
 sabnzbd:
   enabled: true
   tag: "4.5.1"
+  metrics:
+    enabled: true
+    exporterTag: "v2.3.0"
+    # Created manually (current secrets convention):
+    #   kubectl create secret generic sabnzbd-api-key -n arr-stack \
+    #     --from-literal=api-key=<key from SABnzbd Config->General>
+    apiKeySecret: sabnzbd-api-key
+    # SabnzbdSlowDownloads fires when the queue is busy but sustained speed is
+    # below this (bytes/sec). Healthy tunnel sustains 10+ MB/s; a degraded
+    # WireGuard session collapses to ~50 KB/s. Set between those, but below
+    # provider-side slow spells (~1 MB/s) to avoid alerting on them.
+    slowSpeedBytesPerSec: 500000
   resources:
     requests:
       cpu: 100m
@@ -183,6 +195,17 @@ ytdlpaas:
     limits:
       cpu: 2
       memory: 1Gi
+
+vpnCycle:
+  enabled: true
+  # Mondays 05:30 Pacific: weekly, in the quietest download window
+  schedule: "30 5 * * 1"
+  # Matches the cluster's k8s version (v1.32.6+k3s1)
+  kubectlTag: "v1.32.6"
+  # Deployments carrying the gluetun-vpn sidecar label
+  deployments:
+    - sabnzbd
+    - ytdlpaas
 
 volume:
   configNFSServer: rassigma.avril
