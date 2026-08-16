@@ -1,0 +1,84 @@
+{{ if .Values.vpnCycle.enabled }}
+# Weekly restart of the gluetun-sidecar deployments. Long-lived WireGuard
+# sessions through gluetun degrade over multi-week lifetimes (observed ~1000x
+# throughput collapse after 33 days), and gluetun's healthcheck only detects
+# dead tunnels, not slow ones. A pod restart establishes a fresh WireGuard
+# session and rebuilds SABnzbd's NNTP connection pool in one action.
+# See agentic-investigations/2026-07-12-gluetun-vpn-throughput-collapse.md
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-vpn-cycle
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vpn-cycle
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-vpn-cycle
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vpn-cycle
+rules:
+  # `kubectl rollout restart` reads the deployment then patches its pod
+  # template annotations.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-vpn-cycle
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vpn-cycle
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "arr-stack.fullname" . }}-vpn-cycle
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "arr-stack.fullname" . }}-vpn-cycle
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "arr-stack.fullname" . }}-vpn-cycle
+  labels:
+    {{- include "arr-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vpn-cycle
+spec:
+  schedule: {{ .Values.vpnCycle.schedule | quote }}
+  timeZone: America/Los_Angeles
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: {{ include "arr-stack.fullname" . }}-vpn-cycle
+          containers:
+            - name: rollout-restart
+              image: "rancher/kubectl:{{ .Values.vpnCycle.kubectlTag }}"
+              command: ["kubectl"]
+              args:
+                - rollout
+                - restart
+                {{- range .Values.vpnCycle.deployments }}
+                - deployment/{{ include "arr-stack.fullname" $ }}-{{ . }}
+                {{- end }}
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 64Mi
+{{ end }}
