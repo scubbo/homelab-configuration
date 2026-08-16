@@ -1,6 +1,6 @@
 # SABnzbd/Radarr downloads slow — gluetun VPN tunnel throughput collapse (2026-07-12)
 
-**Status: SOLVED.** Root cause: epsilon's default **208 KB socket buffers**
+**Status: SOLVED (recurred 2026-08-15 with a DIFFERENT root cause — see follow-up at bottom).** Root cause: epsilon's default **208 KB socket buffers**
 (`net.core.{r,w}mem_max`) + **`cubic`** congestion control crippled WireGuard on the
 high-BDP VPN path. Fix: raise `net.core.{r,w}mem_max` to 8 MB + switch to **BBR** with
 **`fq`** qdisc, then recreate the gluetun pod. Result: SAB NNTP **0.5 → ~35 MB/s**
@@ -154,3 +154,44 @@ kubectl -n arr-stack exec "$SAB" -c sabnzbd -- ping -c 20 -i 0.2 8.8.8.8 # loss/
 3. **`kubectl rollout restart deployment/arr-stack-ytdlpaas -n arr-stack`** — bring the
    other gluetun pod onto the working config.
 4. Confirm both pods sustain high throughput; watch the backlog drain.
+
+---
+
+## Follow-up: recurrence with different root cause (2026-08-15)
+
+SAB observed at ~87-440 KB/s with 357 GB queued. The July sysctl fix was intact
+(verified: epsilon `/etc/sysctl.d/99-network-tuning.conf` present, rmem/wmem 8 MB, bbr,
+fq all live; pod netns has bbr; uptime 233 days so no reboot). This time there were TWO
+stacked problems, neither of them the July one:
+
+### Problem 1: 33-day-old WireGuard session degraded (~1000x)
+- Decisive test: epsilon direct → leaseweb = 45 MB/s; SAB pod through tunnel = 45 KB/s.
+- BUT ytdlpaas (same node, same Kyverno policy, different WG session) = 11.5 MB/s.
+- SAB's tunnel was the *same session established 2026-07-13* (the one verified fast
+  post-fix). It degraded over 33 days.
+- **Fix without pod restart:** gluetun control server —
+  `wget -qO- --method=PUT --body-data='{"status":"stopped"}' http://127.0.0.1:8000/v1/vpn/status`
+  (then `"running"`). Fresh session to the SAME Amsterdam server → 11.25 MB/s sustained.
+  So it's session-staleness, not server choice.
+- After a VPN cycle, SAB's NNTP connection pool stays half-wedged (7/20 conns,
+  handshake timeouts). Fix: `api?mode=restart` on SAB to rebuild the pool (20/20 after).
+- Note: VPN cycle causes ~1 min of DNS failures in the pod (healthcheck churn) — wait
+  it out before concluding anything.
+
+### Problem 2: usenetserver fr7 backend slow (still open, provider-side)
+- With the tunnel proven at 11 MB/s (CDN single-stream), SAB NNTP still only sustains
+  0.4-1.1 MB/s across 20 conns (~55 KB/s/conn).
+- `news.usenetserver.com` CNAMEs to `news.fr7.usenetserver.com` (185.90.196.64/96/128).
+  SAB logged `Connection reset by peer` to fr7 starting ~13:35 UTC, hours BEFORE any
+  intervention → provider-side degradation or throttling of Proton exit IPs.
+- Changing Proton exit (Amsterdam 169.150.196.140 → Rotterdam 89.39.107.205) improved
+  0.39 → 1.13 MB/s sustained, so per-exit-IP throttling is plausible.
+- No SAB-side limits (speedlimit 0, bandwidth_max empty, bandwidth_perc 100).
+- Left at ~1.1 MB/s (queue ETA ~4-7 days). Options if it persists: different
+  SERVER_COUNTRIES (GitOps: manifests/gluetun/kyverno-gluetun-inject.yaml), alternate
+  usenetserver port (443/80), or wait out fr7.
+
+### Durable-fix ideas (discuss with Jack)
+- WG sessions degrade over weeks; gluetun's healthcheck catches *dead* tunnels, not
+  *slow* ones. Consider periodic VPN cycle (CronJob hitting the gluetun control server)
+  or scheduled rollout restart of the gluetun-sidecar deployments.
