@@ -178,7 +178,14 @@ stacked problems, neither of them the July one:
 - Note: VPN cycle causes ~1 min of DNS failures in the pod (healthcheck churn) — wait
   it out before concluding anything.
 
-### Problem 2: NNTP-specific throttling through Proton NL exits (still open)
+### Problem 2: NNTP-specific throttling through Proton NL exits (SOLVED 2026-08-16)
+
+**RESOLVED: Proton NL exits shape NNTP-over-TLS; Canada exits do not.** After
+merging the SERVER_COUNTRIES Netherlands→Canada switch (PR #39) and the
+ndots:1 DNS fix (PR #40), SAB sustained **21.84 MB/s** over 150s (instant
+rate 33.9 MB/s) through a Toronto exit to the same usenetserver account -
+~40x the NL exit's ~0.5 MB/s. Queue ETA dropped from weeks to hours. The
+account and usenetserver's farms were never the problem.
 
 **Update 2026-08-16: NOT the fr7 farm.** Runtime tests via SAB's server config API
 eliminated both farm and port:
@@ -200,7 +207,7 @@ started somewhere in the intervening month. Next test: SERVER_COUNTRIES →
 Canada (different exit IP range + geo-DNS routes to a NA farm). If Canada is
 equally slow, suspect account-level throttling and contact usenetserver.
 
-(Original notes below predate the farm/port elimination.)
+(Original notes below predate the farm/port elimination and resolution.)
 
 #### Original notes (2026-08-15): usenetserver fr7 backend slow
 - With the tunnel proven at 11 MB/s (CDN single-stream), SAB NNTP still only sustains
