@@ -51,19 +51,33 @@ helm install zfs-nfs democratic-csi/democratic-csi \
 # In your values file:
 controller:
   driver:
-    image: docker.io/democraticcsi/democratic-csi@sha256:7fffba3553a0613c9b2c709588d5658cdc80b0126c9157318224228d8a5f7d35
+    image: docker.io/democraticcsi/democratic-csi:v1.9.5@sha256:fc3b7d7ed3a616714139525075312758e23a5d425ffb539ad12c9bd20fb6001f
     imagePullPolicy: IfNotPresent
 
 node:
   driver:
-    image: docker.io/democraticcsi/democratic-csi@sha256:7fffba3553a0613c9b2c709588d5658cdc80b0126c9157318224228d8a5f7d35
+    image: docker.io/democraticcsi/democratic-csi:v1.9.5@sha256:fc3b7d7ed3a616714139525075312758e23a5d425ffb539ad12c9bd20fb6001f
     imagePullPolicy: IfNotPresent
 ```
 
-This SHA corresponds to the `next` tag as of December 2025, which includes fixes for:
+This SHA is the **manifest-list** digest for `v1.9.5` (released 2026-01-07), which includes fixes for:
 - TrueNAS 13.0 compatibility
 - NFS share creation API changes
 - Response body handling improvements
+
+**Warning:** When pinning by digest, always use the multi-arch *manifest-list* digest, NOT a platform-specific manifest digest. The cluster has both amd64 (epsilon, culex) and arm64 (rasnu1) nodes; a platform-specific digest bypasses architecture resolution and will crashloop with `exec format error` on the other architecture. Verify a digest is a manifest list with:
+
+```bash
+docker manifest inspect docker.io/democraticcsi/democratic-csi@sha256:<digest>
+# mediaType must be application/vnd.docker.distribution.manifest.list.v2+json (or OCI image index),
+# and the manifests array must include both linux/amd64 and linux/arm64
+```
+
+The manifest-list digest for a tag can be found with:
+
+```bash
+curl -s "https://hub.docker.com/v2/repositories/democraticcsi/democratic-csi/tags/<tag>" | jq -r .digest
+```
 
 **Configuration Example (NFS):**
 
@@ -110,7 +124,7 @@ To upgrade to a newer version:
 kubectl get pod -n democratic-csi -o jsonpath='{.items[?(@.metadata.name contains "controller")].status.containerStatuses[?(@.name=="csi-driver")].imageID}'
 ```
 
-2. Identify the target SHA from Docker Hub or GitHub
+2. Identify the target SHA from Docker Hub or GitHub (must be a multi-arch manifest-list digest — see warning above)
 3. Update your values file with the new SHA
 4. Upgrade the Helm release:
 ```bash
