@@ -3,8 +3,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/scubbo/pl8calcul8
   pullPolicy: IfNotPresent
-  # Pin to a sha-<gitsha> tag once the GitHub Actions workflow has published one.
-  tag: "latest"
+  tag: "sha-c2919ea53500e2116be85bdd8329115173333c3c"
 
 imagePullSecrets: []
 nameOverride: ""
