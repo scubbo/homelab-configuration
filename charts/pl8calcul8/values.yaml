@@ -1,32 +1,24 @@
 replicaCount: 1
-
 image:
   repository: ghcr.io/scubbo/pl8calcul8
   pullPolicy: IfNotPresent
-  tag: "sha-c2919ea53500e2116be85bdd8329115173333c3c"
-
+  tag: "sha-4df8ed43f974c64de612dea905aab2fff39761a6"
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   create: true
   annotations: {}
   name: ""
-
 podAnnotations: {}
-
 podSecurityContext:
   fsGroup: 1000
-
 securityContext:
   runAsUser: 1000
   runAsNonRoot: true
-
 service:
   type: ClusterIP
   port: 8080
-
 ingress:
   enabled: true
   className: "traefik"
@@ -37,15 +29,12 @@ ingress:
         - path: /
           pathType: ImplementationSpecific
   tls: []
-
 persistence:
   storageClass: "freenas-iscsi-csi"
   size: 1Gi
-
 # Name of the manually-created Secret holding BACKUP_TOKEN
 # (see secret.example.yaml).
 secretName: pl8calcul8-secrets
-
 resources:
   requests:
     cpu: 100m
@@ -53,16 +42,11 @@ resources:
   limits:
     cpu: 500m
     memory: 512Mi
-
 autoscaling:
   enabled: false
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 livenessProbe:
   httpGet:
     path: /healthz
@@ -70,7 +54,6 @@ livenessProbe:
   initialDelaySeconds: 15
   periodSeconds: 30
   timeoutSeconds: 10
-
 readinessProbe:
   httpGet:
     path: /healthz
