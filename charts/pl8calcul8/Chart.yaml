@@ -1,0 +1,6 @@
+apiVersion: v2
+name: pl8calcul8
+description: Backup server for the pl8calcul8 weightlifting tracker app
+type: application
+version: 0.1.0
+appVersion: "latest"
