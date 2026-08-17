@@ -1,6 +1,9 @@
 # Default values for openclaw.
 
-replicaCount: 1
+# Scaled to zero: service not actively in use. The app was crashlooping on
+# unreachable Slack API calls; restore replicaCount: 1 (and fix Slack
+# connectivity/credentials) to bring it back.
+replicaCount: 0
 
 image:
   repository: ghcr.io/openclaw/openclaw
@@ -30,6 +33,9 @@ service:
 ingress:
   enabled: true
   className: "traefik"
+  labels:
+    # Excluded from blackbox uptime probing while the service is scaled to zero
+    uptime-monitoring/probe: "false"
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
   hosts:

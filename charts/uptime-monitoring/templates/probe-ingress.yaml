@@ -28,6 +28,12 @@ spec:
 
       # Relabel configuration to construct proper URLs
       relabelingConfigs:
+      # Opt-out: skip Ingresses labeled with uptime-monitoring/probe: "false"
+      # (label name is sanitized by Kubernetes SD: non-alphanumerics become underscores)
+      - sourceLabels:
+        - __meta_kubernetes_ingress_label_uptime_monitoring_probe
+        regex: "false"
+        action: drop
       # Filter: Only keep Ingresses with ingressClassName matching our target
       - sourceLabels:
         - __meta_kubernetes_ingress_class_name
