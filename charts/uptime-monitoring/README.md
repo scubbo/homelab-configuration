@@ -65,7 +65,13 @@ No action required! Any new Ingress with `ingressClassName: traefik` will be aut
 
 ## Excluding Services from Monitoring
 
-To exclude a specific Ingress from monitoring, change its `ingressClassName` or add label-based exclusions to `values.yaml`.
+To exclude a specific Ingress from monitoring, label it with `uptime-monitoring/probe: "false"`:
+
+```yaml
+metadata:
+  labels:
+    uptime-monitoring/probe: "false"
+```
 
 ## Dependencies
 
