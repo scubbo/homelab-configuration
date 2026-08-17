@@ -20,7 +20,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
       "id": 1,
       "options": {
         "colorMode": "background",
@@ -57,7 +57,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
       "id": 2,
       "options": {
         "colorMode": "background",
@@ -95,7 +95,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
       "id": 3,
       "options": {
         "colorMode": "background",
@@ -133,7 +133,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
       "id": 4,
       "options": {
         "colorMode": "background",
@@ -240,6 +240,8 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "decimals": 0,
+          "max": 90,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -248,7 +250,7 @@
               { "color": "green", "value": 30 }
             ]
           },
-          "unit": "d"
+          "unit": "none"
         },
         "overrides": []
       },
