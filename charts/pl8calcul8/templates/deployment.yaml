@@ -38,11 +38,11 @@ spec:
           env:
             - name: DATA_DIR
               value: /data
-            - name: BACKUP_TOKEN
+            - name: BACKUP_TOKENS
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.secretName }}
-                  key: backup-token
+                  key: backup-tokens
           ports:
             - name: http
               containerPort: 8080
