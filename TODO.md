@@ -15,6 +15,7 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [ ] Unseal Vault after restart (`kubectl exec -n vault vault-0 -- vault operator unseal`)
 - [ ] Merge `homelab-hardening` branch after confirming monitoring works (health checks, resource limits, deprecated API cleanup, image pinning)
 - [X] Install NVIDIA k8s-device-plugin for GPU-accelerated Jellyfin transcoding (see https://github.com/NVIDIA/k8s-device-plugin)
+- [ ] Upgrade Jellyfin Server from 10.10.7 to a current 10.11.x release when streaming users can tolerate maintenance; Jellyfin Android 2.7.2 requires Server API 10.11.0 or newer
 - [ ] Set up a local CA for `.avril` TLD so internal services can get trusted TLS certs without needing `.scubbo.org` subdomains (currently yt-dlp-aas uses `yt-dlp-aas.scubbo.org` as a workaround for mixed-content browser restrictions)
 - [ ] Set up Renovate for automated dependency updates (see https://docs.renovatebot.com/ - consider GitHub App for simplicity or self-hosted CronJob for full control)
 - [~] Set up SSO via Authentik (ArgoCD done, Jellyfin/Grafana/others pending)
