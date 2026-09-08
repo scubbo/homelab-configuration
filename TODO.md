@@ -12,8 +12,8 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [ ] Consider switching from VSO to ESO if multi-backend support becomes needed (AWS Secrets Manager, GCP, etc.) - see [docs/todo/eso-vs-vso-comparison.md](docs/todo/eso-vs-vso-comparison.md)
 - [X] Complete Telegram alerting setup: create bot, get chat ID, create `alertmanager-telegram` secret (see [manifests/alertmanager-telegram/README.md](manifests/alertmanager-telegram/README.md))
 - [ ] Investigate rasnu1 Pi - Tailscale offline (34+ days), DNS broken due to Tailscale resolver configured but not connected. Node cordoned. Check power supply, SD card, `dmesg` for under-voltage warnings, and fix Tailscale connectivity
-- [ ] Unseal Vault after restart (`kubectl exec -n vault vault-0 -- vault operator unseal`)
-- [ ] Merge `homelab-hardening` branch after confirming monitoring works (health checks, resource limits, deprecated API cleanup, image pinning)
+- [ ] Configure Vault to automatically unseal after every restart; manual `vault operator unseal` is only a temporary recovery procedure
+- [X] Merge `homelab-hardening` branch after confirming monitoring works (health checks, resource limits, deprecated API cleanup, image pinning)
 - [X] Install NVIDIA k8s-device-plugin for GPU-accelerated Jellyfin transcoding (see https://github.com/NVIDIA/k8s-device-plugin)
 - [X] Upgrade Jellyfin Server from 10.10.7 to a current 10.11.x release when streaming users can tolerate maintenance; Jellyfin Android 2.7.2 requires Server API 10.11.0 or newer
 - [ ] Check for a Jellyfin 10.11-compatible Playback Reporting plugin before re-enabling it; the currently available 17.0.0.0 release causes playback progress requests to fail
