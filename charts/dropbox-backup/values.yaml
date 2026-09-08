@@ -73,3 +73,61 @@ resources:
     # kernel's dirty_ratio hard-throttle point (~20% of RAM), so the writer is
     # throttled before the container can OOM, even if galactus writeback stalls.
     memory: 16Gi
+
+# Long-lived exporter that opens the restic repo on a schedule and publishes
+# backup-health metrics for Prometheus. restic runs as a short-lived CronJob with
+# nothing to scrape, so this is the only continuously-scrapable view of health.
+exporter:
+  enabled: true
+  image:
+    repository: ngosang/restic-exporter
+    tag: "2.1.2"
+  # Seconds between repo reads. Hourly keeps the exporter well clear of the 03:17
+  # nightly window; its reads only take a shared lock (see cronjob.yaml).
+  refreshInterval: 3600
+  port: 8001
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      # restic loads the repo index into memory for stats/check.
+      memory: 512Mi
+
+# Weekly end-to-end restorability proof: restore a real file and verify its
+# contents. `restic check` proves integrity; only a restore proves restorability.
+restoreDrill:
+  enabled: true
+  # Sunday 04:47, off the :00 mark and clear of the 03:17 nightly backup.
+  schedule: "47 4 * * 0"
+  # File to restore from the latest snapshot. If empty, the drill auto-selects the
+  # first non-empty file in the latest snapshot. Point this at a small,
+  # always-present file to keep the weekly restore light and deterministic.
+  canaryPath: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+
+alerting:
+  enabled: true
+  # Fire DropboxBackupStale if no fresh snapshot within this window. 26h > the 24h
+  # schedule interval, so a single missed night doesn't false-alarm.
+  staleAfterSeconds: 93600
+  # Fire DropboxRestoreDrillStale if no successful drill within this window. 8d >
+  # the 7d drill interval, giving one full cycle of slack.
+  drillStaleAfterSeconds: 691200
+  # A deliberate monthly calendar nudge (not a failure) delivered through the
+  # alert->Telegram path, reminding Jack to do a manual full-restore spot-check.
+  # dayOfMonth/hour are evaluated in UTC (Prometheus day_of_month()/hour()).
+  manualDrillReminder:
+    enabled: true
+    dayOfMonth: 1
+    hour: 16
+
+dashboard:
+  enabled: true

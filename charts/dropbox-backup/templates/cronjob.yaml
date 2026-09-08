@@ -78,14 +78,19 @@ spec:
                     echo "Initialising restic repository at $RESTIC_REPOSITORY"
                     restic init
                   fi
-                  restic backup /data/mirror --host {{ .Values.restic.host }} --tag dropbox
-                  restic forget --host {{ .Values.restic.host }} --tag dropbox \
+                  # --retry-lock waits instead of erroring if another reader holds
+                  # a shared lock: the restic-exporter reads the repo hourly and the
+                  # weekly restore-drill restores from it, so forget --prune's
+                  # exclusive lock can briefly contend. (An overlapping run once
+                  # errored a nightly pod outright before this was added.)
+                  restic backup /data/mirror --host {{ .Values.restic.host }} --tag dropbox --retry-lock 5m
+                  restic forget --host {{ .Values.restic.host }} --tag dropbox --retry-lock 5m \
                     --keep-daily {{ .Values.retention.daily }} \
                     --keep-weekly {{ .Values.retention.weekly }} \
                     --keep-monthly {{ .Values.retention.monthly }} \
                     --keep-yearly {{ .Values.retention.yearly }} \
                     --prune
-                  restic check
+                  restic check --retry-lock 5m
               resources:
                 {{- toYaml .Values.resources | nindent 16 }}
               volumeMounts:
