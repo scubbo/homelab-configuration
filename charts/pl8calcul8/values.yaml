@@ -2,7 +2,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/scubbo/pl8calcul8
   pullPolicy: IfNotPresent
-  tag: "sha-32d98486741a9b5bfb92405bdb623fb758eba634"
+  tag: "sha-41b6c836dc1574978d64a2d9ff9bcbfc120afd25"
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
