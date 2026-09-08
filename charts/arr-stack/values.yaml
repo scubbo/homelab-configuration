@@ -101,10 +101,7 @@ ombi:
 
 sonarr:
   enabled: true
-  # Hard-coded to address https://forums.sonarr.tv/t/unraid-binhex-sonarr-crashes-constantly-epic-fail/33175/
-  # https://github.com/Sonarr/Sonarr/issues/5929 / https://old.reddit.com/r/sonarr/comments/15p160j/v4_consoleapp_epic_fail_error/
-#  tag: "develop-version-4.0.0.613"
-  tag: "4.0.7"
+  tag: "4.0.19.2979-ls322"
   resources:
     requests:
       cpu: 100m
