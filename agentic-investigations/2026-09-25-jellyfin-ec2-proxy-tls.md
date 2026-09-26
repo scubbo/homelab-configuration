@@ -131,3 +131,4 @@ The work is complete only when all of the following are true:
 2. Provision the replacement stack and migrate through its documented cutover, rather than modifying the legacy stack in place.
 3. Add the dedicated external HTTPS Blackbox probe and verify the Alertmanager notification path after cutover.
 4. Add AWS CloudWatch alert ingestion to Grafana. Until then, the dedicated SNS email is the operational notification path for EC2 status-check and AWS Backup failures.
+5. Track the 90-day Tailscale auth-key expiry through an SSM Advanced-tier parameter policy. It alerts 30 and 7 days beforehand because its expiry only prevents enrollment of a future replacement proxy; it does not disconnect an already-enrolled tagged proxy.

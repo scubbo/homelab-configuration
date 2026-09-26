@@ -460,6 +460,39 @@
           ]
         }
       }
+    },
+    "TailscaleAuthKeyExpiryRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "Notify when the stored Tailscale auth key is nearing or has reached its tracked expiration.",
+        "EventPattern": {
+          "source": [
+            "aws.ssm"
+          ],
+          "detail-type": [
+            "Parameter Store Policy Action"
+          ],
+          "detail": {
+            "parameter-name": [
+              {
+                "Ref": "TailscaleAuthKeyParameterName"
+              }
+            ],
+            "policy-type": [
+              "ExpirationNotification",
+              "Expiration"
+            ]
+          }
+        },
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "ProxyAlertTopic"
+            },
+            "Id": "tailscale-auth-key-expiry-notification"
+          }
+        ]
+      }
     }
   },
   "Outputs": {

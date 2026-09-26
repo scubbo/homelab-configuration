@@ -30,6 +30,7 @@ assert "ProxyElasticIp" in resources
 assert "ProxyAlertTopic" in resources
 assert "ProxyAlertEmailSubscription" in resources
 assert "ProxyAlertTopicPolicy" in resources
+assert "TailscaleAuthKeyExpiryRule" in resources
 assert resources["ProxyStateVolume"]["DeletionPolicy"] == "Snapshot"
 assert resources["ProxyStateVolume"]["UpdateReplacePolicy"] == "Snapshot"
 assert resources["ProxyStateVolume"]["Properties"]["Encrypted"] is True
@@ -47,6 +48,15 @@ alert_topic_policy_statements = resources["ProxyAlertTopicPolicy"]["Properties"]
 assert {statement["Principal"]["Service"] for statement in alert_topic_policy_statements} == {
     "cloudwatch.amazonaws.com",
     "events.amazonaws.com",
+}
+auth_key_expiry_pattern = resources["TailscaleAuthKeyExpiryRule"]["Properties"]["EventPattern"]
+assert auth_key_expiry_pattern == {
+    "source": ["aws.ssm"],
+    "detail-type": ["Parameter Store Policy Action"],
+    "detail": {
+        "parameter-name": [{"Ref": "TailscaleAuthKeyParameterName"}],
+        "policy-type": ["ExpirationNotification", "Expiration"],
+    },
 }
 launch_template_data = resources["ProxyLaunchTemplate"]["Properties"]["LaunchTemplateData"]
 assert "SecurityGroupIds" not in launch_template_data

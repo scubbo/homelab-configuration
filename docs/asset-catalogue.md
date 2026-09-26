@@ -35,7 +35,7 @@ Do **not** store secret material, private keys, API tokens, recovery codes, or c
 | --- | --- | --- | --- |
 | Cloudflare API credential | Kubernetes Secret `security/cloudflare-api-key-secret` | cert-manager | Used for Let's Encrypt DNS-01. Do not copy its value into Git. |
 | Cloudflare Tunnel token and API token | Kubernetes Secrets in `cloudflared` | cloudflared | Tunnel token connects the tunnel; API token updates tunnel configuration and DNS. |
-| Tailscale proxy auth key | SSM SecureString `/jellyfin-proxy/tailscale-auth-key` | Jellyfin EC2 proxy bootstrap | Reusable tagged key with least privilege. Rotate by replacing the SecureString and re-enrolling a replacement proxy. |
+| Tailscale proxy auth key | SSM SecureString `/jellyfin-proxy/tailscale-auth-key` | Jellyfin EC2 proxy bootstrap | Reusable tagged key with least privilege. Expires 2026-12-25 (tracked conservatively); SSM policy emits alerts 30 and 7 days beforehand. Rotate by replacing the SecureString and re-enrolling a replacement proxy. |
 | Jellyfin proxy ACME account and private key | Encrypted NPM state volume | Nginx Proxy Manager | Created and renewed by NPM. Protected by AWS Backup; never export to Git. |
 | Jellyfin metrics API key | Kubernetes Secret `jellyfin/jellyfin-metrics-api-key` | Jellyfin metrics exporter | Rotate in Jellyfin and update the Kubernetes Secret together. |
 | VPN credentials | Kubernetes Secrets `vpn/gluetun-protonvpn` and `arr-stack/gluetun-protonvpn` | Gluetun | Planned migration to Vault/secret operator remains documented in `docs/todo/vault-to-k8s-secrets.md`. |
@@ -48,4 +48,4 @@ Do **not** store secret material, private keys, API tokens, recovery codes, or c
 | Kubernetes services | Prometheus, Blackbox Exporter, Alertmanager | Ingress discovery covers Traefik endpoints. |
 | Jellyfin public HTTPS endpoint | Dedicated static Blackbox probe | Must independently test `https://jellyfin.scubbo.org/web/`; Kubernetes Ingress monitoring is not sufficient. Enable `externalTargets` only after the HTTPS cutover succeeds. |
 | Jellyfin proxy state | AWS Backup recovery point and deletion snapshots | A restoration exercise is required after initial migration and after material recovery changes. |
-| Jellyfin proxy AWS infrastructure alerts | Dedicated SNS topic with email subscription | EC2 status-check and AWS Backup failures email `scubbojj@gmail.com` after subscription confirmation. Grafana ingestion is a planned follow-up. |
+| Jellyfin proxy AWS infrastructure alerts | Dedicated SNS topic with email subscription | EC2 status-check, AWS Backup, and Tailscale auth-key expiry events email `scubbojj@gmail.com` after subscription confirmation. Grafana ingestion is a planned follow-up. |
