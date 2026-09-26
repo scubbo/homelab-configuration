@@ -4,11 +4,13 @@
 
 Serve `https://jellyfin.scubbo.org` from the EC2-based Jellyfin proxy with a publicly trusted certificate that renews without a recurring manual task, survives routine restarts, and alerts before a certificate or HTTPS endpoint fails.
 
-## Port clarification required
+## Decisions confirmed
 
-The request says HTTPS should be enabled on port **43**. HTTPS conventionally uses TCP **443**; TCP 43 is the WHOIS service. A TLS listener can technically run on 43, but clients would have to use `https://jellyfin.scubbo.org:43/`, and some networks may block it.
-
-This plan assumes **TCP 443** is intended. If TCP 43 is really required, open 43 in the EC2 security group, publish `43:443` from the proxy container, and make the monitoring target explicitly use `https://jellyfin.scubbo.org:43/web/`. It should not replace the standard 443 listener unless there is a concrete client requirement.
+- HTTPS listens on standard TCP **443**. The mention of TCP 43 was a typo.
+- AWS infrastructure definitions live in this repository under `non-k8s-iac/aws-cloudformation/`.
+- The public proxy uses AWS Systems Manager Session Manager rather than public SSH. NPM administration is reached only through an SSM port-forward; see `non-k8s-iac/aws-cloudformation/jellyfin-proxy/README.md`.
+- `docs/asset-catalogue.md` is the maintained inventory for hosts, domains, credentials, access patterns, and recovery dependencies.
+- `jellyfin.scubbo.org` must remain Cloudflare **DNS-only**. Cloudflare proxying of video traffic is forbidden.
 
 ## Current state observed
 
@@ -125,7 +127,7 @@ The work is complete only when all of the following are true:
 
 ## Follow-up decisions
 
-1. Confirm whether the requested port is 443 (recommended) or truly 43.
-2. Decide where the reviewed AWS CloudFormation source should live. This repository currently has no dedicated AWS infrastructure layout; do not invent one without agreeing the repository boundary and deployment workflow.
-3. Decide whether the public SSH rule should be replaced by SSM Session Manager. Leaving TCP 22 open to the Internet is not required for certificate renewal and expands the proxy's attack surface.
-4. Decide whether Cloudflare proxying is desired. The plan works with the current direct DNS configuration and avoids adding Cloudflare TLS mode/cache behavior to Jellyfin until there is a reason to do so.
+1. Create the SSM SecureString containing the reusable, tagged Tailscale auth key before provisioning the replacement stack. The stack creates its dedicated SNS topic; confirm the email subscription that AWS sends to `scubbojj@gmail.com`.
+2. Provision the replacement stack and migrate through its documented cutover, rather than modifying the legacy stack in place.
+3. Add the dedicated external HTTPS Blackbox probe and verify the Alertmanager notification path after cutover.
+4. Add AWS CloudWatch alert ingestion to Grafana. Until then, the dedicated SNS email is the operational notification path for EC2 status-check and AWS Backup failures.

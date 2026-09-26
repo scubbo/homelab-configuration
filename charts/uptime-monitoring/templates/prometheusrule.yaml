@@ -23,9 +23,18 @@ spec:
             summary: "Service {{ "{{" }} $labels.ingress {{ "}}" }} is down"
             description: "The service {{ "{{" }} $labels.ingress {{ "}}" }} in namespace {{ "{{" }} $labels.namespace {{ "}}" }} ({{ "{{" }} $labels.host {{ "}}" }}) has been unreachable for more than {{ .Values.alerts.downDuration }}."
 
+        - alert: ExternalServiceDown
+          expr: probe_success{probe_scope="external"} == 0
+          for: {{ .Values.alerts.downDuration }}
+          labels:
+            severity: critical
+          annotations:
+            summary: "External service {{ "{{" }} $labels.target {{ "}}" }} is down"
+            description: "The external HTTPS endpoint {{ "{{" }} $labels.host {{ "}}" }} has been unreachable for more than {{ .Values.alerts.downDuration }}."
+
         # Alert when SSL certificate will expire soon
         - alert: SSLCertificateExpiringSoon
-          expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 30
+          expr: (probe_ssl_earliest_cert_expiry{probe_scope="external"} - time()) / 86400 < 30
           for: 1h
           labels:
             severity: warning
@@ -35,7 +44,7 @@ spec:
 
         # Alert when SSL certificate will expire very soon
         - alert: SSLCertificateExpiringVerySoon
-          expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 7
+          expr: (probe_ssl_earliest_cert_expiry{probe_scope="external"} - time()) / 86400 < 7
           for: 1h
           labels:
             severity: critical

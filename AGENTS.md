@@ -3,6 +3,7 @@
 - Except when debugging or testing something, never make changes directly to the cluster (e.g. with `jsonnet <path> | kubectl apply -f`). Always make a change to the Infrastructure-as-Code definitions, then prompt me to review and push it.
 - **CRITICAL:** NEVER run `argocd app sync` or any other ArgoCD commands that modify application state. ArgoCD's API is READ-ONLY for Claude. All changes must go through GitOps (commit to git, let ArgoCD sync automatically or wait for Jack to manually sync). This includes syncing, refreshing, or any other write operations on ArgoCD applications.
 - You have access to `kubectl` and `argocd` tools to read state/logs while debugging.
+- Keep `docs/asset-catalogue.md` current whenever adding, removing, or materially changing a durable, manually operated, Internet-facing, security-sensitive, or recovery-critical asset. Never record secret values or private keys in the catalogue.
 
 ## Repository Structure
 
@@ -87,5 +88,6 @@ Examples of current manual secrets:
 - `/docs/` - General documentation
 - `/docs/todo/` - Detailed TODO documents for complex future work
 - `/TODO.md` - Simple checklist of pending tasks
+- `/docs/asset-catalogue.md` - Inventory of durable infrastructure, public exposure, credentials, recovery dependencies, and operational access patterns
 - Individual chart READMEs under `/charts/<name>/README.md`
 - If you add a new tool, library, installation, or technique, you should draft a blog post about it in `~/Code/blogcontent`

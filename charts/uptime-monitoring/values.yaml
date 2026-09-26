@@ -25,6 +25,12 @@ ingressSelector:
   # Additional label selectors (optional)
   matchLabels: {}
 
+externalTargets:
+  enabled: false
+  targets:
+    - name: jellyfin-public
+      url: https://jellyfin.scubbo.org/web/
+
 # Alert configuration
 alerts:
   enabled: true
