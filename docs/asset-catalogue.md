@@ -17,7 +17,7 @@ Do **not** store secret material, private keys, API tokens, recovery codes, or c
 | `rasnu1` | Kubernetes workload node | k3s | Debian Linux node. |
 | OPNsense (`192.168.1.1`) | Router, AdGuard Home, Unbound DNS | Manual appliance configuration and external-dns | external-dns manages `*.avril` Unbound records; do not create unmanaged host overrides. |
 | TrueNAS storage hosts (`rassigma.avril`, `rasnu2.avril`) | NFS/iSCSI storage for Kubernetes | Manual appliance configuration and democratic-csi | Kubernetes uses `freenas-nfs-csi` and `freenas-iscsi-csi`; credentials are not stored in this repository. |
-| Jellyfin proxy | Internet-facing EC2 reverse proxy for Jellyfin | `non-k8s-iac/aws-cloudformation/jellyfin-proxy/` | Use AWS SSM Session Manager, never public SSH. NPM admin access is an SSM port-forward to local port 8181. NPM state is encrypted EBS data with AWS Backup. |
+| Jellyfin proxy | Internet-facing EC2 reverse proxy for Jellyfin | `non-k8s-iac/aws-cloudformation/jellyfin-proxy/` | Replacement stack `jellyfin-proxy-replacement` currently uses Elastic IP `34.231.142.91`. Use AWS SSM Session Manager, never public SSH. NPM admin access is an SSM port-forward to local port 8181. NPM state is encrypted EBS data with AWS Backup. |
 
 ## Domains and public exposure
 
@@ -25,7 +25,7 @@ Do **not** store secret material, private keys, API tokens, recovery codes, or c
 | --- | --- | --- | --- |
 | `avril` | Internal homelab DNS suffix | OPNsense Unbound via external-dns | Not a public DNS zone. |
 | `scubbo.org` | External DNS zone | Cloudflare | Public records are managed according to each service's exposure method. |
-| `jellyfin.scubbo.org` | External Jellyfin endpoint | Cloudflare DNS → EC2 Jellyfin proxy | Must always be **DNS-only**. Cloudflare proxying video traffic is forbidden. TLS terminates in Nginx Proxy Manager on the EC2 proxy. |
+| `jellyfin.scubbo.org` | External Jellyfin endpoint | Cloudflare DNS → EC2 Jellyfin proxy | Must always be **DNS-only**. Cloudflare proxying video traffic is forbidden. DNS still targets the legacy proxy until the replacement proxy has a verified upstream and certificate. TLS terminates in Nginx Proxy Manager on the EC2 proxy. |
 | `auth.scubbo.org`, `argo.scubbo.org`, `yt-dlp-aas.scubbo.org`, `openclaw.scubbo.org` | Kubernetes Ingress endpoints | Cloudflare DNS → Traefik | Certificates are managed by cert-manager / Let's Encrypt. |
 | `blog.scubbo.org`, `immich.scubbo.org`, `wedding-media.scubbo.org`, `pl8calcul8.scubbo.org` | Cloudflare Tunnel endpoints | Cloudflare Tunnel | Tunnel routing is declared in `charts/cloudflared/values.yaml`. |
 

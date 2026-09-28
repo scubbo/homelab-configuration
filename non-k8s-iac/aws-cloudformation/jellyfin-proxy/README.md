@@ -96,6 +96,17 @@ aws ssm start-session \
 
 This port-forward is the only supported way to access NPM administration. Do not add an Internet-facing port 81 or SSH rule as a convenience workaround.
 
+If the Session Manager port-forward accepts a local connection but reports that its connection to destination port 81 failed, investigate through SSM rather than changing security-group rules. The usual cause is that NPM has not started:
+
+```bash
+aws ssm send-command \
+  --target <instance-id> \
+  --document-name AWS-RunShellScript \
+  --parameters 'commands=["cloud-init status --long || true","systemctl status docker --no-pager || true","docker compose -f /etc/docker/compose.yaml ps || true","ss -ltnp | grep :81 || true"]'
+```
+
+The bootstrap installs AWS CLI v2 from AWS's archive because the selected Ubuntu 24.04 image does not provide an installable `awscli` APT package. Do not replace that installation with `apt-get install awscli`.
+
 ## Certificate renewal and recovery
 
 NPM owns the Let's Encrypt HTTP-01 certificate and renews it automatically using its persistent `/data` and `/etc/letsencrypt` state. Keep TCP 80 public and verify both HTTP-01 reachability and external HTTPS after every proxy change.

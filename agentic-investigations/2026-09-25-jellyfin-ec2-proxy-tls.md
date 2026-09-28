@@ -132,3 +132,38 @@ The work is complete only when all of the following are true:
 3. Add the dedicated external HTTPS Blackbox probe and verify the Alertmanager notification path after cutover.
 4. Add AWS CloudWatch alert ingestion to Grafana. Until then, the dedicated SNS email is the operational notification path for EC2 status-check and AWS Backup failures.
 5. Track the 90-day Tailscale auth-key expiry through an SSM Advanced-tier parameter policy. It alerts 30 and 7 days beforehand because its expiry only prevents enrollment of a future replacement proxy; it does not disconnect an already-enrolled tagged proxy.
+
+## Replacement-stack bootstrap incident (2026-09-28)
+
+The replacement stack `jellyfin-proxy-replacement` was created successfully with instance `i-0d4e80162cbd407ad`, Elastic IP `34.231.142.91`, and persistent state volume `vol-0699ed35f7bcbf753`. Its initial NPM SSM port-forward accepted local connections but reported:
+
+```
+Connection to destination port failed, check SSM Agent logs.
+```
+
+### Root cause
+
+Cloud-init aborted before Docker, Tailscale, or NPM were configured because the original user data attempted to install `awscli` from Ubuntu 24.04 APT repositories:
+
+```
+Package awscli is not available, but is referred to by another package.
+E: Package 'awscli' has no installation candidate
+```
+
+The bootstrap needs AWS CLI to retrieve the Tailscale auth key from Parameter Store, but `awscli` is unavailable from that Ubuntu image's configured repositories.
+
+### Resolution
+
+1. Updated `non-k8s-iac/aws-cloudformation/jellyfin-proxy/template.json` to install pinned AWS CLI v2 from AWS's official archive instead of APT. The regression test asserts this exact requirement.
+2. CloudFormation correctly warned that applying user-data changes could conditionally replace the instance and detach/re-attach the state volume. The change set was deleted without execution; do not casually apply it during a stateful migration.
+3. Because the initial encrypted state volume was blank, reran the **rendered** corrected user-data through SSM on the same instance. A first recovery attempt accidentally used the raw template and therefore treated `${ProxyStateVolume}` as literal text; it was cancelled before touching the volume. The second run substituted the actual volume ID and completed successfully.
+
+Verified after recovery:
+
+- NPM container runs from pinned `jc21/nginx-proxy-manager:2.12.6` image.
+- NPM binds `127.0.0.1:81`; local HTTP returns 200 through the SSM tunnel.
+- Public TCP 80 and 443 are reachable; public TCP 81 is blocked by the security group.
+- The state volume is formatted ext4 and mounted at `/srv/npm`.
+- Tailscale is `Running` as `jellyfin-proxy` at `100.98.225.124`.
+
+The public DNS record still targets the legacy proxy. Do not cut over Cloudflare DNS until NPM has a verified Jellyfin upstream and the Let's Encrypt certificate has been issued.
