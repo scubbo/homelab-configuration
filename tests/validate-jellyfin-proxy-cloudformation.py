@@ -66,6 +66,10 @@ assert "awk -v serial=\"$PROXY_STATE_VOLUME_SERIAL\" '$2 == serial" in user_data
 assert user_data.index("https://download.docker.com/linux/ubuntu/gpg") < user_data.index(
     "apt-get install -y docker-ce"
 )
+assert "apt-get install -y ca-certificates curl unzip" in user_data
+assert "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" in user_data
+assert "/tmp/aws/install --update" in user_data
+assert "apt-get install -y awscli" not in user_data
 assert "apt-get install -y tailscale jq" in user_data
 assert "jq -er '.BackendState == \"Running\"'" in user_data
 assert '\\"' not in user_data
