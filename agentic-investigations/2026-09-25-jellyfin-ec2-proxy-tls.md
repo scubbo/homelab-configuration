@@ -167,3 +167,13 @@ Verified after recovery:
 - Tailscale is `Running` as `jellyfin-proxy` at `100.98.225.124`.
 
 The public DNS record still targets the legacy proxy. Do not cut over Cloudflare DNS until NPM has a verified Jellyfin upstream and the Let's Encrypt certificate has been issued.
+
+### Tailscale subnet-route correction
+
+The replacement proxy initially resolved `jellyfin.avril` to Traefik's internal load-balancer address (`192.168.1.13`) but timed out because Tailscale reported that peers advertised routes while `--accept-routes` was false. The bootstrap now enables route acceptance both on initial enrollment and on subsequent runs:
+
+```bash
+tailscale set --accept-routes=true
+```
+
+After enabling it on the live replacement host, `192.168.1.13` routed through `tailscale0` and `http://jellyfin.avril/` returned Jellyfin's expected `302` redirect to `web/`. NPM must proxy to `jellyfin.avril` on port `80` (Traefik), not direct port `8096` or the public hostname.

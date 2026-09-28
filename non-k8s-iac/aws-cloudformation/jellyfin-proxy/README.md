@@ -111,6 +111,25 @@ The bootstrap installs AWS CLI v2 from AWS's archive because the selected Ubuntu
 
 NPM owns the Let's Encrypt HTTP-01 certificate and renews it automatically using its persistent `/data` and `/etc/letsencrypt` state. Keep TCP 80 public and verify both HTTP-01 reachability and external HTTPS after every proxy change.
 
+## Jellyfin upstream
+
+Use the existing Traefik route as NPM's upstream:
+
+| NPM field | Value |
+| --- | --- |
+| Domain Names | `jellyfin.scubbo.org` |
+| Scheme | `http` |
+| Forward Hostname / IP | `jellyfin.avril` |
+| Forward Port | `80` |
+
+The proxy accepts the Tailscale subnet route for `192.168.1.0/24`, allowing `jellyfin.avril` to reach the internal Traefik load-balancer address. Do not point NPM at `jellyfin.scubbo.org`, which would create a public-proxy loop, or at a Kubernetes ClusterIP, which is not reachable from EC2.
+
+Before changing public DNS, validate this exact request through SSM:
+
+```bash
+curl --fail --location --connect-timeout 10 --max-time 30 http://jellyfin.avril/
+```
+
 AWS Backup protects the state volume, but a backup is not a recovery test. At least once after migration, restore a recovery point to a temporary volume in `us-east-1c`, attach it to an isolated replacement instance, and verify the NPM configuration and certificate files are usable. Destroy the test resources when validation is complete.
 
 ## Monitoring follow-up

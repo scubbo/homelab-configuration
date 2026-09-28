@@ -72,6 +72,8 @@ assert "/tmp/aws/install --update" in user_data
 assert "apt-get install -y awscli" not in user_data
 assert "apt-get install -y tailscale jq" in user_data
 assert "jq -er '.BackendState == \"Running\"'" in user_data
+assert "tailscale set --accept-routes=true" in user_data
+assert "tailscale up --auth-key=\"$TAILSCALE_AUTH_KEY\" --hostname=jellyfin-proxy --ssh=false --accept-routes" in user_data
 assert '\\"' not in user_data
 
 subprocess.run(
