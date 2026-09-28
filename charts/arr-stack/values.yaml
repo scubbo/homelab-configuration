@@ -183,7 +183,7 @@ sabnzbd:
 
 ytdlpaas:
   enabled: true
-  tag: "sha-7709f34b83727ff5510dab1eccb7c9f3d6da2faa"
+  tag: "sha-199d7e7a93b67efe61432e667311dae14c5acac8"
   downloadDir: "/data/media/music"
   resources:
     requests:
