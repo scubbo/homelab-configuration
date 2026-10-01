@@ -25,7 +25,7 @@ Do **not** store secret material, private keys, API tokens, recovery codes, or c
 | --- | --- | --- | --- |
 | `avril` | Internal homelab DNS suffix | OPNsense Unbound via external-dns | Not a public DNS zone. |
 | `scubbo.org` | External DNS zone | Cloudflare | Public records are managed according to each service's exposure method. |
-| `jellyfin.scubbo.org` | External Jellyfin endpoint | Cloudflare DNS → EC2 Jellyfin proxy | Must always be **DNS-only**. Cloudflare proxying video traffic is forbidden. DNS still targets the legacy proxy until the replacement proxy has a verified upstream and certificate. TLS terminates in Nginx Proxy Manager on the EC2 proxy. |
+| `jellyfin.scubbo.org` | External Jellyfin endpoint | Cloudflare DNS → EC2 Jellyfin proxy | DNS-only `A` record targets replacement Elastic IP `34.231.142.91`. Cloudflare proxying video traffic is forbidden. TLS terminates in Nginx Proxy Manager on the EC2 proxy. |
 | `auth.scubbo.org`, `argo.scubbo.org`, `yt-dlp-aas.scubbo.org`, `openclaw.scubbo.org` | Kubernetes Ingress endpoints | Cloudflare DNS → Traefik | Certificates are managed by cert-manager / Let's Encrypt. |
 | `blog.scubbo.org`, `immich.scubbo.org`, `wedding-media.scubbo.org`, `pl8calcul8.scubbo.org` | Cloudflare Tunnel endpoints | Cloudflare Tunnel | Tunnel routing is declared in `charts/cloudflared/values.yaml`. |
 
@@ -46,6 +46,6 @@ Do **not** store secret material, private keys, API tokens, recovery codes, or c
 | Asset | Coverage | Notes |
 | --- | --- | --- |
 | Kubernetes services | Prometheus, Blackbox Exporter, Alertmanager | Ingress discovery covers Traefik endpoints. |
-| Jellyfin public HTTPS endpoint | Dedicated static Blackbox probe | Must independently test `https://jellyfin.scubbo.org/web/`; Kubernetes Ingress monitoring is not sufficient. Enable `externalTargets` only after the HTTPS cutover succeeds. |
+| Jellyfin public HTTPS endpoint | Dedicated static Blackbox probe | Independently probes `https://jellyfin.scubbo.org/web/`; Kubernetes Ingress monitoring is not sufficient. Includes availability and certificate-expiry alerts. |
 | Jellyfin proxy state | AWS Backup recovery point and deletion snapshots | A restoration exercise is required after initial migration and after material recovery changes. |
 | Jellyfin proxy AWS infrastructure alerts | Dedicated SNS topic with email subscription | EC2 status-check, AWS Backup, and Tailscale auth-key expiry events email `scubbojj@gmail.com` after subscription confirmation. Grafana ingestion is a planned follow-up. |

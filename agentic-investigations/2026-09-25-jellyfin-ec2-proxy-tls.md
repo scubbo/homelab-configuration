@@ -177,3 +177,20 @@ tailscale set --accept-routes=true
 ```
 
 After enabling it on the live replacement host, `192.168.1.13` routed through `tailscale0` and `http://jellyfin.avril/` returned Jellyfin's expected `302` redirect to `web/`. NPM must proxy to `jellyfin.avril` on port `80` (Traefik), not direct port `8096` or the public hostname.
+
+## TLS cutover complete (2026-10-01)
+
+- Cloudflare DNS-only `A` record for `jellyfin.scubbo.org` now targets the replacement Elastic IP `34.231.142.91`. Cloudflare video proxying remains forbidden.
+- NPM successfully issued a publicly trusted Let's Encrypt certificate:
+  - Subject/SAN: `jellyfin.scubbo.org`
+  - Issuer: Let's Encrypt `YE2`
+  - Valid: 2026-10-01 04:05:48 UTC through 2026-12-30 04:05:47 UTC
+- Public HTTP returns a `301` redirect to HTTPS; HTTPS uses HTTP/2 and returns Jellyfin's expected `302` redirect to `web/`, followed by a 200 response.
+- The dedicated external HTTPS probe in `charts/uptime-monitoring` is enabled after this validation. It checks `https://jellyfin.scubbo.org/web/` every 30 seconds and raises certificate-expiry alerts at 30 and 7 days.
+- AWS Backup has completed daily recovery points for the encrypted NPM state volume and the dedicated SNS email subscription is confirmed.
+
+## Remaining hardening
+
+- Perform and document an isolated restoration exercise from an AWS Backup recovery point before deleting the legacy `jellyfin-proxy` stack.
+- Keep the legacy stack available until the restoration exercise and a normal NPM certificate renewal have both succeeded.
+- Implement the planned AWS CloudWatch/EventBridge alert visibility in Grafana. AWS alerts currently route to the confirmed SNS email subscription.
