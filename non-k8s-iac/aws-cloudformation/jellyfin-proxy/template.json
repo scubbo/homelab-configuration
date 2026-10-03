@@ -1,0 +1,524 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "External Jellyfin reverse proxy with durable Nginx Proxy Manager state and Systems Manager access.",
+  "Parameters": {
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id",
+      "Default": "vpc-952036f0",
+      "Description": "VPC containing the public Jellyfin proxy subnet."
+    },
+    "SubnetId": {
+      "Type": "AWS::EC2::Subnet::Id",
+      "Default": "subnet-535f3d78",
+      "Description": "Public subnet for the proxy instance."
+    },
+    "AvailabilityZone": {
+      "Type": "AWS::EC2::AvailabilityZone::Name",
+      "Default": "us-east-1c",
+      "Description": "Availability Zone of SubnetId and the persistent Nginx Proxy Manager state volume."
+    },
+    "UbuntuAmiId": {
+      "Type": "AWS::EC2::Image::Id",
+      "Default": "ami-0045d7fc2ad003464",
+      "Description": "Pinned Ubuntu 24.04 LTS AMI. Update this deliberately after reviewing the Canonical AMI release."
+    },
+    "NginxProxyManagerImage": {
+      "Type": "String",
+      "Default": "jc21/nginx-proxy-manager:2.12.6@sha256:6ab097814f54b1362d5fd3c5884a01ddd5878aaae9992ffd218439180f0f92f3",
+      "Description": "Pinned Nginx Proxy Manager image."
+    },
+    "TailscaleAuthKeyParameterName": {
+      "Type": "String",
+      "Default": "/jellyfin-proxy/tailscale-auth-key",
+      "AllowedPattern": "^/.*",
+      "Description": "Name of the pre-created SecureString containing a reusable, tagged Tailscale auth key."
+    }
+  },
+  "Resources": {
+    "ProxySecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Public HTTP and HTTPS access to the Jellyfin reverse proxy.",
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80,
+            "CidrIp": "0.0.0.0/0",
+            "Description": "HTTP for ACME HTTP-01 validation and HTTPS redirects."
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443,
+            "CidrIp": "0.0.0.0/0",
+            "Description": "HTTPS for external Jellyfin clients."
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Required for operating-system updates, SSM, Tailscale, Docker image pulls, and ACME."
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "jellyfin-proxy"
+          }
+        ]
+      }
+    },
+    "ProxyInstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        ],
+        "Policies": [
+          {
+            "PolicyName": "ReadTailscaleAuthKey",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "ssm:GetParameter",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${TailscaleAuthKeyParameterName}"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "kms:Decrypt",
+                  "Resource": "*",
+                  "Condition": {
+                    "StringEquals": {
+                      "kms:ViaService": {
+                        "Fn::Sub": "ssm.${AWS::Region}.amazonaws.com"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "ProxyInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Roles": [
+          {
+            "Ref": "ProxyInstanceRole"
+          }
+        ]
+      }
+    },
+    "ProxyStateVolume": {
+      "Type": "AWS::EC2::Volume",
+      "DeletionPolicy": "Snapshot",
+      "UpdateReplacePolicy": "Snapshot",
+      "Properties": {
+        "AvailabilityZone": {
+          "Ref": "AvailabilityZone"
+        },
+        "Encrypted": true,
+        "Size": 20,
+        "VolumeType": "gp3",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "jellyfin-proxy-npm-state"
+          },
+          {
+            "Key": "Backup",
+            "Value": "jellyfin-proxy"
+          }
+        ]
+      }
+    },
+    "ProxyLaunchTemplate": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateData": {
+          "ImageId": {
+            "Ref": "UbuntuAmiId"
+          },
+          "InstanceType": "t3.micro",
+          "IamInstanceProfile": {
+            "Arn": {
+              "Fn::GetAtt": [
+                "ProxyInstanceProfile",
+                "Arn"
+              ]
+            }
+          },
+          "MetadataOptions": {
+            "HttpEndpoint": "enabled",
+            "HttpTokens": "required",
+            "HttpPutResponseHopLimit": 1,
+            "InstanceMetadataTags": "disabled"
+          },
+          "UserData": {
+            "Fn::Base64": {
+              "Fn::Sub": "#!/bin/bash\nset -euo pipefail\n\nexport DEBIAN_FRONTEND=noninteractive\napt-get update\napt-get install -y ca-certificates curl unzip\ncurl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/awscliv2.zip\nunzip -q /tmp/awscliv2.zip -d /tmp\n/tmp/aws/install --update\nrm -rf /tmp/aws /tmp/awscliv2.zip\ninstall -m 0755 -d /etc/apt/keyrings\ncurl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc\nchmod a+r /etc/apt/keyrings/docker.asc\n. /etc/os-release\necho \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $VERSION_CODENAME stable\" > /etc/apt/sources.list.d/docker.list\napt-get update\napt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin\n\nif ! command -v tailscale >/dev/null; then\n  curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg -o /usr/share/keyrings/tailscale-archive-keyring.gpg\n  curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.tailscale-keyring.list -o /etc/apt/sources.list.d/tailscale.list\n  apt-get update\n  apt-get install -y tailscale jq\nfi\n\nPROXY_STATE_VOLUME_SERIAL=$(echo '${ProxyStateVolume}' | tr -d '-')\nfor attempt in $(seq 1 60); do\n  STATE_DEVICE=$(lsblk -dn -o NAME,SERIAL | awk -v serial=\"$PROXY_STATE_VOLUME_SERIAL\" '$2 == serial {print \"/dev/\" $1; exit}')\n  if [ -n \"$STATE_DEVICE\" ]; then\n    break\n  fi\n  sleep 5\ndone\n\nif [ -z \"$STATE_DEVICE\" ]; then\n  echo \"Nginx Proxy Manager state volume did not attach\" >&2\n  exit 1\nfi\n\nif ! blkid \"$STATE_DEVICE\" >/dev/null 2>&1; then\n  mkfs.ext4 -F \"$STATE_DEVICE\"\nfi\n\ninstall -d -m 0750 /srv/npm\nSTATE_UUID=$(blkid -s UUID -o value \"$STATE_DEVICE\")\ngrep -q \" /srv/npm \" /etc/fstab || echo \"UUID=$STATE_UUID /srv/npm ext4 defaults,nofail 0 2\" >> /etc/fstab\nmount /srv/npm\ninstall -d -m 0700 /srv/npm/data /srv/npm/letsencrypt\n\ncat > /etc/docker/compose.yaml <<'COMPOSE'\nservices:\n  nginx-proxy-manager:\n    image: '${NginxProxyManagerImage}'\n    restart: unless-stopped\n    ports:\n      - '80:80'\n      - '443:443'\n      - '127.0.0.1:81:81'\n    volumes:\n      - /srv/npm/data:/data\n      - /srv/npm/letsencrypt:/etc/letsencrypt\nCOMPOSE\n\nsystemctl enable --now docker\ndocker compose -f /etc/docker/compose.yaml up -d\n\nif tailscale status --json | jq -er '.BackendState == \"Running\"' >/dev/null; then\n  tailscale set --accept-routes=true\nelse\n  TAILSCALE_AUTH_KEY=$(aws ssm get-parameter --name '${TailscaleAuthKeyParameterName}' --with-decryption --query Parameter.Value --output text)\n  tailscale up --auth-key=\"$TAILSCALE_AUTH_KEY\" --hostname=jellyfin-proxy --ssh=false --accept-routes\nfi\n"
+            }
+          },
+          "TagSpecifications": [
+            {
+              "ResourceType": "instance",
+              "Tags": [
+                {
+                  "Key": "Name",
+                  "Value": "jellyfin-proxy"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "ProxyInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "AvailabilityZone": {
+          "Ref": "AvailabilityZone"
+        },
+        "LaunchTemplate": {
+          "LaunchTemplateId": {
+            "Ref": "ProxyLaunchTemplate"
+          },
+          "Version": {
+            "Fn::GetAtt": [
+              "ProxyLaunchTemplate",
+              "LatestVersionNumber"
+            ]
+          }
+        },
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": false,
+            "DeviceIndex": 0,
+            "SubnetId": {
+              "Ref": "SubnetId"
+            },
+            "GroupSet": [
+              {
+                "Fn::GetAtt": [
+                  "ProxySecurityGroup",
+                  "GroupId"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ProxyStateVolumeAttachment": {
+      "Type": "AWS::EC2::VolumeAttachment",
+      "Properties": {
+        "Device": "/dev/sdf",
+        "InstanceId": {
+          "Ref": "ProxyInstance"
+        },
+        "VolumeId": {
+          "Ref": "ProxyStateVolume"
+        }
+      }
+    },
+    "ProxyElasticIp": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "jellyfin-proxy"
+          }
+        ]
+      }
+    },
+    "ProxyElasticIpAssociation": {
+      "Type": "AWS::EC2::EIPAssociation",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "ProxyElasticIp",
+            "AllocationId"
+          ]
+        },
+        "InstanceId": {
+          "Ref": "ProxyInstance"
+        }
+      }
+    },
+    "BackupVault": {
+      "Type": "AWS::Backup::BackupVault",
+      "Properties": {
+        "BackupVaultName": "jellyfin-proxy"
+      }
+    },
+    "BackupRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "backup.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup",
+          "arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores"
+        ]
+      }
+    },
+    "BackupPlan": {
+      "Type": "AWS::Backup::BackupPlan",
+      "Properties": {
+        "BackupPlan": {
+          "BackupPlanName": "jellyfin-proxy-state",
+          "BackupPlanRule": [
+            {
+              "RuleName": "daily-state-volume-snapshot",
+              "TargetBackupVault": {
+                "Ref": "BackupVault"
+              },
+              "ScheduleExpression": "cron(0 6 ? * * *)",
+              "StartWindowMinutes": 60,
+              "CompletionWindowMinutes": 180,
+              "Lifecycle": {
+                "DeleteAfterDays": 35
+              }
+            }
+          ]
+        }
+      }
+    },
+    "BackupSelection": {
+      "Type": "AWS::Backup::BackupSelection",
+      "Properties": {
+        "BackupPlanId": {
+          "Ref": "BackupPlan"
+        },
+        "BackupSelection": {
+          "SelectionName": "jellyfin-proxy-state-volume",
+          "IamRoleArn": {
+            "Fn::GetAtt": [
+              "BackupRole",
+              "Arn"
+            ]
+          },
+          "Resources": [
+            {
+              "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:volume/${ProxyStateVolume}"
+            }
+          ]
+        }
+      }
+    },
+    "InstanceStatusCheckAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "The Jellyfin proxy EC2 instance has failed a system or instance status check.",
+        "AlarmActions": [
+          {
+            "Ref": "ProxyAlertTopic"
+          }
+        ],
+        "Namespace": "AWS/EC2",
+        "MetricName": "StatusCheckFailed",
+        "Dimensions": [
+          {
+            "Name": "InstanceId",
+            "Value": {
+              "Ref": "ProxyInstance"
+            }
+          }
+        ],
+        "Statistic": "Maximum",
+        "Period": 60,
+        "EvaluationPeriods": 2,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "TreatMissingData": "breaching"
+      }
+    },
+    "BackupJobFailureRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "Notify when an AWS Backup job for the Jellyfin proxy state volume fails.",
+        "EventPattern": {
+          "source": [
+            "aws.backup"
+          ],
+          "detail-type": [
+            "Backup Job State Change"
+          ],
+          "detail": {
+            "state": [
+              "FAILED",
+              "EXPIRED",
+              "ABORTED"
+            ],
+            "backupVaultName": [
+              {
+                "Ref": "BackupVault"
+              }
+            ]
+          }
+        },
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "ProxyAlertTopic"
+            },
+            "Id": "backup-failure-notification"
+          }
+        ]
+      }
+    },
+    "ProxyAlertTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "DisplayName": "Jellyfin proxy infrastructure alerts",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "jellyfin-proxy-alerts"
+          }
+        ]
+      }
+    },
+    "ProxyAlertEmailSubscription": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "ProxyAlertTopic"
+        },
+        "Protocol": "email",
+        "Endpoint": "scubbojj@gmail.com"
+      }
+    },
+    "ProxyAlertTopicPolicy": {
+      "Type": "AWS::SNS::TopicPolicy",
+      "Properties": {
+        "Topics": [
+          {
+            "Ref": "ProxyAlertTopic"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AllowCloudWatchAlarmsToPublish",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudwatch.amazonaws.com"
+              },
+              "Action": "sns:Publish",
+              "Resource": {
+                "Ref": "ProxyAlertTopic"
+              }
+            },
+            {
+              "Sid": "AllowEventBridgeToPublish",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": "sns:Publish",
+              "Resource": {
+                "Ref": "ProxyAlertTopic"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "TailscaleAuthKeyExpiryRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "Notify when the stored Tailscale auth key is nearing or has reached its tracked expiration.",
+        "EventPattern": {
+          "source": [
+            "aws.ssm"
+          ],
+          "detail-type": [
+            "Parameter Store Policy Action"
+          ],
+          "detail": {
+            "parameter-name": [
+              {
+                "Ref": "TailscaleAuthKeyParameterName"
+              }
+            ],
+            "policy-type": [
+              "ExpirationNotification",
+              "Expiration"
+            ]
+          }
+        },
+        "Targets": [
+          {
+            "Arn": {
+              "Ref": "ProxyAlertTopic"
+            },
+            "Id": "tailscale-auth-key-expiry-notification"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "InstanceId": {
+      "Description": "Use this instance ID for Systems Manager sessions and port forwarding.",
+      "Value": {
+        "Ref": "ProxyInstance"
+      }
+    },
+    "ElasticIpAddress": {
+      "Description": "Set the DNS-only Cloudflare A record for jellyfin.scubbo.org to this address.",
+      "Value": {
+        "Ref": "ProxyElasticIp"
+      }
+    },
+    "NginxProxyManagerAdminPortForward": {
+      "Description": "Run the documented SSM port-forward command, then browse http://127.0.0.1:8181.",
+      "Value": {
+        "Fn::Sub": "aws ssm start-session --target ${ProxyInstance} --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"81\"],\"localPortNumber\":[\"8181\"]}'"
+      }
+    },
+    "AlertTopicArn": {
+      "Description": "Dedicated SNS topic for Jellyfin proxy infrastructure alerts. Confirm its email subscription before relying on it.",
+      "Value": {
+        "Ref": "ProxyAlertTopic"
+      }
+    }
+  }
+}

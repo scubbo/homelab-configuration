@@ -1,0 +1,27 @@
+{{- if .Values.externalTargets.enabled }}
+{{- range .Values.externalTargets.targets }}
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: {{ include "uptime-monitoring.fullname" $ }}-{{ .name }}
+  namespace: {{ $.Values.blackboxExporter.namespace }}
+  labels:
+    {{- include "uptime-monitoring.labels" $ | nindent 4 }}
+    release: prometheus
+spec:
+  prober:
+    url: {{ $.Values.blackboxExporter.service }}.{{ $.Values.blackboxExporter.namespace }}.svc:{{ $.Values.blackboxExporter.port }}
+  module: http_2xx_https
+  interval: {{ $.Values.probe.interval }}
+  scrapeTimeout: {{ $.Values.probe.scrapeTimeout }}
+  targets:
+    staticConfig:
+      static:
+        - {{ .url | quote }}
+      labels:
+        host: {{ .url | replace "https://" "" | trimSuffix "/web/" | quote }}
+        target: {{ .name | quote }}
+        probe_scope: external
+---
+{{- end }}
+{{- end }}
