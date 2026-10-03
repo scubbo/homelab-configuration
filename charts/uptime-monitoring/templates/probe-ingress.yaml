@@ -34,6 +34,12 @@ spec:
         - __meta_kubernetes_ingress_label_uptime_monitoring_probe
         regex: "false"
         action: drop
+      {{- range .Values.externalTargets.excludeIngressHosts }}
+      - sourceLabels:
+        - __meta_kubernetes_ingress_host
+        regex: {{ . }}
+        action: drop
+      {{- end }}
       # Filter: Only keep Ingresses with ingressClassName matching our target
       - sourceLabels:
         - __meta_kubernetes_ingress_class_name

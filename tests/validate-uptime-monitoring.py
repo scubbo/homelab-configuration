@@ -26,5 +26,9 @@ assert '"https://jellyfin.scubbo.org/web/"' in rendered
 assert 'probe_scope: external' in rendered
 assert 'probe_ssl_earliest_cert_expiry{probe_scope="external"}' in rendered
 assert "alert: ExternalServiceDown" in rendered
+assert """- sourceLabels:
+        - __meta_kubernetes_ingress_host
+        regex: jellyfin.scubbo.org
+        action: drop""" in rendered
 
 print("Uptime monitoring renders the external Jellyfin HTTPS probe and scoped alerts.")

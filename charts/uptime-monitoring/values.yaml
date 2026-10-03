@@ -27,6 +27,8 @@ ingressSelector:
 
 externalTargets:
   enabled: true
+  excludeIngressHosts:
+    - jellyfin.scubbo.org
   targets:
     - name: jellyfin-public
       url: https://jellyfin.scubbo.org/web/
