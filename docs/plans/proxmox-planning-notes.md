@@ -22,6 +22,7 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Record Jack's privileged epsilon disk/boot checks and successful culex package preview.
 - [ ] Inspect ESP contents, back up/correct boot storage configuration, and verify the corrections.
 - [x] Verify the permanent ESP fstab mount and protected off-host fstab copy.
+- [x] Verify the off-host GPT-table backup and inspect partition-3 contents.
 - [ ] Install/verify culex rehearsal tooling and establish the isolated clone/network.
 - [x] Investigate independent PostgreSQL HA options and record the bootstrap/failover constraints.
 - [x] Align the Proxmox plan/manifests with epsilon, a network probe, k3s guests, and HAOS.
@@ -90,3 +91,4 @@ The hypervisor and HA guest should boot without Kubernetes, external-dns, Vault,
 - Recovery-access documentation checks passed: 32 relative hyperlinks/anchors, 10 Bash examples, and `git diff --check`. Physical access/destination are agreed; offline image, clone rehearsal, and privileged fstab/GPT/socket changes remain pending Jack's execution.
 - Jack supplied the permanent ESP mount/file listing. Read-only SSH verified fstab entry `UUID=6B0D-04C5 /boot/efi vfat umask=0077 0 1` and read-write mount with fmask/dmask 0077. Protected culex `fstab.before` matches current fstab except that added entry. Partition-3 GPT type and retired NAS fstab record remain unchanged; existing swap/NAS failed-unit state remains. No reboot/persistence or `findmnt --verify` result has been established.
 - Targeted culex socket check confirmed virtqemud/virtlogd/virtlockd active. Avoid repeating their startup or completed tooling installation. Next operator steps are GPT table backup/type-only correction and privileged retired-mount consumer check; full host-image/clone rehearsal remains pending.
+- Jack supplied GPT backup and privileged data-directory output. Read-only SSH verified culex `epsilon-gpt.before` exists mode 0600 with the expected GPT ID and all partition boundaries/PARTUUIDs. `/mnt/second-drive` uses 24 KiB and contains `longhorn` and `lost+found`; the accessible longhorn directory is empty. Archive the small filesystem's contents before type correction, preserving metadata. Its ext4 UUID/mount and on-disk GPT swap type remain unchanged; no partition edit or reboot has been executed.

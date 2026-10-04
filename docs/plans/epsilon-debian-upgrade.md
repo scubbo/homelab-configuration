@@ -64,7 +64,7 @@ Jack completed the read-only mount/list/unmount: the verified ESP contains `shim
 
 Use the stable OS-disk path for the partition-table backup/editor. Back up `/etc/fstab`, the GPT table, and any valuable partition-3 files into protected off-host recovery storage; record where and verify the copies. `/usr/sbin/sfdisk --dump <verified-disk>` produces a textual table backup without changing the disk. Add `UUID=6B0D-04C5 /boot/efi vfat umask=0077 0 1` to fstab after verifying the EFI files. With the verified disk, an interactive `sudo /usr/sbin/fdisk /dev/disk/by-id/wwn-0x614187703cb534002c36dde2320197ab` → `t` → partition `3` → type alias `linux` changes only the GPT type. Inspect `p` before `w`: all starts/ends and the disk/partition identifiers must remain unchanged. Expected type GUID: `0fc63daf-8483-4772-8e79-3d69d8477de4`. The ext4 filesystem/data mount must remain intact. If fdisk offers to remove a filesystem signature, decline; if it reports an in-use/kernel-reread failure, capture the complete message and resolve it at the scheduled reboot rather than forcing a reread of the live root disk.
 
-The ESP/fstab steps above are complete on epsilon. Next capture the textual GPT backup, with pipeline failure propagation and no overwrite of an existing artifact:
+The ESP/fstab and textual GPT backup steps are complete. Jack supplied the GPT backup output; read-only SSH confirms `/home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-gpt.before` exists on culex with mode 0600 and the expected disk ID, boundaries, partition types, and PARTUUIDs. The backup procedure is:
 
 ```bash
 (
@@ -73,6 +73,17 @@ The ESP/fstab steps above are complete on epsilon. Next capture the textual GPT 
     | ssh scubbo@culex 'umask 077; set -C; cat > /home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-gpt.before'
 )
 ssh scubbo@culex 'cat /home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-gpt.before'
+```
+
+Jack's privileged directory inspection reports 24 KiB used under `/mnt/second-drive`, containing `longhorn` and `lost+found`. Read-only SSH found no entries inside `longhorn`; preserve the complete contents rather than deleting these directories. Before the type edit, archive this small filesystem's files off-host with ownership/ACLs/xattrs preserved:
+
+```bash
+(
+  set -o pipefail
+  sudo tar --one-file-system --acls --xattrs --numeric-owner -C /mnt/second-drive -cpf - . \
+    | ssh scubbo@culex 'umask 077; set -C; cat > /home/scubbo/epsilon-recovery.mVvt2ir2/second-drive.before.tar'
+)
+ssh scubbo@culex 'tar -tvf /home/scubbo/epsilon-recovery.mVvt2ir2/second-drive.before.tar'
 ```
 
 Only after successful backup/inspection, use the interactive fdisk type-only procedure above. Its `p` output must show partition 3 at start `973699072`, end `975697919`, and Linux filesystem; partitions 1/2 retain their existing boundaries/types. An in-use warning is expected on the live OS disk; do not resize/delete partitions or force a kernel reread. Prefer performing the edit from the planned rescue session if the tool refuses the type-only write. Capture full editor output and verify with `sudo /usr/sbin/sfdisk --dump <verified-disk>` plus `lsblk`/`findmnt` afterwards; do not treat a stale generated swap unit's failure state as evidence that the on-disk edit failed.
