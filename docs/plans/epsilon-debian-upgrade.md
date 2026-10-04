@@ -39,7 +39,32 @@ findmnt /mnt/second-drive
 systemctl --failed --no-pager
 ```
 
-Use the confirmed disk identity from these results, not a guessed `/dev/sdX` name. Back up `/etc/fstab` and the partition table into protected off-host recovery storage. Add `UUID=6B0D-04C5 /boot/efi vfat umask=0077 0 1` to fstab after verifying the UUID and EFI directory. With the verified disk, an interactive `sudo fdisk /dev/sdb` → `t` → partition `3` → type alias `linux` changes only the GPT type; inspect `p` before `w`. It must remain the same ext4 filesystem/data mount. Remove only the retired NAS fstab line after consumer checks. Then run:
+Jack supplied these checks; they confirm the following identities:
+
+| Item | Verified identity |
+| --- | --- |
+| OS logical disk | 499,558,383,616 bytes; WWN `0x614187703cb534002c36dde2320197ab`; currently `/dev/sdb` |
+| GPT disk identifier | `96DF694E-2C1D-4F6A-9629-4D96AFAD94CA` |
+| Stable OS-disk path | `/dev/disk/by-id/wwn-0x614187703cb534002c36dde2320197ab` (symlink verified over SSH) |
+| ESP | Partition 1, UUID `6B0D-04C5`; PARTUUID `fb231222-651f-407c-96eb-f8f7841ab72d`; sectors 2048–1050623 |
+| Data filesystem | Partition 3, UUID `428cea4d-9e78-4af9-99df-c9f13f06f680`; PARTUUID `f79e479d-8050-4468-b35b-b9b9296966a9`; sectors 973699072–975697919 |
+| Separate unallocated candidate | 931 GiB PERC disk, WWN `0x614187703cb534002c7d389b1499c8ab`; ownership/data still unverified |
+
+Next inspect the ESP without writing it, using a separate empty inspection directory (confirm neither directory nor partition is already mounted before proceeding):
+
+```bash
+sudo mkdir -p /mnt/epsilon-esp-check
+sudo mount -t vfat -o ro UUID=6B0D-04C5 /mnt/epsilon-esp-check
+findmnt /mnt/epsilon-esp-check
+sudo ls -l /mnt/epsilon-esp-check/EFI/debian/
+sudo umount /mnt/epsilon-esp-check
+```
+
+Expected boot files include `shimx64.efi` and `grubx64.efi`; BootCurrent identifies the Debian shim path, but file presence has not yet been inspected. A failed mount or missing files needs investigation before changing bootloader packages.
+
+Use the stable OS-disk path for the partition-table backup/editor. Back up `/etc/fstab`, the GPT table, and any valuable partition-3 files into protected off-host recovery storage; record where and verify the copies. `/usr/sbin/sfdisk --dump <verified-disk>` produces a textual table backup without changing the disk. Add `UUID=6B0D-04C5 /boot/efi vfat umask=0077 0 1` to fstab after verifying the EFI files. With the verified disk, an interactive `sudo /usr/sbin/fdisk /dev/disk/by-id/wwn-0x614187703cb534002c36dde2320197ab` → `t` → partition `3` → type alias `linux` changes only the GPT type. Inspect `p` before `w`: all starts/ends and the disk/partition identifiers must remain unchanged. Expected type GUID: `0fc63daf-8483-4772-8e79-3d69d8477de4`. The ext4 filesystem/data mount must remain intact. If fdisk offers to remove a filesystem signature, decline; if it reports an in-use/kernel-reread failure, capture the complete message and resolve it at the scheduled reboot rather than forcing a reread of the live root disk.
+
+For retiring `/mnt/NAS`, the inspected Docker mounts, current pod hostPaths, system/user systemd units, backup scripts, and readable cron files had no consumers; only fstab matched. A root-only k3s environment file could not be searched. Jack completes a filenames-only privileged search of root/user jobs and configuration without printing credential contents. Remove only the retired NAS fstab line after consumer checks, preserving the directory/local files. Then run:
 
 ```bash
 sudo systemctl daemon-reload
@@ -64,7 +89,16 @@ ssh scubbo@culex
 sudo dnf --assumeno --refresh install qemu-kvm libvirt-daemon-kvm libvirt-client virt-install edk2-ovmf
 ```
 
-This may intentionally exit nonzero at the declined transaction; distinguish that from repository/package-resolution failures. Existing Fedora 38 sources still use Fedora metalinks, not a verified archive. If metadata/packages are unavailable, share that output with Jack and decide the supported tooling/rehearsal-host path before editing repositories or disabling signature checks. Do not assume QEMU/libvirt is already installed from `/dev/kvm` alone.
+Jack supplied the preview: metadata refresh and dependency resolution succeeded, proposing **141 package installations**, 55 MB download / 207 MB installed, with no upgrades/removals shown in the supplied summary. Requested versions include QEMU 7.2.10, libvirt 9.0.0, virt-install 4.1.0, and OVMF 20230524. The final `Operation aborted` is expected from `--assumeno`; installation has not occurred. The excerpt omits some dependencies, so Jack reviews the complete transaction in the actual interactive installation. `brltty` appears as a weak dependency; account for its possible USB-device ownership when adding serial devices to this host.
+
+Install the same package set with an interactive confirmation, retaining repository/package signature validation:
+
+```bash
+sudo dnf install qemu-kvm libvirt-daemon-kvm libvirt-client virt-install edk2-ovmf
+rpm -q qemu-kvm libvirt-daemon-kvm libvirt-client virt-install edk2-ovmf
+```
+
+If the actual transaction differs materially or fails, share its output before changing sources or bypassing checks. Existing Fedora 38 sources successfully resolved via configured metalinks, but successful resolution does not extend the release's support lifetime. No repository rewrite or Fedora upgrade is part of this tooling step. Do not start a default libvirt network or attach a clone to the LAN as an implicit part of package installation; guest/network configuration follows the isolation procedure below.
 
 ### Clone and isolation procedure
 
