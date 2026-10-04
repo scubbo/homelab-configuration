@@ -2,11 +2,13 @@
 
 **Status: planned, downtime accepted.** Target: Proxmox guest 100 on physical culex (`culex-pve`), with the **same physical Zigbee dongle** passed through to Home Assistant OS. Finish the [hypervisor/Kubernetes conversion](proxmox-installation.md) first. The Pi remains the rollback appliance until migration and recovery checks pass.
 
+The target host is under review in the [host-selection assessment](proxmox-host-selection.md); this execution plan and its manifests describe the culex proposal. Related: [planning notes](proxmox-planning-notes.md), [current asset catalogue](../asset-catalogue.md), and [active plans](README.md).
+
 ## Network and VM intent
 
 | Item | Target |
 | --- | --- |
-| VM manifest | [`100-homeassistant.conf.in`](../non-k8s-iac/proxmox/vms/100-homeassistant.conf.in) |
+| VM manifest | [`100-homeassistant.conf.in`](../../non-k8s-iac/proxmox/vms/100-homeassistant.conf.in) |
 | Resources | 2 vCPU, 4 GiB fixed RAM, 64 GiB local disk baseline |
 | Boot | Q35, OVMF/UEFI, persistent EFI variables, Secure Boot disabled |
 | LAN | VirtIO on `vmbr0`; VM MAC `02:00:00:01:00:64` (check uniqueness first) |
@@ -15,7 +17,7 @@
 | Access | Initially `http://192.168.1.134:8123`; preserve the verified HTTP/HTTPS and remote-access settings on restore |
 | Zigbee | Existing coordinator, existing integration/network identity, verified guest `/dev/serial/by-id/...` path |
 
-The source address is declared in [`charts/external-dns/homeassistant-dns-endpoint.yaml`](../charts/external-dns/homeassistant-dns-endpoint.yaml). Confirm the Pi actually uses it and determine whether it is static or DHCP-reserved. Keeping `.134` preserves DNS and consumers of the numeric address. Proxmox's host management address is separate. HAOS uses guest networking, not Proxmox cloud-init `ipconfig` settings. The bridged guest is on the same LAN as the Pi, preserving mDNS/SSDP discovery without NAT or an extra ingress.
+The source address is declared in [`charts/external-dns/homeassistant-dns-endpoint.yaml`](../../charts/external-dns/homeassistant-dns-endpoint.yaml). Confirm the Pi actually uses it and determine whether it is static or DHCP-reserved. Keeping `.134` preserves DNS and consumers of the numeric address. Proxmox's host management address is separate. HAOS uses guest networking, not Proxmox cloud-init `ipconfig` settings. The bridged guest is on the same LAN as the Pi, preserving mDNS/SSDP discovery without NAT or an extra ingress.
 
 ## 1. Identify the source and dependencies
 
@@ -160,7 +162,7 @@ The same coordinator plus its restored application state should preserve pairing
 - [ ] Trigger a Zigbee-driven automation end to end and verify its intended physical result. Check RF coverage at the coordinator's server location; allow routes to settle and inspect persistent failures.
 - [ ] Shut down/start guest 100 and repeat serial identity and device checks. Verify the mapping survives a dongle disconnect/reconnect with the radio service stopped first.
 - [ ] Set `qm set 100 --onboot 1`; in a scheduled host reboot window verify both VM auto-start and Zigbee reconnection. If USB enumeration races prevent startup, investigate logs/topology and fix the cause before completion.
-- [ ] Complete and commit the VM manifest's actual volume IDs/selector and `host.json`'s observed non-secret inputs. Update the asset catalogue to mark HAOS/hypervisor active and the Pi retained for rollback.
+- [ ] Complete and commit the [VM manifest's](../../non-k8s-iac/proxmox/vms/100-homeassistant.conf.in) actual volume IDs/selector and [`host.json`](../../non-k8s-iac/proxmox/host.json)'s observed non-secret inputs. Add the active HAOS/hypervisor and Pi rollback status to the [asset catalogue](../asset-catalogue.md).
 
 ## 5. Recovery and retirement
 

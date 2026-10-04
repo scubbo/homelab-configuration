@@ -1,16 +1,17 @@
 # Proxmox VM configuration
 
-**Status: planned, not provisioned.** Proxmox runs on the physical `culex` machine with management identity `culex-pve.avril`. VM 101 retains the Kubernetes identity `culex` (`192.168.1.13`); VM 100 runs Home Assistant OS (`192.168.1.134`).
+**Status: proposed, not provisioned; host selection under review.** These manifests describe Proxmox on physical `culex` with management identity `culex-pve.avril`. VM 101 retains the Kubernetes identity `culex` (`192.168.1.13`); VM 100 runs Home Assistant OS (`192.168.1.134`). Compare the [epsilon/culex host assessment](../../docs/plans/proxmox-host-selection.md) before selecting an installation path.
 
-- [Hypervisor installation and host conversion](../../docs/proxmox-installation.md)
-- [Home Assistant migration and rollback](../../docs/homeassistant-vm-migration.md)
+- [Hypervisor installation and host conversion](../../docs/plans/proxmox-installation.md)
+- [Home Assistant migration and rollback](../../docs/plans/homeassistant-vm-migration.md)
+- [Planning notes](../../docs/plans/proxmox-planning-notes.md)
 - [Asset catalogue](../../docs/asset-catalogue.md)
 
 ## Source of truth
 
-`host.json` records host, addressing, image provenance, and recovery intent. Its `null` values are execution-time inputs that have not been verified. Resolve them during preflight and commit the non-secret results. The Proxmox and HAOS downloads are pinned with upstream SHA-256 digests; upgrades are explicit edits. Record the installed Proxmox package version after updating the host. The HAOS image version is a bootstrap version, not a constraint on subsequent Home Assistant updates.
+[`host.json`](host.json) records host, addressing, image provenance, and recovery intent. Its `null` values are execution-time inputs that have not been verified. Resolve them during preflight and commit the non-secret results. The Proxmox and HAOS downloads are pinned with upstream SHA-256 digests; upgrades are explicit edits. Record the installed Proxmox package version after updating the host. The HAOS image version is a bootstrap version, not a constraint on subsequent Home Assistant updates.
 
-`vms/*.conf.in` are templates in the native [`qm.conf`](https://pve.proxmox.com/pve-docs/qm.conf.5.html) format. They record desired virtual hardware, including persistent MACs, disk sizes, boot/shutdown order, and the Zigbee device. The provisioning commands in the runbooks create the actual storage volumes and VM configuration. There is no automatic apply or drift reconciliation, and ArgoCD does not manage these guests.
+The [HAOS](vms/100-homeassistant.conf.in) and [Kubernetes](vms/101-culex.conf.in) templates use the native [`qm.conf`](https://pve.proxmox.com/pve-docs/qm.conf.5.html) format. They record desired virtual hardware, including persistent MACs, disk sizes, boot/shutdown order, and the Zigbee device. The provisioning commands in the [installation](../../docs/plans/proxmox-installation.md) and [migration](../../docs/plans/homeassistant-vm-migration.md) plans create the actual storage volumes and VM configuration. There is no automatic apply or drift reconciliation, and ArgoCD does not manage these guests.
 
 Proposed locally administered MACs are `02:00:00:01:00:64` (100) and `02:00:00:01:00:65` (101). Confirm both are unused in OPNsense and the LAN before provisioning. Allocate VMIDs globally across future Proxmox hosts; these IDs are reserved here for these two guests. Start HA before Kubernetes so its boot does not depend on the cluster. `cpu: host` favors this single-host installation; moving to unlike CPUs requires a powered-off migration or a deliberately selected common CPU model.
 
@@ -20,7 +21,7 @@ Proposed locally administered MACs are `02:00:00:01:00:64` (100) and `02:00:00:0
 | --- | --- |
 | `@EFI_VOLUME@` | Volume ID allocated by `qm set <id> --efidisk0 local-lvm:0,...`, from `qm config <id>` |
 | `@OS_VOLUME@` | Imported/allocated OS disk volume ID, from `qm config <id>` |
-| `@ZIGBEE_USB_HOST@` | Verified unique `vendor:product` ID or physical `bus-port` selector on culex-pve; see migration runbook |
+| `@ZIGBEE_USB_HOST@` | Verified unique `vendor:product` ID or physical `bus-port` selector on culex-pve; see [USB migration](../../docs/plans/homeassistant-vm-migration.md#physically-move-and-pass-through-zigbee) |
 
 Volume names are assigned by Proxmox: do not infer disk numbers or copy another VM's volumes. After provisioning, replace the tokens with the observed volume IDs/device selector and rename the template to `.conf`; update its path in `host.json`. If source usage needs a larger disk, change `size` and the provisioning command together. `size=` in a configuration file is metadata; actual enlargement uses `qm disk resize`.
 
@@ -37,4 +38,4 @@ Reserve at least 8 GiB of the host's 64 GiB for Proxmox and leave remaining capa
 
 ## Recovery boundary
 
-Manifests recreate virtual hardware, not Home Assistant state, Kubernetes secrets, PostgreSQL contents, or Zigbee coordinator NVRAM. Keep native HA backups and VM backups off-host; keep recovery credentials and the HA backup emergency kit in a password manager. The default VM-backup baseline is weekly stop-mode backups to NAS storage `vm-backups`, retaining four copies; HA native backups run daily, retaining seven off-host copies. Configure the actual jobs and verify a restore as described in the runbooks.
+Manifests recreate virtual hardware, not Home Assistant state, Kubernetes secrets, PostgreSQL contents, or Zigbee coordinator NVRAM. Keep native HA backups and VM backups off-host; keep recovery credentials and the HA backup emergency kit in a password manager. The default VM-backup baseline is weekly stop-mode backups to NAS storage `vm-backups`, retaining four copies; HA native backups run daily, retaining seven off-host copies. Configure the actual jobs and verify a restore using the [VM recovery plan](../../docs/plans/proxmox-installation.md#5-off-host-backups-and-maintenance) and [HA recovery plan](../../docs/plans/homeassistant-vm-migration.md#5-recovery-and-retirement).

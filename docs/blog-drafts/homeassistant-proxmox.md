@@ -1,12 +1,12 @@
 # Moving Home Assistant to a VM without losing the radio
 
-**Unpublished planning draft.** The deployment and restore exercises described here are planned; operational results should be added after execution.
+**Unpublished planning draft.** The deployment and restore exercises described here are planned; operational results should be added after execution. [Host selection](../plans/proxmox-host-selection.md) is under review with Jack; this draft describes the [culex proposal](../plans/proxmox-installation.md).
 
 My Home Assistant installation works, but its Raspberry Pi hardware is unreliable. Migrating the application is an opportunity to establish a VM platform with configuration and recovery instructions in the homelab repository.
 
 ## The host choice is about dependencies
 
-Both candidate servers, epsilon and culex, have the same dual Xeon CPUs and 64 GB RAM. epsilon carries the Kubernetes API address, the shared PostgreSQL datastore, and GPU-pinned workloads. culex therefore makes more sense as the Proxmox host, although it also has a Kubernetes control-plane role and standalone media services to account for.
+Both candidate servers, epsilon and culex, have the same dual Xeon CPUs and 64 GB RAM. epsilon carries the Kubernetes API address, the shared PostgreSQL datastore, and GPU-pinned workloads. A dedicated Proxmox installation on culex isolates those dependencies from hypervisor conversion, although it also has a Kubernetes control-plane role and standalone media services to account for. Installing Proxmox onto epsilon's existing Debian filesystem is another candidate, with a Debian 13 upgrade, kernel/package changes, and shared-datastore downtime to plan. epsilon also has a libvirt VM; identifying it informs the choice of VM-management platform.
 
 The layout is a dedicated Proxmox host, a Linux Kubernetes guest, and a separate Home Assistant OS guest. The Kubernetes guest retains the culex name/address; the hypervisor has its own management identity. That prevents a Kubernetes hostname from unexpectedly becoming a hypervisor endpoint.
 
@@ -46,4 +46,4 @@ Recovery is a separate proof. The plan uses daily native HA backups, weekly stop
 - RF coverage and real-device acceptance results.
 - Off-host restore exercise outcome and actual recovery time.
 
-The repository runbooks are [`docs/proxmox-installation.md`](../proxmox-installation.md) and [`docs/homeassistant-vm-migration.md`](../homeassistant-vm-migration.md); the VM configuration lives in [`non-k8s-iac/proxmox/`](../../non-k8s-iac/proxmox/README.md).
+The repository plans are [Proxmox installation](../plans/proxmox-installation.md) and [Home Assistant migration](../plans/homeassistant-vm-migration.md); the VM configuration lives in [`non-k8s-iac/proxmox/`](../../non-k8s-iac/proxmox/README.md). The [asset catalogue](../asset-catalogue.md) describes deployed assets, and [planning notes](../plans/proxmox-planning-notes.md) record findings and verification.

@@ -1,6 +1,8 @@
 # Proxmox installation on culex
 
-**Status: planned.** This is an operator runbook; installation and host conversion have not been performed. Jack selected Proxmox on physical `culex`, with a separate Linux guest preserving its Kubernetes role. Home Assistant cutover is a subsequent maintenance window.
+**Status: proposed; host selection under review.** This plan describes Proxmox on physical `culex`, with a separate Linux guest preserving its Kubernetes role. Review the [epsilon/culex host assessment](proxmox-host-selection.md) before choosing an installation path. Installation and host conversion have not been performed. [Home Assistant cutover](homeassistant-vm-migration.md#3-cut-over-during-the-home-assistant-outage) is a subsequent maintenance window.
+
+Related: [planning notes](proxmox-planning-notes.md), [VM manifests](../../non-k8s-iac/proxmox/README.md), [current asset catalogue](../asset-catalogue.md), and [active plans](README.md).
 
 ## Why this host and hypervisor
 
@@ -12,7 +14,7 @@ Use a single Proxmox node with local VM disks. The host runs the hypervisor; Kub
 
 ## 1. Prepare identities, storage, and recovery
 
-Record non-secret execution inputs in [`host.json`](../non-k8s-iac/proxmox/host.json). Keep credentials, host backup archives, and SQL dumps outside Git.
+Record non-secret execution inputs in [`host.json`](../../non-k8s-iac/proxmox/host.json). Keep credentials, host backup archives, and SQL dumps outside Git.
 
 | Input | Baseline / action |
 | --- | --- |
@@ -26,9 +28,9 @@ Record non-secret execution inputs in [`host.json`](../non-k8s-iac/proxmox/host.
 | Data disk | Preserve the approximately 3.6 TiB PERC logical disk with XFS `/mnt/data`; back it up and exclude it from installation |
 | Backup destination | Choose a NAS export independent of culex and Kubernetes; record NAS host/export and retention |
 
-Reserve the hypervisor IP outside the DHCP dynamic pool (or exclude it explicitly). Check leases, static assignments, and OPNsense ARP records: a failed ping alone does not establish that an address is unused. Check the proposed VM MACs and VMIDs in the [manifest README](../non-k8s-iac/proxmox/README.md).
+Reserve the hypervisor IP outside the DHCP dynamic pool (or exclude it explicitly). Check leases, static assignments, and OPNsense ARP records: a failed ping alone does not establish that an address is unused. Check the proposed VM MACs and VMIDs in the [manifest README](../../non-k8s-iac/proxmox/README.md).
 
-For the bare hypervisor hostname, add a `culex-pve.avril` DNSEndpoint under `charts/external-dns/` once the management address is selected. Use the same shape as `galactus-dns-endpoint.yaml`, with the selected address and **no `recordTTL`**. Commit for Jack to review and push, then allow normal reconciliation or Jack's manual sync. Do not add a competing manual Unbound override. During bootstrap, use the management IP directly; `/etc/hosts` on Proxmox must also resolve its own FQDN to that management IP.
+For the bare hypervisor hostname, add a `culex-pve.avril` DNSEndpoint under `charts/external-dns/` once the management address is selected. Use the same shape as [`galactus-dns-endpoint.yaml`](../../charts/external-dns/galactus-dns-endpoint.yaml), with the selected address and **no `recordTTL`**. Commit for Jack to review and push, then allow normal reconciliation or Jack's manual sync. Do not add a competing manual Unbound override. During bootstrap, use the management IP directly; `/etc/hosts` on Proxmox must also resolve its own FQDN to that management IP.
 
 ### Inventory culex beyond Kubernetes
 
@@ -67,7 +69,7 @@ kubectl get pods -A --field-selector spec.nodeName=culex -o yaml
 
 Inspect the node's labels/taints, selectors, local PVs, pod `hostPath` volumes, `emptyDir` data, host networking/ports, and capacity needed on epsilon while culex is absent. No local PVs were observed during planning, but this must be rechecked. ArgoCD, external-dns, Traefik, Vault, Immich's database, and monitoring had pods on culex. Verify those can relocate and verify storage detachment/reattachment; use their existing recovery procedures where needed. Plan the Kubernetes outage window separately from the Pi migration.
 
-On epsilon, take and verify a PostgreSQL dump using the [datastore backup procedure](k3s-ha-postgres/README.md). Preserve the k3s **server token**, datastore credentials, and original server settings in protected off-host storage. The token is needed to join/restore, even with an external SQL datastore. Capture `/etc/rancher/k3s/`, `/etc/systemd/system/k3s.service`, its `.env`, registry configuration, network tuning, and any certificate-maintenance units from culex. Do not print or check in their credential values. Preserve the matching critical server flags from both servers. Confirm epsilon's API and PostgreSQL remain healthy before taking culex out.
+On epsilon, take and verify a PostgreSQL dump using the [datastore backup procedure](../k3s-ha-postgres/README.md). Preserve the k3s **server token**, datastore credentials, and original server settings in protected off-host storage. The token is needed to join/restore, even with an external SQL datastore. Capture `/etc/rancher/k3s/`, `/etc/systemd/system/k3s.service`, its `.env`, registry configuration, network tuning, and any certificate-maintenance units from culex. Do not print or check in their credential values. Preserve the matching critical server flags from both servers. Confirm epsilon's API and PostgreSQL remain healthy before taking culex out.
 
 ## 2. Evacuate the physical Kubernetes node
 
@@ -140,7 +142,7 @@ The management IP belongs on the bridge; `.13` and `.134` belong to guests. This
 
 This is a fresh Linux installation, not an image of the Fedora root filesystem. The 128 GiB baseline is for Kubernetes node storage, not the standalone 770 GB media dataset. Choose/pin a Debian 13 amd64 installer ISO and its official SHA-256 in `host.json`; upload it to `local` ISO storage.
 
-On the Proxmox root shell, confirm VMID 101 is unused with `qm list`. These one-time commands correspond to [`101-culex.conf.in`](../non-k8s-iac/proxmox/vms/101-culex.conf.in):
+On the Proxmox root shell, confirm VMID 101 is unused with `qm list`. These one-time commands correspond to [`101-culex.conf.in`](../../non-k8s-iac/proxmox/vms/101-culex.conf.in):
 
 ```bash
 qm create 101 --name culex --ostype l26 --machine q35 --bios ovmf \
@@ -205,7 +207,7 @@ qm guest cmd 101 ping
 qm config 101 --current 1
 ```
 
-Complete/rename the manifest as described in its README. Schedule a host reboot and verify guest auto-start, control-plane registration, DNS, Traefik, CSI, and application availability. Do not migrate the Pi until the Kubernetes host conversion and standalone-service handling are stable.
+Complete/rename the manifest as described in the [manifest README](../../non-k8s-iac/proxmox/README.md#completing-a-manifest). Schedule a host reboot and verify guest auto-start, control-plane registration, DNS, Traefik, CSI, and application availability. Begin the [Pi migration](homeassistant-vm-migration.md) once the Kubernetes host conversion and standalone-service handling are stable.
 
 ## 5. Off-host backups and maintenance
 

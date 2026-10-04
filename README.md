@@ -15,7 +15,7 @@ So - with some regret and shame - I've decided it's prudent to conform and use t
 
 ## Proxmox and Home Assistant VMs
 
-The planned VM platform runs Proxmox on physical `culex`, with separate Kubernetes and Home Assistant OS guests. See the [hypervisor installation and host-conversion runbook](docs/proxmox-installation.md), [Home Assistant migration/rollback runbook](docs/homeassistant-vm-migration.md), and [versioned VM configuration](non-k8s-iac/proxmox/README.md). Operational and planned assets are recorded in the [asset catalogue](docs/asset-catalogue.md).
+The Home Assistant VM platform is an [active plan](docs/plans/README.md), with [host selection under review](docs/plans/proxmox-host-selection.md). See the [Proxmox installation proposal](docs/plans/proxmox-installation.md), [Home Assistant migration/rollback plan](docs/plans/homeassistant-vm-migration.md), and [versioned VM configuration](non-k8s-iac/proxmox/README.md). Deployed assets are recorded in the [asset catalogue](docs/asset-catalogue.md); the [documentation index](docs/README.md) links operational documentation and plans.
 
 ## democratic-csi
 
