@@ -21,6 +21,7 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [ ] Document and arrange a rehearsal, backup/restore proof, Jellyfin notification, and Debian execution window.
 - [x] Record Jack's privileged epsilon disk/boot checks and successful culex package preview.
 - [ ] Inspect ESP contents, back up/correct boot storage configuration, and verify the corrections.
+- [x] Verify the permanent ESP fstab mount and protected off-host fstab copy.
 - [ ] Install/verify culex rehearsal tooling and establish the isolated clone/network.
 - [x] Investigate independent PostgreSQL HA options and record the bootstrap/failover constraints.
 - [x] Align the Proxmox plan/manifests with epsilon, a network probe, k3s guests, and HAOS.
@@ -87,3 +88,5 @@ The hypervisor and HA guest should boot without Kubernetes, external-dns, Vault,
 - Jack confirmed physical access to epsilon and selected culex's home directory for the off-host image. Created protected mode-0700 `/home/scubbo/epsilon-recovery.mVvt2ir2` on culex; about 1.7 TiB free on its root filesystem. No host image/clone was captured. Master images stay protected; libvirt requires a separately labelled/readable working image, not opening permissions broadly on the recovery directory.
 - Minimal iDRAC investigation found `/dev/ipmi0` on epsilon but no local IPMI/racadm utility or verified controller address/license/credentials. Check firmware iDRAC network settings during physical imaging access if convenient. Physical monitor/keyboard plus rescue-media proof is the selected recovery route; avoid expanding iDRAC setup into a separate migration blocker.
 - Recovery-access documentation checks passed: 32 relative hyperlinks/anchors, 10 Bash examples, and `git diff --check`. Physical access/destination are agreed; offline image, clone rehearsal, and privileged fstab/GPT/socket changes remain pending Jack's execution.
+- Jack supplied the permanent ESP mount/file listing. Read-only SSH verified fstab entry `UUID=6B0D-04C5 /boot/efi vfat umask=0077 0 1` and read-write mount with fmask/dmask 0077. Protected culex `fstab.before` matches current fstab except that added entry. Partition-3 GPT type and retired NAS fstab record remain unchanged; existing swap/NAS failed-unit state remains. No reboot/persistence or `findmnt --verify` result has been established.
+- Targeted culex socket check confirmed virtqemud/virtlogd/virtlockd active. Avoid repeating their startup or completed tooling installation. Next operator steps are GPT table backup/type-only correction and privileged retired-mount consumer check; full host-image/clone rehearsal remains pending.

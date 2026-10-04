@@ -21,7 +21,7 @@ Third-party candidates include Docker CE 27 → 29 and containerd.io 1.7 → 2.3
 
 Observed root causes and operator actions:
 
-1. **Missing ESP mount:** UEFI BootCurrent `0006` references Debian shim on ESP `/dev/sdb1` (UUID `6B0D-04C5`, PARTUUID `fb231222-651f-407c-96eb-f8f7841ab72d`). `/boot/efi` is empty/unmounted and `/etc/fstab` has no ESP entry. Verify the EFI files on that actual partition and mount it before GRUB/shim package updates.
+1. **ESP mount configured:** UEFI BootCurrent `0006` references Debian shim on ESP `/dev/sdb1` (UUID `6B0D-04C5`, PARTUUID `fb231222-651f-407c-96eb-f8f7841ab72d`). Jack added `UUID=6B0D-04C5 /boot/efi vfat umask=0077 0 1` to fstab and mounted it. Read-only SSH confirmed read-write mount with `fmask=0077,dmask=0077`; Debian boot files are present. Persistence across a reboot and upgraded bootloader operation remain acceptance checks.
 2. **Mislabelled data partition:** `/dev/sdb3`, UUID `428cea4d-9e78-4af9-99df-c9f13f06f680`, is ext4 mounted at `/mnt/second-drive`, but its GPT type is Linux swap. `systemd-gpt-auto-generator` creates `dev-sdb3.swap`, which fails reading a swap header. Correct the GPT type to Linux filesystem **without formatting or changing its UUID/PARTUUID**. Do not run `mkswap`, disable GPT discovery globally, or mask the symptom instead of correcting the label.
 3. **Retired NAS mount:** `rassigma.avril:/mnt/BERTHA → /mnt/NAS` timed out at boot; NFS TCP 2049 currently refuses connections. Jack approved retiring this mount. `/mnt/NAS` is unmounted/empty; no current pod hostPath or inspected systemd/backup path references it. Finish checking all container bind mounts, user jobs/services, and scripts; remove only this fstab record and preserve the directory/local files.
 4. **OpenSSH prerequisite:** Installed server `1:9.2p1-2+deb12u2` is below Debian's `deb12u7` minimum recommended for interrupted remote Trixie upgrades. Patch Bookworm first and prove a fresh SSH login before Trixie changes.
@@ -60,9 +60,22 @@ sudo ls -l /mnt/epsilon-esp-check/EFI/debian/
 sudo umount /mnt/epsilon-esp-check
 ```
 
-Jack completed the read-only mount/list/unmount: the verified ESP contains `shimx64.efi`, `grubx64.efi`, `grub.cfg`, `mmx64.efi`, `fbx64.efi`, and `BOOTX64.CSV` under `EFI/debian/`. The temporary mount was unmounted successfully. This verifies the files are present, not that upgraded firmware/GRUB boots correctly. The permanent ESP fstab mount still needs adding before bootloader package updates.
+Jack completed the read-only mount/list/unmount: the verified ESP contains `shimx64.efi`, `grubx64.efi`, `grub.cfg`, `mmx64.efi`, `fbx64.efi`, and `BOOTX64.CSV` under `EFI/debian/`. The permanent fstab entry and read-write `/boot/efi` mount are also verified. Protected `/home/scubbo/epsilon-recovery.mVvt2ir2/fstab.before` on culex is mode 0600 and matches current fstab with only the added ESP entry excluded. This verifies configuration/file presence, not a reboot or upgraded bootloader.
 
 Use the stable OS-disk path for the partition-table backup/editor. Back up `/etc/fstab`, the GPT table, and any valuable partition-3 files into protected off-host recovery storage; record where and verify the copies. `/usr/sbin/sfdisk --dump <verified-disk>` produces a textual table backup without changing the disk. Add `UUID=6B0D-04C5 /boot/efi vfat umask=0077 0 1` to fstab after verifying the EFI files. With the verified disk, an interactive `sudo /usr/sbin/fdisk /dev/disk/by-id/wwn-0x614187703cb534002c36dde2320197ab` → `t` → partition `3` → type alias `linux` changes only the GPT type. Inspect `p` before `w`: all starts/ends and the disk/partition identifiers must remain unchanged. Expected type GUID: `0fc63daf-8483-4772-8e79-3d69d8477de4`. The ext4 filesystem/data mount must remain intact. If fdisk offers to remove a filesystem signature, decline; if it reports an in-use/kernel-reread failure, capture the complete message and resolve it at the scheduled reboot rather than forcing a reread of the live root disk.
+
+The ESP/fstab steps above are complete on epsilon. Next capture the textual GPT backup, with pipeline failure propagation and no overwrite of an existing artifact:
+
+```bash
+(
+  set -o pipefail
+  sudo /usr/sbin/sfdisk --dump /dev/disk/by-id/wwn-0x614187703cb534002c36dde2320197ab \
+    | ssh scubbo@culex 'umask 077; set -C; cat > /home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-gpt.before'
+)
+ssh scubbo@culex 'cat /home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-gpt.before'
+```
+
+Only after successful backup/inspection, use the interactive fdisk type-only procedure above. Its `p` output must show partition 3 at start `973699072`, end `975697919`, and Linux filesystem; partitions 1/2 retain their existing boundaries/types. An in-use warning is expected on the live OS disk; do not resize/delete partitions or force a kernel reread. Prefer performing the edit from the planned rescue session if the tool refuses the type-only write. Capture full editor output and verify with `sudo /usr/sbin/sfdisk --dump <verified-disk>` plus `lsblk`/`findmnt` afterwards; do not treat a stale generated swap unit's failure state as evidence that the on-disk edit failed.
 
 For retiring `/mnt/NAS`, the inspected Docker mounts, current pod hostPaths, system/user systemd units, backup scripts, and readable cron files had no consumers; only fstab matched. A root-only k3s environment file could not be searched. Jack completes a filenames-only privileged search of root/user jobs and configuration without printing credential contents. Remove only the retired NAS fstab line after consumer checks, preserving the directory/local files. Then run:
 
@@ -102,7 +115,7 @@ If the actual transaction differs materially or fails, share its output before c
 
 ### Start the installed QEMU socket
 
-culex uses modular libvirt: `virtqemud.socket`, `virtlogd.socket`, and `virtlockd.socket` are installed/enabled but inactive. `libvirtd.socket` is disabled; `virtqemud.service` explicitly conflicts with `libvirtd.service`. Start only the local QEMU/logging/locking sockets for the initially NIC-less rehearsal:
+culex uses modular libvirt: `virtqemud.socket`, `virtlogd.socket`, and `virtlockd.socket` are active, verified over SSH after Jack's preparation. `libvirtd.socket` is disabled; `virtqemud.service` explicitly conflicts with `libvirtd.service`. The startup procedure for the initially NIC-less rehearsal is:
 
 ```bash
 sudo systemctl start virtqemud.socket virtlogd.socket virtlockd.socket
