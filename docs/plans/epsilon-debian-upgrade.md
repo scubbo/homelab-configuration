@@ -60,7 +60,7 @@ sudo ls -l /mnt/epsilon-esp-check/EFI/debian/
 sudo umount /mnt/epsilon-esp-check
 ```
 
-Expected boot files include `shimx64.efi` and `grubx64.efi`; BootCurrent identifies the Debian shim path, but file presence has not yet been inspected. A failed mount or missing files needs investigation before changing bootloader packages.
+Jack completed the read-only mount/list/unmount: the verified ESP contains `shimx64.efi`, `grubx64.efi`, `grub.cfg`, `mmx64.efi`, `fbx64.efi`, and `BOOTX64.CSV` under `EFI/debian/`. The temporary mount was unmounted successfully. This verifies the files are present, not that upgraded firmware/GRUB boots correctly. The permanent ESP fstab mount still needs adding before bootloader package updates.
 
 Use the stable OS-disk path for the partition-table backup/editor. Back up `/etc/fstab`, the GPT table, and any valuable partition-3 files into protected off-host recovery storage; record where and verify the copies. `/usr/sbin/sfdisk --dump <verified-disk>` produces a textual table backup without changing the disk. Add `UUID=6B0D-04C5 /boot/efi vfat umask=0077 0 1` to fstab after verifying the EFI files. With the verified disk, an interactive `sudo /usr/sbin/fdisk /dev/disk/by-id/wwn-0x614187703cb534002c36dde2320197ab` → `t` → partition `3` → type alias `linux` changes only the GPT type. Inspect `p` before `w`: all starts/ends and the disk/partition identifiers must remain unchanged. Expected type GUID: `0fc63daf-8483-4772-8e79-3d69d8477de4`. The ext4 filesystem/data mount must remain intact. If fdisk offers to remove a filesystem signature, decline; if it reports an in-use/kernel-reread failure, capture the complete message and resolve it at the scheduled reboot rather than forcing a reread of the live root disk.
 
@@ -80,7 +80,7 @@ Verify these fixes on a scheduled reboot; clearing recorded failure state alone 
 
 ## Rehearse on culex
 
-Jack selected culex as the rehearsal host. It has KVM available and about 1.7 TiB root / 2.9 TiB media-volume free, but no QEMU/libvirt tools installed. Fedora 38 is out of support, so package availability must be established without silently upgrading the rehearsal host or rewriting repository configuration. Jack installs the minimal supported tooling in a sudo session after reviewing package transactions. Record tool versions; private rehearsal guests do not join production k3s or claim epsilon's identity.
+Jack selected culex as the rehearsal host. It has KVM available and about 1.7 TiB root / 2.9 TiB media-volume free. Jack installed QEMU/libvirt tooling using the verified Fedora repositories; Fedora 38's support lifetime still applies independently of successful installation. Private rehearsal guests do not join production k3s or claim epsilon's identity.
 
 The first operator step on culex is a package transaction preview:
 
@@ -89,7 +89,7 @@ ssh scubbo@culex
 sudo dnf --assumeno --refresh install qemu-kvm libvirt-daemon-kvm libvirt-client virt-install edk2-ovmf
 ```
 
-Jack supplied the preview: metadata refresh and dependency resolution succeeded, proposing **141 package installations**, 55 MB download / 207 MB installed, with no upgrades/removals shown in the supplied summary. Requested versions include QEMU 7.2.10, libvirt 9.0.0, virt-install 4.1.0, and OVMF 20230524. The final `Operation aborted` is expected from `--assumeno`; installation has not occurred. The excerpt omits some dependencies, so Jack reviews the complete transaction in the actual interactive installation. `brltty` appears as a weak dependency; account for its possible USB-device ownership when adding serial devices to this host.
+Jack supplied the preview: metadata refresh and dependency resolution succeeded, proposing **141 package installations**, 55 MB download / 207 MB installed, with no upgrades/removals shown in the supplied summary. The final `Operation aborted` was expected from `--assumeno`. Jack subsequently installed the package set; `rpm -q` confirms QEMU `7.2.10-1.fc38`, libvirt `9.0.0-5.fc38`, virt-install `4.1.0-2.fc38`, and OVMF `20230524-3.fc38`. `brltty` appeared as a weak dependency; account for its possible USB-device ownership when adding serial devices to this host.
 
 Install the same package set with an interactive confirmation, retaining repository/package signature validation:
 
@@ -100,9 +100,48 @@ rpm -q qemu-kvm libvirt-daemon-kvm libvirt-client virt-install edk2-ovmf
 
 If the actual transaction differs materially or fails, share its output before changing sources or bypassing checks. Existing Fedora 38 sources successfully resolved via configured metalinks, but successful resolution does not extend the release's support lifetime. No repository rewrite or Fedora upgrade is part of this tooling step. Do not start a default libvirt network or attach a clone to the LAN as an implicit part of package installation; guest/network configuration follows the isolation procedure below.
 
+### Start the installed QEMU socket
+
+culex uses modular libvirt: `virtqemud.socket`, `virtlogd.socket`, and `virtlockd.socket` are installed/enabled but inactive. `libvirtd.socket` is disabled; `virtqemud.service` explicitly conflicts with `libvirtd.service`. Start only the local QEMU/logging/locking sockets for the initially NIC-less rehearsal:
+
+```bash
+sudo systemctl start virtqemud.socket virtlogd.socket virtlockd.socket
+sudo virsh -c qemu:///system list --all
+systemctl is-active virtqemud.socket virtlogd.socket virtlockd.socket
+```
+
+An empty domain list is expected before creating the rehearsal. Do not start the monolithic daemon or a default NAT network. Network/storage daemons and a private network are configured only when the rehearsal needs them. Keep SELinux enabled; libvirt-readable VM copies can use standard labelled image storage or a specifically configured/labelled storage pool. A protected image in scubbo's mode-0700 recovery directory is the backup master, not implicitly a libvirt-readable guest disk.
+
+### Recovery access and image destination
+
+Jack confirmed physical access to epsilon; recovery means viewing its boot screen and using a physical monitor/keyboard if Linux/SSH fails. Arrange a bootable rescue USB and verify it can see the PERC OS disk and reach culex before the imaging/upgrade window. Jack is interested in iDRAC; a read-only check found `/dev/ipmi0`, but no `ipmitool`/`racadm` executable or verified iDRAC IP/access. During the physical visit, inspect firmware **iDRAC Settings → Network** for its address/NIC selection, then test the management page if credentials are available. Remote-console capability/licensing is unverified; it does not block the physical recovery route.
+
+Jack selected **culex's home directory**, not epsilon's OS disk, for off-host recovery storage. A mode-0700 directory owned by scubbo was created at `/home/scubbo/epsilon-recovery.mVvt2ir2` on culex. Its backing filesystem `/dev/mapper/fedora-root` has about 1.7 TiB free. Store baseline images, partition-table/fstab copies, checksums, and protected service recovery files there; secret-bearing files remain outside Git. Keep master images mode-0600 and make separate rehearsal copies/overlays. Image/checksum/restore has not yet been performed.
+
+First boot the rescue medium, identify the OS disk by WWN and exact byte size, and confirm **all its filesystems are unmounted**. Do not image the current live mounted root with `dd`, even if PostgreSQL alone has been stopped. Full raw image size is 499,558,383,616 bytes; sparse allocation/compression savings depend on actual contents, not just filesystem-used space. Check destination free space for master and rehearsal copies.
+
+From the rescue session, after verifying SSH to culex and the disk/mount state, capture the raw master (replace username only if the rescue environment requires a different privilege mechanism):
+
+```bash
+bash
+set -euo pipefail
+DISK=/dev/disk/by-id/wwn-0x614187703cb534002c36dde2320197ab
+IMAGE=/home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-os.raw
+sudo blockdev --getsize64 "$DISK"
+lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINTS "$DISK"
+ssh scubbo@culex "test ! -e '$IMAGE' && df -h /home/scubbo"
+sudo dd if="$DISK" bs=16M iflag=fullblock status=progress \
+  | ssh scubbo@culex "umask 077; test ! -e '$IMAGE' && dd of='$IMAGE' bs=16M iflag=fullblock conv=sparse,fsync"
+ssh scubbo@culex "stat -c '%s %n' '$IMAGE'; sha256sum '$IMAGE' > '$IMAGE.sha256'"
+sudo sha256sum "$DISK"
+ssh scubbo@culex "cat '$IMAGE.sha256'"
+```
+
+Compare source/destination hashes and exact image byte size. Source hashing rereads the disk while still offline; budget that time. If transfer fails, treat any partial file as incomplete and investigate before choosing a distinct retry path. Do not overwrite an existing recovery artifact blindly. Restore rehearsal uses a working copy/overlay, never writes the master. Raw image checksum verifies transfer integrity; a successful isolated boot/restore exercise proves usability.
+
 ### Clone and isolation procedure
 
-1. Establish a recovery console for physical epsilon (iDRAC/physical access method still needs verification), a protected off-host bootable image destination, and a rollback method. A live `dd` of a changing root filesystem is not a coherent recovery image. Quiesce writers and make a tested offline full-disk image, or use a proved quiesced snapshot/image workflow on storage that supports it; current ext4 root is not an LVM snapshot source.
+1. Use the [physical recovery access and off-host destination](#recovery-access-and-image-destination) selected above. Notify consumers of the imaging outage as well as the upgrade window; the first offline image itself requires downtime. Quiesce writers and capture/verify the offline full-disk image. Current ext4 root is not an LVM snapshot source.
 2. Rehearsal uses a **copy** of that full-disk image, with sufficient virtual capacity for the original disk geometry (about 465 GiB) and free space for baseline/test copies. Retain the unmodified backup separately. Keep sensitive host data in protected recovery storage.
 3. Before first boot, attach no NIC and no shared host folders/USB/GPU devices. Use a guest console to disable k3s, Docker, Tailscale, scheduled backups/cron, and other production services; remove production NFS/iSCSI mounts only in the clone. Set a distinct hostname and MAC/address. Never boot the unchanged clone on a reachable production network; it contains production tokens/client identities.
 4. Add a private rehearsal bridge/subnet and controlled outbound package access. Block routes to production LAN, Kubernetes API, datastore, NAS, MQTT, and tailnet/cloud-control endpoints. Use a reviewed egress proxy/gateway for Debian/vendor package downloads, not a direct production LAN bridge. SSH/console access to the guest comes through the rehearsal host.
