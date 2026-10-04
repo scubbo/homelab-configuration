@@ -1,18 +1,18 @@
 # Moving Home Assistant to a VM without losing the radio
 
-**Unpublished planning draft.** The deployment and restore exercises described here are planned; operational results should be added after execution. [Host selection](../plans/proxmox-host-selection.md) is under review with Jack; this draft describes the [culex proposal](../plans/proxmox-installation.md).
+**Unpublished planning draft.** The deployment and host-upgrade rehearsal described here are planned; operational results should be added after execution. [Host selection](../plans/proxmox-host-selection.md) chooses [Proxmox on epsilon](../plans/proxmox-installation.md). An isolated SQL backup restoration has passed; that is one part of recovery proof.
 
 My Home Assistant installation works, but its Raspberry Pi hardware is unreliable. Migrating the application is an opportunity to establish a VM platform with configuration and recovery instructions in the homelab repository.
 
 ## The host choice is about dependencies
 
-Both candidate servers, epsilon and culex, have the same dual Xeon CPUs and 64 GB RAM. epsilon carries the Kubernetes API address, the shared PostgreSQL datastore, and GPU-pinned workloads. A dedicated Proxmox installation on culex isolates those dependencies from hypervisor conversion, although it also has a Kubernetes control-plane role and standalone media services to account for. Installing Proxmox onto epsilon's existing Debian filesystem is another candidate, with a Debian 13 upgrade, kernel/package changes, and shared-datastore downtime to plan. epsilon also has a libvirt VM; identifying it informs the choice of VM-management platform.
+Both candidate servers, epsilon and culex, have the same dual Xeon CPUs and 64 GB RAM. epsilon carries the Kubernetes API address, the shared PostgreSQL datastore, and GPU-pinned workloads. Its Debian installation supports a package-based Proxmox conversion after a rehearsed Debian 13 upgrade. Accepting planned downtime provides an opportunity to prove physical-node recovery and discover maintenance friction before an emergency.
 
-The layout is a dedicated Proxmox host, a Linux Kubernetes guest, and a separate Home Assistant OS guest. The Kubernetes guest retains the culex name/address; the hypervisor has its own management identity. That prevents a Kubernetes hostname from unexpectedly becoming a hypervisor endpoint.
+The layout is Proxmox on epsilon with a general-purpose Kubernetes server guest, a GPU worker guest, and Home Assistant OS. Distinct guest identities permit staging while pods remain on physical k3s. The P1000 moves only when GPU consumers stop; two nodes cannot use the same passthrough card simultaneously. The Kubernetes API endpoint also needs an explicit transition before physical k3s retirement.
 
 ## Native manifests are a useful first interface
 
-Proxmox stores guest hardware in a colon-separated configuration file. Keeping templates for that format in Git gives the first two guests explicit CPU, memory, disk, firmware, MAC, and startup settings. Documented `qm` commands allocate the actual disks, whose generated volume IDs are then recorded in the manifests.
+Proxmox stores guest hardware in a colon-separated configuration file. Keeping templates in Git gives production guests and a minimal network probe explicit CPU, memory, disk, firmware, MAC, passthrough, and startup settings. Documented `qm` commands allocate the actual disks, whose generated volume IDs are then recorded in the manifests.
 
 That is a small foundation rather than an automatic configuration reconciler. The important boundary is clear: Git describes hardware and operational intent; off-host backups preserve the appliance's state. A configuration file by itself does not allocate a disk or restore Home Assistant.
 

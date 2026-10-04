@@ -1,0 +1,21 @@
+# VMID 102, Proxmox node epsilon on the physical epsilon host.
+# PCI assignment is exclusive; physical GPU consumers stop before ownership transfer.
+agent: 1
+balloon: 0
+bios: ovmf
+boot: order=scsi0
+cores: 8
+cpu: host
+efidisk0: @EFI_VOLUME@,efitype=4m,pre-enrolled-keys=0
+hostpci0: @GPU_PCI_FUNCTIONS@,pcie=1
+machine: q35
+memory: 16384
+name: epsilon-gpu
+net0: virtio=02:00:00:01:00:66,bridge=vmbr0
+onboot: 1
+ostype: l26
+scsi0: @OS_VOLUME@,backup=1,cache=none,discard=on,iothread=1,size=64G
+scsihw: virtio-scsi-single
+sockets: 1
+startup: order=3,up=30,down=180
+tags: kubernetes;gpu

@@ -1,4 +1,4 @@
-# VMID 100, physical host culex, Proxmox node culex-pve.
+# VMID 100, Proxmox node epsilon on the physical epsilon host.
 # HAOS requires UEFI without Secure Boot; the EFI volume holds persistent variables.
 agent: 1
 balloon: 0

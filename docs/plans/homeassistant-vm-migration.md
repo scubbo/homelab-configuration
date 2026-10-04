@@ -1,8 +1,8 @@
 # Home Assistant: Raspberry Pi to HAOS VM
 
-**Status: planned, downtime accepted.** Target: Proxmox guest 100 on physical culex (`culex-pve`), with the **same physical Zigbee dongle** passed through to Home Assistant OS. Finish the [hypervisor/Kubernetes conversion](proxmox-installation.md) first. The Pi remains the rollback appliance until migration and recovery checks pass.
+**Status: planned, downtime accepted.** Target: Proxmox guest 100 on physical epsilon, with the **same physical Zigbee dongle** passed through to Home Assistant OS. Finish the [Debian maintenance](epsilon-debian-upgrade.md), [Proxmox installation](proxmox-installation.md), and [network probe](proxmox-network-probe.md) first. The Pi remains the rollback appliance until migration and recovery checks pass.
 
-The target host is under review in the [host-selection assessment](proxmox-host-selection.md); this execution plan and its manifests describe the culex proposal. Related: [planning notes](proxmox-planning-notes.md), [current asset catalogue](../asset-catalogue.md), and [active plans](README.md).
+The [host-selection decision](proxmox-host-selection.md) and [manifests](../../non-k8s-iac/proxmox/README.md) select epsilon with separate general-purpose k3s, GPU-worker, and HAOS guests. Related: [planning notes](proxmox-planning-notes.md), [current asset catalogue](../asset-catalogue.md), and [active plans](README.md).
 
 ## Network and VM intent
 
@@ -44,7 +44,7 @@ Choose a target disk with more free space than the Pi's **used installation size
 
 ## 2. Provision and test the empty HAOS guest
 
-On Proxmox, verify `local-lvm` is healthy and VMID 100 is unused. Download/decompress the pinned x86-64 KVM image from `host.json`; the Pi's raw SD-card/ARM image cannot boot on this x86 guest.
+On Proxmox, verify the [local directory storage](proxmox-installation.md#local-vm-storage) `vm-local` is mounted/healthy and VMID 100 is unused. Download/decompress the pinned x86-64 KVM image from `host.json`; the Pi's raw SD-card/ARM image cannot boot on this x86 guest.
 
 ```bash
 mkdir -p /root/haos-image
@@ -65,8 +65,8 @@ qm create 100 --name homeassistant --ostype l26 --machine q35 --bios ovmf \
   --scsihw virtio-scsi-single --agent 1 --onboot 0 \
   --net0 virtio=02:00:00:01:00:64,bridge=vmbr0 \
   --startup order=1,up=30,down=120 --tags 'homeassistant;appliance'
-qm set 100 --efidisk0 local-lvm:0,efitype=4m,pre-enrolled-keys=0
-qm disk import 100 /root/haos-image/haos_ova-18.3.qcow2 local-lvm --format raw
+qm set 100 --efidisk0 vm-local:0,efitype=4m,pre-enrolled-keys=0,format=qcow2
+qm disk import 100 /root/haos-image/haos_ova-18.3.qcow2 vm-local --format qcow2
 qm config 100
 ```
 
@@ -112,7 +112,7 @@ If an execution-time decision requires a different guest IP, edit the HA guest a
 
 ### Physically move and pass through Zigbee
 
-1. Unplug the **existing** Zigbee dongle from the powered-off Pi and plug it into physical culex. Use a USB extension cable, preferably from a USB 2 port/hub, to position the radio away from the metal chassis, USB 3 devices, and Wi-Fi interference. A distant server/rack can materially change RF coverage: preserve a useful radio location and later test distant devices, not just nearby ones.
+1. Unplug the **existing** Zigbee dongle from the powered-off Pi and plug it into physical epsilon. Use a USB extension cable, preferably from a USB 2 port/hub, to position the radio away from the metal chassis, USB 3 devices, and Wi-Fi interference. A distant server/rack can materially change RF coverage: preserve a useful radio location and later test distant devices, not just nearby ones.
 2. In the Proxmox shell, identify the device and its serial number:
 
    ```bash
@@ -132,7 +132,7 @@ If an execution-time decision requires a different guest IP, edit the HA guest a
    qm start 100
    ```
 
-   The dongle belongs only to guest 100; do not attach it to VM 101 or open it with a host Zigbee service. Ordinary USB device passthrough needs neither an entire PCI USB-controller assignment nor nested virtualization.
+   The dongle belongs only to guest 100; do not attach it to the Kubernetes guests or open it with a host Zigbee service. Ordinary USB device passthrough needs neither an entire PCI USB-controller assignment nor nested virtualization.
 5. Verify `.134` in the guest console/OPNsense lease. In the HAOS console, run `hardware info` / `network info` at `ha >` (or `ha hardware info` / `ha network info` in an HA terminal). For a host-shell check, type `login` at the HAOS console and inspect `/dev/serial/by-id/`. The dongle's expected serial identity must appear **in HAOS**, not merely in Proxmox's `lsusb`. Record the full guest path and complete `@ZIGBEE_USB_HOST@` in the manifest.
 
 ## 4. Restore and verify the application
@@ -173,7 +173,7 @@ Configure daily native HA backups with seven retained **off-host** copies; verif
 Use this if login/network/critical integrations or Zigbee do not pass acceptance and cannot be resolved in the window. Avoid pairing changes and radio firmware changes during migration so rollback retains the same radio state.
 
 1. Disable guest auto-start (`qm set 100 --onboot 0`), gracefully shut guest 100 down (`qm shutdown 100 --timeout 120`), and confirm `qm status 100` says stopped. Stop any external duplicate radio/MQTT service introduced for migration as well.
-2. Physically unplug the Zigbee dongle from culex and reconnect it to the Pi. Restore its useful RF position/extension cable. Leave the VM stopped.
+2. Physically unplug the Zigbee dongle from epsilon and reconnect it to the Pi. Restore its useful RF position/extension cable. Leave the VM stopped.
 3. Restore the original OPNsense reservation/static addressing and Pi MAC ownership of `.134`; clear conflicting/stale VM lease and ARP entries. Restore any changed IPv6, firewall/NAT/proxy/tunnel/Tailscale settings. If DNS moved, restore its source in Git and let the normal deployment process publish it; do not introduce a manual competing override.
 4. Power on the intact Pi, log in, and verify its actual serial path, coordinator identity, mains-powered control, battery event, and automation. Recheck LAN DNS and the actual remote-access path. Neither system may run simultaneously with the production identity.
 5. Record the failed acceptance check and logs in planning/recovery notes. Any configuration or history written after the final source backup on the VM is absent from the Pi; preserve a VM-native backup first if those changes matter. Do not blindly merge databases or restore VM state over the working Pi.

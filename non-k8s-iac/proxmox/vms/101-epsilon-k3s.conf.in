@@ -1,5 +1,5 @@
-# VMID 101, physical host culex, Proxmox node culex-pve.
-# The guest retains the Kubernetes node name and 192.168.1.13 address.
+# VMID 101, Proxmox node epsilon on the physical epsilon host.
+# Distinct guest identity permits overlap with physical-node k3s during migration.
 agent: 1
 balloon: 0
 bios: ovmf
@@ -8,8 +8,8 @@ cores: 8
 cpu: host
 efidisk0: @EFI_VOLUME@,efitype=4m,pre-enrolled-keys=0
 machine: q35
-memory: 32768
-name: culex
+memory: 16384
+name: epsilon-k3s
 net0: virtio=02:00:00:01:00:65,bridge=vmbr0
 onboot: 1
 ostype: l26

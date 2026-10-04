@@ -1,0 +1,20 @@
+# VMID 199, Proxmox node epsilon on the physical epsilon host.
+# A persistent MAC supports repeatable DHCP/network acceptance; the guest is manually started.
+agent: 1
+balloon: 0
+bios: ovmf
+boot: order=scsi0
+cores: 1
+cpu: host
+efidisk0: @EFI_VOLUME@,efitype=4m,pre-enrolled-keys=0
+machine: q35
+memory: 1024
+name: network-probe
+net0: virtio=02:00:00:01:00:c7,bridge=vmbr0
+onboot: 0
+ostype: l26
+scsi0: @OS_VOLUME@,backup=1,cache=none,discard=on,iothread=1,size=16G
+scsihw: virtio-scsi-single
+sockets: 1
+startup: order=99,up=0,down=60
+tags: probe;network

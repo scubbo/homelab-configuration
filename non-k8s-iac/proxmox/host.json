@@ -1,22 +1,34 @@
 {
   "status": "planned",
-  "physical_host": "culex",
+  "physical_host": "epsilon",
   "hypervisor": {
-    "hostname": "culex-pve",
-    "fqdn": "culex-pve.avril",
-    "management_ipv4_cidr": null,
+    "hostname": "epsilon",
+    "fqdn": "epsilon.avril",
+    "management_ipv4_cidr": "192.168.1.69/24",
     "gateway": "192.168.1.1",
     "dns_servers": ["192.168.1.1"],
     "bridge": "vmbr0",
-    "bridge_port": null,
-    "install_disk_identity": null,
+    "bridge_port": "eno1",
+    "bridge_port_mac": "14:18:77:28:11:0c",
+    "installation_method": "packages on Debian 13",
     "filesystem": "ext4",
-    "vm_storage": "local-lvm",
+    "vm_storage": "vm-local",
+    "vm_storage_path": null,
     "reserved_memory_mib": 8192,
-    "iso": {
-      "version": "9.2-1",
-      "url": "https://enterprise.proxmox.com/iso/proxmox-ve_9.2-1.iso",
-      "sha256": "4e88fe416df9b527624a175f24c9aa07c714d3332afb1ee3dbf3879573ef2c6c"
+    "linux_installer": {
+      "os": "Debian 13 amd64",
+      "iso_name": null,
+      "iso_sha256": null
+    },
+    "packages": {
+      "major_version": 9,
+      "kernel_package": "proxmox-default-kernel",
+      "management_package": "proxmox-ve",
+      "repository": "https://download.proxmox.com/debian/pve",
+      "suite": "trixie",
+      "key_url": "https://enterprise.proxmox.com/debian/proxmox-archive-keyring-trixie.gpg",
+      "key_sha256": "136673be77aba35dcce385b28737689ad64fd785a797e57897589aed08db6e45",
+      "reviewed_package_versions": null
     },
     "installed_version": null
   },
@@ -41,17 +53,45 @@
       }
     },
     "101": {
-      "name": "culex",
-      "manifest": "vms/101-culex.conf.in",
-      "ipv4": "192.168.1.13",
+      "name": "epsilon-k3s",
+      "manifest": "vms/101-epsilon-k3s.conf.in",
+      "ipv4": null,
       "address_assignment": "static guest configuration",
       "os": "Debian 13 amd64",
-      "installer_iso_name": null,
-      "installer_iso_sha256": null,
-      "k3s_version": "v1.32.6+k3s1",
+      "k3s_role": "server",
       "datastore_host": "epsilon.avril",
       "datastore_port": 5432
+    },
+    "102": {
+      "name": "epsilon-gpu",
+      "manifest": "vms/102-epsilon-gpu.conf.in",
+      "ipv4": null,
+      "address_assignment": "static guest configuration",
+      "os": "Debian 13 amd64",
+      "k3s_role": "agent",
+      "gpu": {
+        "model": "NVIDIA Quadro P1000",
+        "observed_pci_functions": ["0000:05:00.0", "0000:05:00.1"],
+        "observed_device_ids": ["10de:1cb1", "10de:0fb9"],
+        "verified_passthrough_selector": null,
+        "guest_driver_version": null
+      }
+    },
+    "199": {
+      "name": "network-probe",
+      "manifest": "vms/199-network-probe.conf.in",
+      "ipv4": null,
+      "address_assignment": "temporary OPNsense DHCP reservation",
+      "os": "Debian 13 amd64",
+      "purpose": "network and storage acceptance before production guests"
     }
+  },
+  "kubernetes": {
+    "bootstrap_version": "v1.32.6+k3s1",
+    "physical_node_name_during_overlap": "epsilon",
+    "current_api_endpoint": "https://epsilon:6443",
+    "api_endpoint_after_physical_k3s_retirement": null,
+    "datastore_ha_decision": null
   },
   "backup": {
     "proxmox_storage_id": "vm-backups",
