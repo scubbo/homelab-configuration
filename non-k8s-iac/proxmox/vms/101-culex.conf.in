@@ -1,0 +1,20 @@
+# VMID 101, physical host culex, Proxmox node culex-pve.
+# The guest retains the Kubernetes node name and 192.168.1.13 address.
+agent: 1
+balloon: 0
+bios: ovmf
+boot: order=scsi0
+cores: 8
+cpu: host
+efidisk0: @EFI_VOLUME@,efitype=4m,pre-enrolled-keys=0
+machine: q35
+memory: 32768
+name: culex
+net0: virtio=02:00:00:01:00:65,bridge=vmbr0
+onboot: 1
+ostype: l26
+scsi0: @OS_VOLUME@,backup=1,cache=none,discard=on,iothread=1,size=128G
+scsihw: virtio-scsi-single
+sockets: 1
+startup: order=2,up=30,down=180
+tags: kubernetes;control-plane

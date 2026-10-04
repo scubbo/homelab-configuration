@@ -1,0 +1,64 @@
+{
+  "status": "planned",
+  "physical_host": "culex",
+  "hypervisor": {
+    "hostname": "culex-pve",
+    "fqdn": "culex-pve.avril",
+    "management_ipv4_cidr": null,
+    "gateway": "192.168.1.1",
+    "dns_servers": ["192.168.1.1"],
+    "bridge": "vmbr0",
+    "bridge_port": null,
+    "install_disk_identity": null,
+    "filesystem": "ext4",
+    "vm_storage": "local-lvm",
+    "reserved_memory_mib": 8192,
+    "iso": {
+      "version": "9.2-1",
+      "url": "https://enterprise.proxmox.com/iso/proxmox-ve_9.2-1.iso",
+      "sha256": "4e88fe416df9b527624a175f24c9aa07c714d3332afb1ee3dbf3879573ef2c6c"
+    },
+    "installed_version": null
+  },
+  "guests": {
+    "100": {
+      "name": "homeassistant",
+      "manifest": "vms/100-homeassistant.conf.in",
+      "ipv4": "192.168.1.134",
+      "address_assignment": "OPNsense DHCP reservation",
+      "dns_name": "homeassistant.avril",
+      "image": {
+        "version": "18.3",
+        "url": "https://github.com/home-assistant/operating-system/releases/download/18.3/haos_ova-18.3.qcow2.xz",
+        "sha256": "fae6a728768cc10aff60d4820bfcd40d64cd77fab82c8bd92af13b3d9d414090"
+      },
+      "zigbee": {
+        "integration": null,
+        "model": null,
+        "serial_number": null,
+        "usb_host_selector": null,
+        "guest_serial_path": null
+      }
+    },
+    "101": {
+      "name": "culex",
+      "manifest": "vms/101-culex.conf.in",
+      "ipv4": "192.168.1.13",
+      "address_assignment": "static guest configuration",
+      "os": "Debian 13 amd64",
+      "installer_iso_name": null,
+      "installer_iso_sha256": null,
+      "k3s_version": "v1.32.6+k3s1",
+      "datastore_host": "epsilon.avril",
+      "datastore_port": 5432
+    }
+  },
+  "backup": {
+    "proxmox_storage_id": "vm-backups",
+    "nas_host": null,
+    "nas_export": null,
+    "vm_backup_schedule": "weekly, stop mode, retain 4",
+    "ha_backup_schedule": "daily, off-host, retain 7",
+    "last_restore_exercise": null
+  }
+}

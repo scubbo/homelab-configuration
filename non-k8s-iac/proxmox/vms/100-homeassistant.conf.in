@@ -1,0 +1,22 @@
+# VMID 100, physical host culex, Proxmox node culex-pve.
+# HAOS requires UEFI without Secure Boot; the EFI volume holds persistent variables.
+agent: 1
+balloon: 0
+bios: ovmf
+boot: order=scsi0
+cores: 2
+cpu: host
+efidisk0: @EFI_VOLUME@,efitype=4m,pre-enrolled-keys=0
+machine: q35
+memory: 4096
+name: homeassistant
+net0: virtio=02:00:00:01:00:64,bridge=vmbr0
+onboot: 1
+ostype: l26
+scsi0: @OS_VOLUME@,backup=1,cache=none,discard=on,iothread=1,size=64G
+scsihw: virtio-scsi-single
+sockets: 1
+startup: order=1,up=30,down=120
+tags: homeassistant;appliance
+# Passthrough binds to a unique device type or a labelled physical port on this host.
+usb0: host=@ZIGBEE_USB_HOST@

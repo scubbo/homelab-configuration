@@ -13,6 +13,12 @@ So - with some regret and shame - I've decided it's prudent to conform and use t
 
 # Auxillary installations
 
+## Proxmox and Home Assistant VMs
+
+The planned VM platform runs Proxmox on physical `culex`, with separate Kubernetes and Home Assistant OS guests. See the [hypervisor installation and host-conversion runbook](docs/proxmox-installation.md), [Home Assistant migration/rollback runbook](docs/homeassistant-vm-migration.md), and [versioned VM configuration](non-k8s-iac/proxmox/README.md). Operational and planned assets are recorded in the [asset catalogue](docs/asset-catalogue.md).
+
+## democratic-csi
+
 Several applications in this setup depend on [democratic-csi](https://github.com/democratic-csi/democratic-csi/), an automatic provisioner of PersistentVolumes from (among other things) `freenas-nfs` and `freenas-iscsi`. Unfortunately there's no easy way to model this within the app-of-apps setup here for one-command installation, as the `values.yaml` include both an `apiKey` and an ssh key, both of which should be treated as secrets. Thankfully, installation is reasonably well-documented - a combination of [these](https://jonathangazeley.com/2021/01/05/using-truenas-to-provide-persistent-storage-for-kubernetes/) [two](https://www.lisenet.com/2021/moving-to-truenas-and-democratic-csi-for-kubernetes-persistent-storage/) community guides suffice for setting up the FreeNAS server to accept connections, and there's a great `values.yaml` template [here](https://raw.githubusercontent.com/democratic-csi/charts/master/stable/democratic-csi/examples/freenas-nfs.yaml) which needs values filled in from the appropriate [examples](https://github.com/democratic-csi/democratic-csi/tree/master/examples). Remember to adjust:
 * `host`
 * Use `apiKey` instead of `username/password`
