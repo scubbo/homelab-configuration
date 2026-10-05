@@ -17,7 +17,7 @@ Do **not** store secret material, private keys, API tokens, recovery codes, or c
 | `rasnu1` | Kubernetes workload node | k3s | Debian Linux node. |
 | OPNsense (`192.168.1.1`) | Router, AdGuard Home, Unbound DNS | Manual appliance configuration and external-dns | external-dns manages `*.avril` Unbound records; do not create unmanaged host overrides. |
 | TrueNAS storage hosts (`rassigma.avril`, `rasnu2.avril`) | NFS/iSCSI storage for Kubernetes | Manual appliance configuration and democratic-csi | Kubernetes uses `freenas-nfs-csi` and `freenas-iscsi-csi`; credentials are not stored in this repository. |
-| Jellyfin proxy | Internet-facing EC2 reverse proxy for Jellyfin | `non-k8s-iac/aws-cloudformation/jellyfin-proxy/` | Replacement stack `jellyfin-proxy-replacement` currently uses Elastic IP `34.231.142.91`. It accepts the Tailscale route to `192.168.1.0/24` and proxies to `jellyfin.avril:80` through Traefik. Use AWS SSM Session Manager, never public SSH. NPM admin access is an SSM port-forward to local port 8181. NPM state is encrypted EBS data with AWS Backup. |
+| Jellyfin proxy | Internet-facing EC2 reverse proxy for Jellyfin | `non-k8s-iac/aws-cloudformation/jellyfin-proxy/` | Stack `jellyfin-proxy-replacement` currently uses instance `i-0887ba1714b7bed76` and Elastic IP `34.231.142.91`. It accepts the Tailscale route to `192.168.1.0/24` and proxies to `jellyfin.avril:80` through Traefik. Use AWS SSM Session Manager, never public SSH. NPM admin access is an SSM port-forward to local port 8181. NPM state is encrypted EBS data with AWS Backup. |
 
 ## Domains and public exposure
 
