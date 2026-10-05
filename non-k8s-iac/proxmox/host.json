@@ -60,7 +60,7 @@
       "name": "epsilon-k3s",
       "manifest": "vms/101-epsilon-k3s.conf.in",
       "ipv4": "192.168.1.222",
-      "address_validation": "pending OPNsense DHCP/static inventory and exclusion",
+      "address_validation": "Jack confirmed no conflicts and ISC pool exclusion; guest not deployed",
       "address_assignment": "static guest configuration",
       "os": "Debian 13 amd64",
       "k3s_role": "server",
@@ -71,7 +71,7 @@
       "name": "epsilon-gpu",
       "manifest": "vms/102-epsilon-gpu.conf.in",
       "ipv4": "192.168.1.223",
-      "address_validation": "pending OPNsense DHCP/static inventory and exclusion",
+      "address_validation": "Jack confirmed no conflicts and ISC pool exclusion; guest not deployed",
       "address_assignment": "static guest configuration",
       "os": "Debian 13 amd64",
       "k3s_role": "agent",
@@ -87,7 +87,7 @@
       "name": "network-probe",
       "manifest": "vms/199-network-probe.conf.in",
       "ipv4": "192.168.1.221",
-      "address_validation": "pending OPNsense DHCP/static inventory and reservation",
+      "address_validation": "Jack confirmed ISC pool exclusion; probe static mapping/lease verification pending",
       "address_assignment": "temporary OPNsense DHCP reservation",
       "os": "Debian 13 amd64",
       "purpose": "network and storage acceptance before production guests"
@@ -100,24 +100,24 @@
     "api_endpoint_after_physical_k3s_retirement": null,
     "planned_api_endpoint": "https://k3s-api.avril:6443",
     "api_virtual_ipv4": "192.168.1.220",
-    "api_address_validation": "pending OPNsense DHCP/static inventory and exclusion",
+    "api_address_validation": "Jack confirmed no conflicts and ISC pool exclusion; VIP not deployed",
     "api_proxy_hosts": ["epsilon", "culex"],
     "api_proxy_status": "placement accepted by Jack; not installed",
     "future_guest_ipv4_range": {
       "start": "192.168.1.224",
       "end": "192.168.1.229",
-      "validation": "repository reservation only; pending OPNsense exclusion/conflict check"
+      "validation": "Jack confirmed no conflicts and ISC pool exclusion; held for future guests"
     },
     "datastore_ha_decision": null
   },
   "router": {
     "dhcp_backend": "ISC DHCPv4 [legacy]",
-    "current_dynamic_pool": {
-      "start": "192.168.1.1",
-      "end": "192.168.1.254"
-    },
+    "current_dynamic_pools": [
+      {"start": "192.168.1.10", "end": "192.168.1.219"},
+      {"start": "192.168.1.230", "end": "192.168.1.254"}
+    ],
     "project_range_conflict_check": "Jack reports no existing assignments in 192.168.1.220-229",
-    "project_range_exclusion_status": "not yet applied; preserve exclusions for other static addresses when splitting pools"
+    "project_range_exclusion_status": "split pools applied and confirmed by Jack; 192.168.1.220-229 outside dynamic pools"
   },
   "backup": {
     "proxmox_storage_id": "vm-backups",
@@ -125,8 +125,16 @@
     "nas_ipv4": "192.168.1.39",
     "nas_platform": "TrueNAS CORE",
     "planned_nas_export": "/mnt/high-resiliency/proxmox-backups",
-    "export_status": "approved by Jack; creation/permission test pending",
-    "nas_export": null,
+    "export_status": "created by Jack; export and allowed host observed from epsilon; mount/write test pending",
+    "nas_export": "/mnt/high-resiliency/proxmox-backups",
+    "nas_user": "proxback",
+    "nas_uid": 1001,
+    "nas_group": "proxback",
+    "nas_gid": 1001,
+    "nas_user_shell": "nologin",
+    "allowed_host": "192.168.1.69",
+    "maproot_user": "proxback",
+    "maproot_group": "proxback",
     "vm_backup_schedule": "weekly, stop mode, retain 4",
     "ha_backup_schedule": "daily, off-host, retain 7",
     "last_restore_exercise": null
