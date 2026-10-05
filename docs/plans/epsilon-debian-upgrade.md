@@ -176,6 +176,42 @@ The verified ISO is staged on culex at `/home/scubbo/epsilon-recovery.mVvt2ir2/s
 
 The Mac had no external physical disks attached and approximately 2.5 GiB free when checked. Plug in an expendable USB stick (at least 2 GiB), identify it with `diskutil list external physical` and `diskutil info <exact-device>`, and confirm its size/model/contents before any device write. Do not guess a `/dev/diskN` from a previous connection. Use the verified ISO with a Mac-compatible image writer or a device-specific operator `dd` command after identification; no USB disk has yet been erased. The ISO may be copied locally only after checking available space, or streamed from its verified culex copy with a subsequent exact-byte device-readback checksum. A USB write failure is not an acceptable rescue medium.
 
+Jack attached `/Volumes/Lexar` and explicitly approved erasing it. Mac inspection maps volume `disk2s1` to **external physical USB Flash Drive `/dev/disk2`**, exactly 124,623,257,600 bytes; its contents were Lexar DataShield installers/guides and macOS metadata. Mac sudo requires Jack's interactive authentication. Writing and USB readback verification are pending; the ISO on culex has been rehashed successfully.
+
+Run the device-specific write below in Jack's **Mac terminal**, after checking the displayed disk is still that same USB. Disk identifiers can change after reconnecting; if its identity/size differs, identify it again before writing. Authenticate sudo before the pipeline; `BatchMode=yes` prevents SSH password prompting during the stream (workstation-to-culex key authentication has been verified).
+
+```bash
+diskutil info /dev/disk2
+sudo -v
+diskutil unmountDisk /dev/disk2
+```
+
+Proceed only when unmount succeeds and identity is confirmed:
+
+```bash
+(
+  set -o pipefail
+  ssh -o BatchMode=yes -o ConnectTimeout=10 \
+    -o ServerAliveInterval=10 -o ServerAliveCountMax=3 scubbo@culex \
+    'cat /home/scubbo/epsilon-recovery.mVvt2ir2/systemrescue-13.02-amd64.iso' \
+    | sudo -n dd of=/dev/rdisk2 bs=4m
+)
+sync
+```
+
+On macOS, Ctrl+T reports `dd` progress without terminating it. If macOS offers to initialize an unreadable disk after the ISO write, choose **Ignore**, not Initialize. Stop on any SSH/dd error, including expired sudo credentials. Read back exactly 1,381,629,952 ISO bytes using 21,082 blocks of 65,536 bytes (not the entire 124.6 GB stick):
+
+```bash
+sudo -v
+diskutil unmountDisk /dev/disk2
+(
+  set -o pipefail
+  sudo -n dd if=/dev/rdisk2 bs=64k count=21082 | shasum -a 256
+)
+```
+
+Expected SHA-256: `ad4d670b72859d887c7960142a9a9d36a3e50446694a035e254442f65d6e7572`. Eject with `diskutil eject /dev/disk2` only after successful write/readback. Record the outcome before using this USB to boot epsilon.
+
 Keep a separate workstation terminal available for runbook/log access. From the physical machine, use its one-time boot menu (commonly Dell F11) to boot **UEFI USB**, not an installed-OS installer or format option. SystemRescue starts a root shell and normally configures the wired LAN with DHCP via NetworkManager. Its NIC name/address may differ from the installed OS; inspect rather than assume:
 
 ```bash
