@@ -130,7 +130,15 @@ Before changing public DNS, validate this exact request through SSM:
 curl --fail --location --connect-timeout 10 --max-time 30 http://jellyfin.avril/
 ```
 
-AWS Backup protects the state volume, but a backup is not a recovery test. At least once after migration, restore a recovery point to a temporary volume in `us-east-1c`, attach it to an isolated replacement instance, and verify the NPM configuration and certificate files are usable. Destroy the test resources when validation is complete.
+AWS Backup protects the state volume, but a backup is not a recovery test. The restoration drill on 2026-10-05 passed: the latest recovery point restored to an encrypted 20 GiB volume in `us-east-1c`, and an isolated SSM-only host mounted it with `ro,noload`. The NPM SQLite database contained the Proxy Host and certificate records, and the restored certificate matched `jellyfin.scubbo.org`.
+
+Repeat the following after material changes to backup, storage, NPM, or recovery infrastructure:
+
+1. Restore the latest recovery point to a temporary volume in `us-east-1c` with AWS Backup.
+2. Attach it to an SSM-only test instance protected by a security group with no inbound rules.
+3. Mount the volume read-only with `noload`; do not start NPM from the restored state.
+4. Run a no-repair filesystem check and inspect the NPM SQLite database and public certificate metadata. Never print private keys or NPM credential values.
+5. Terminate the test instance, delete the restored volume, and delete the temporary security group. Verify all temporary resources are gone.
 
 ## Monitoring follow-up
 
