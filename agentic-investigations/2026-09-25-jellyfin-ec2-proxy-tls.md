@@ -191,6 +191,37 @@ After enabling it on the live replacement host, `192.168.1.13` routed through `t
 
 ## Remaining hardening
 
-- Perform and document an isolated restoration exercise from an AWS Backup recovery point before deleting the legacy `jellyfin-proxy` stack.
 - Keep the legacy stack available until the restoration exercise and a normal NPM certificate renewal have both succeeded.
 - Implement the planned AWS CloudWatch/EventBridge alert visibility in Grafana. AWS alerts currently route to the confirmed SNS email subscription.
+
+## Isolated AWS Backup restoration drill (2026-10-05)
+
+### Scope and safety controls
+
+Tested the latest completed AWS Backup recovery point for the encrypted NPM state volume without changing the live proxy, its state volume, its Elastic IP, NPM configuration, Cloudflare DNS, or Kubernetes resources.
+
+- Source recovery point: `snap-0ba1a06a458516363`, created 2026-10-04 from the live `vol-0699ed35f7bcbf753` state volume.
+- Restore job: `a2f8a3a2-6a6d-4ebd-8692-136d3b5b6815`; completed in 76 seconds.
+- Restored resource: encrypted 20 GiB EBS volume `vol-068de847cf4a8f0f9` in `us-east-1c`, encrypted with the same KMS key as the source.
+- Test host: temporary `t3.micro` `i-09336bb5af2e9abba` in `us-east-1c`, using the SSM instance profile and a dedicated security group with **no inbound rules**. Its public IP existed only for outbound SSM connectivity.
+- The restored disk was attached but no NPM container was started and no network listener was exposed.
+
+### Verification results
+
+The restored volume was mounted read-only with `noload` and unmounted after inspection:
+
+```
+/dev/nvme1n1 /mnt/npm-restore ro,relatime,norecovery
+```
+
+`fsck.ext4 -fn` completed without repairs. The restored NPM state was readable:
+
+- `proxy_host_rows=1`
+- `certificate_rows=1`
+- `/letsencrypt/live/npm-1/fullchain.pem` contains the expected `jellyfin.scubbo.org` Let's Encrypt certificate, valid through 2026-12-30.
+
+This proves that AWS Backup can restore the encrypted NPM state volume and that the restored data contains both the proxy configuration and ACME certificate material needed for recovery.
+
+### Cleanup verification
+
+After verification, the temporary instance was terminated, the restored EBS volume was deleted, and the no-ingress security group was deleted. AWS confirmed the volume and security group no longer existed. The live replacement proxy passed both EC2 system/instance status checks and continued serving public HTTPS throughout.

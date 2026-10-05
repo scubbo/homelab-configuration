@@ -47,5 +47,5 @@ Do **not** store secret material, private keys, API tokens, recovery codes, or c
 | --- | --- | --- |
 | Kubernetes services | Prometheus, Blackbox Exporter, Alertmanager | Ingress discovery covers Traefik endpoints. |
 | Jellyfin public HTTPS endpoint | Dedicated static Blackbox probe | Independently probes `https://jellyfin.scubbo.org/web/`; generic Ingress discovery excludes the public hostname because it now traverses the EC2 proxy. Includes availability and certificate-expiry alerts. |
-| Jellyfin proxy state | AWS Backup recovery point and deletion snapshots | A restoration exercise is required after initial migration and after material recovery changes. |
+| Jellyfin proxy state | AWS Backup recovery point and deletion snapshots | Isolated restoration drill passed on 2026-10-05. Repeat after material changes to backup, storage, NPM, or recovery infrastructure. |
 | Jellyfin proxy AWS infrastructure alerts | Dedicated SNS topic with email subscription | EC2 status-check, AWS Backup, and Tailscale auth-key expiry events email `scubbojj@gmail.com` after subscription confirmation. Grafana ingestion is a planned follow-up. |
