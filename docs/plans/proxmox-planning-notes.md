@@ -43,6 +43,9 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Assign draft guest/API addresses and record their router-validation status in the catalogue.
 - [x] Explain/draft API proxy placement and a dedicated galactus VM-backup export.
 - [x] Verify address/storage clarification work and prepare the review commit.
+- [x] Record signature-probe result and Jack's revised `.220–.229` address block consistently.
+- [x] Record accepted proxy/NAS placement and document VRRP election, partition behavior, and listener coexistence.
+- [x] Prepare router/NAS operator steps and verify configuration consistency; prepare review commit.
 
 ## Findings (2026-10-04, read-only)
 
@@ -136,3 +139,9 @@ The hypervisor and HA guest should boot without Kubernetes, external-dns, Vault,
 - Assigned repository address candidates: server `.220`, GPU worker `.221`, probe `.222`, API VIP `.223`. Catalogue records exact VM MACs and pending OPNsense DHCP/static-assignment validation; these are not claimed router reservations or deployed addresses. Host intent agrees with the catalogue; no DNS records were published.
 - Recommended host-OS API proxy services on physical epsilon and culex, with shared VIP failover and TLS passthrough; placement awaits Jack's acceptance. Proposed galactus dataset/export `high-resiliency/proxmox-backups` at `/mnt/high-resiliency/proxmox-backups`, backup-only Proxmox storage fragment and keep-last=4. Existing share capacity/permissions need NAS administration and a real write/restore test before deployment.
 - Verification passed: 5 renderer tests, 106 local hyperlinks/anchors, 7 Bash examples, distinct catalogue/host-intent address assignments, proposed NAS storage-fragment consistency, and git diff checks. No cluster/host/router/NAS writes, partition formatting, or application deployment occurred; inventory was read-only.
+- Jack's privileged `wipefs --no-act`/`blkid -p` returned no recognized signatures or displayed errors on the selected 931 GiB disk. Allocation/formatting has not occurred; do not repeat the completed signature check absent a state change. Signature absence is not a claim about zeroed raw contents or RAID health.
+- Jack revised address order to API VIP `.220`, probe `.221`, general server `.222`, GPU worker `.223`, and repository reservation `.224–.229` for six additional colocated guests. Router validation/exclusions remain pending. Preserve persistent VM MACs and update catalogue/host intent/plans together.
+- Jack accepted proxy services on epsilon/culex and dedicated galactus backup dataset/export. Router/NAS operator preparation now explains backend-specific DHCP range checks, no fake future-guest/VIP mappings, share-scoped root mapping to a dedicated backup account, and real backup/restore acceptance.
+- Read-only `ss -ltn` confirms wildcard `*:6443` listeners on both physical k3s servers. A VIP-specific same-port proxy cannot bind until server listeners are narrowed to their own addresses or a different architecture is chosen. Plan a tested bind-address/server-local-client restart transition, not a misleading assumption that binding a different IP automatically avoids wildcard listener contention.
+- VRRP design: distinct priorities, both initially BACKUP, nopreempt, one-second adverts, explicit unicast peers and protocol-112 firewall allowance, gratuitous ARP on takeover, local proxy/interface tracking. This is not quorum/fencing: advertisement partition can yield dual masters. Host/health/partition/rejoin testing and client reconnect timing are required before claiming endpoint HA.
+- Verification passed for this revision: 5 renderer tests, 175 local hyperlinks/anchors, 32 Bash example syntax checks, exact `.220–.229` catalogue/host-intent mapping, accepted proxy-host inventory, and git diff checks. No formatting, live VIP/listener, NAS/router, cluster or DNS writes were performed.

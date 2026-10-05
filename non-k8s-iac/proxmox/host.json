@@ -16,6 +16,7 @@
     "vm_storage_path": "/mnt/proxmox",
     "vm_storage_uuid": null,
     "storage_candidate_wwn": "0x614187703cb534002c7d389b1499c8ab",
+    "storage_signature_check": "Jack ran privileged wipefs --no-act and blkid -p; no signatures reported",
     "reserved_memory_mib": 8192,
     "linux_installer": {
       "os": "Debian 13 amd64",
@@ -58,7 +59,7 @@
     "101": {
       "name": "epsilon-k3s",
       "manifest": "vms/101-epsilon-k3s.conf.in",
-      "ipv4": "192.168.1.220",
+      "ipv4": "192.168.1.222",
       "address_validation": "pending OPNsense DHCP/static inventory and exclusion",
       "address_assignment": "static guest configuration",
       "os": "Debian 13 amd64",
@@ -69,7 +70,7 @@
     "102": {
       "name": "epsilon-gpu",
       "manifest": "vms/102-epsilon-gpu.conf.in",
-      "ipv4": "192.168.1.221",
+      "ipv4": "192.168.1.223",
       "address_validation": "pending OPNsense DHCP/static inventory and exclusion",
       "address_assignment": "static guest configuration",
       "os": "Debian 13 amd64",
@@ -85,7 +86,7 @@
     "199": {
       "name": "network-probe",
       "manifest": "vms/199-network-probe.conf.in",
-      "ipv4": "192.168.1.222",
+      "ipv4": "192.168.1.221",
       "address_validation": "pending OPNsense DHCP/static inventory and reservation",
       "address_assignment": "temporary OPNsense DHCP reservation",
       "os": "Debian 13 amd64",
@@ -98,9 +99,15 @@
     "current_api_endpoint": "https://epsilon:6443",
     "api_endpoint_after_physical_k3s_retirement": null,
     "planned_api_endpoint": "https://k3s-api.avril:6443",
-    "api_virtual_ipv4": "192.168.1.223",
+    "api_virtual_ipv4": "192.168.1.220",
     "api_address_validation": "pending OPNsense DHCP/static inventory and exclusion",
-    "api_proxy_hosts": null,
+    "api_proxy_hosts": ["epsilon", "culex"],
+    "api_proxy_status": "placement accepted by Jack; not installed",
+    "future_guest_ipv4_range": {
+      "start": "192.168.1.224",
+      "end": "192.168.1.229",
+      "validation": "repository reservation only; pending OPNsense exclusion/conflict check"
+    },
     "datastore_ha_decision": null
   },
   "backup": {
@@ -108,7 +115,7 @@
     "nas_host": "galactus.avril",
     "nas_ipv4": "192.168.1.39",
     "planned_nas_export": "/mnt/high-resiliency/proxmox-backups",
-    "export_status": "proposed; absent from observed NFS export list",
+    "export_status": "approved by Jack; creation/permission test pending",
     "nas_export": null,
     "vm_backup_schedule": "weekly, stop mode, retain 4",
     "ha_backup_schedule": "daily, off-host, retain 7",

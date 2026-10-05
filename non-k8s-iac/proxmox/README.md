@@ -18,10 +18,10 @@ Native [`qm.conf`](https://pve.proxmox.com/pve-docs/qm.conf.5.html) manifests re
 
 - [`host/interfaces`](host/interfaces): proposed static `.69` LAN bridge on `eno1`, preserving the interfaces.d include. Merge only after inspecting execution-time host configuration and reserving `.69`; its deployment changes live management networking.
 - [`host/hosts.fragment`](host/hosts.fragment): host name resolution independent of Kubernetes; merge with existing localhost/IPv6 entries, not replace the entire file.
-- [`host/fstab.fragment.in`](host/fstab.fragment.in): `/mnt/proxmox` ext4 mount with filesystem UUID still unresolved pending disk ownership/signature/RAID checks. This is not a disk-format command.
+- [`host/fstab.fragment.in`](host/fstab.fragment.in): `/mnt/proxmox` ext4 mount with filesystem UUID still unresolved pending allocation. Jack's privileged disk probes reported no recognized signatures; the filesystem has not been created. This is not a disk-format command.
 - [`host/storage.cfg.fragment`](host/storage.cfg.fragment): Proxmox `vm-local` directory storage on that mount, with `is_mountpoint` checking so a missing mount is offline instead of consuming root space. Merge with actual Proxmox storage entries, preserving unique storage/volume identity.
-- [`host/backup-storage.cfg.fragment`](host/backup-storage.cfg.fragment): galactus backup-only NFS storage and four-copy retention, referring to a proposed dedicated export that must be created/permission-tested before deployment.
-- [Stable API endpoint design](../../docs/plans/k3s-api-endpoint.md): `k3s-api.avril` is a draft target, with VIP/proxy placement pending.
+- [`host/backup-storage.cfg.fragment`](host/backup-storage.cfg.fragment): galactus backup-only NFS storage and four-copy retention, referring to Jack's accepted dedicated export that must be created/permission-tested before deployment.
+- [Stable API endpoint design](../../docs/plans/k3s-api-endpoint.md): `k3s-api.avril` VIP `.220` with accepted epsilon/culex proxy placement; implementation pending.
 
 The Debian installer is pinned to `debian-13.7.0-amd64-netinst.iso` using the SHA-256 published in the version-specific official checksum file. Download/check it at the recorded URL before uploading it to `vm-local` ISO storage. The installer was not downloaded or booted as part of this draft.
 
@@ -46,7 +46,7 @@ Review the printed commands and run them deliberately in the Proxmox shell after
 | [102, epsilon-gpu](vms/102-epsilon-gpu.conf.in) | k3s agent, Jellyfin/Tdarr P1000 | 8 / 16 GiB | 64 GiB | `02:00:00:01:00:66` |
 | [199, network-probe](vms/199-network-probe.conf.in) | Minimal network/storage acceptance | 1 / 1 GiB | 16 GiB | `02:00:00:01:00:c7` |
 
-Confirm all locally administered MACs and VMIDs are unused; allocate IDs across any future Proxmox hosts. Guest/API candidates `.220`/`.221`/`.222`/`.223` are assigned in [catalogue address allocations](../../docs/asset-catalogue.md#intended-address-allocations-not-yet-reserved-in-opnsense), with router validation/exclusion still pending. HA retains `.134`. The host retains `.69`/`epsilon`; guests never share its Kubernetes name/IP. No `epsilon-physical` node rename is needed to achieve physical/guest overlap.
+Confirm all locally administered MACs and VMIDs are unused; allocate IDs across any future Proxmox hosts. [Catalogue address allocations](../../docs/asset-catalogue.md#intended-address-allocations-not-yet-reserved-in-opnsense) hold API `.220`, probe `.221`, server `.222`, GPU worker `.223`, and future guests `.224–.229`, with router validation/exclusion still pending. [Router/NAS preparation](../../docs/plans/proxmox-network-storage-preparation.md) describes implementing that complete block. HA retains `.134`. The host retains `.69`/`epsilon`; guests never share its Kubernetes name/IP. No `epsilon-physical` node rename is needed to achieve physical/guest overlap.
 
 Production guest RAM totals 36 GiB; reserve at least 8 GiB for host services/Proxmox and measure **overlap** consumption before starting all guests. GPU workers/physical PostgreSQL still consume host RAM until their respective migration. More guest separation does not provide physical HA. `cpu: host` favors this host; migration to unlike CPUs uses a powered-off move or an explicitly selected shared model.
 
