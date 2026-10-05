@@ -22,8 +22,8 @@ Third-party candidates include Docker CE 27 → 29 and containerd.io 1.7 → 2.3
 Observed root causes and operator actions:
 
 1. **ESP mount configured:** UEFI BootCurrent `0006` references Debian shim on ESP `/dev/sdb1` (UUID `6B0D-04C5`, PARTUUID `fb231222-651f-407c-96eb-f8f7841ab72d`). Jack added `UUID=6B0D-04C5 /boot/efi vfat umask=0077 0 1` to fstab and mounted it. Read-only SSH confirmed read-write mount with `fmask=0077,dmask=0077`; Debian boot files are present. Persistence across a reboot and upgraded bootloader operation remain acceptance checks.
-2. **Data partition type corrected:** Jack's on-disk `sfdisk --dump` and `lsblk` results confirm partition 3 now has Linux filesystem GPT type `0fc63daf-8483-4772-8e79-3d69d8477de4`. Start/size, disk ID, and all PARTUUIDs match the saved table; ext4 UUID `428cea4d-9e78-4af9-99df-c9f13f06f680` and read-write `/mnt/second-drive` mount are intact. This resolves the incorrect swap label that caused `systemd-gpt-auto-generator` to attempt `swapon`. Generated-unit cleanup and reboot acceptance remain pending.
-3. **Retired NAS mount:** `rassigma.avril:/mnt/BERTHA → /mnt/NAS` timed out at boot; NFS TCP 2049 currently refuses connections. Jack approved retiring this mount. `/mnt/NAS` is unmounted/empty; no current pod hostPath or inspected systemd/backup path references it. Finish checking all container bind mounts, user jobs/services, and scripts; remove only this fstab record and preserve the directory/local files.
+2. **Data partition type corrected:** Jack's on-disk `sfdisk --dump` and `lsblk` results confirm partition 3 now has Linux filesystem GPT type `0fc63daf-8483-4772-8e79-3d69d8477de4`. Start/size, disk ID, and all PARTUUIDs match the saved table; ext4 UUID `428cea4d-9e78-4af9-99df-c9f13f06f680` and read-write `/mnt/second-drive` mount are intact. The generated swap unit is now `not-found` after daemon-reload; its retained failure record can be cleared. Reboot acceptance remains pending.
+3. **NAS fstab entry retired:** Jack removed `rassigma.avril:/mnt/BERTHA → /mnt/NAS`; read-only SSH confirms the entry is absent and its generated mount unit is `not-found`. The directory/local files are preserved. Inspected Docker/pod/readable configuration paths had no consumers; the requested privileged consumer-search output has not been supplied. Fstab validation passed without errors/warnings; clear only this obsolete unit's retained failure record.
 4. **OpenSSH prerequisite:** Installed server `1:9.2p1-2+deb12u2` is below Debian's `deb12u7` minimum recommended for interrupted remote Trixie upgrades. Patch Bookworm first and prove a fresh SSH login before Trixie changes.
 
 Jack runs the privileged checks in his session and shares sanitized output. Start with:
@@ -114,6 +114,15 @@ systemctl --failed --no-pager
 ```
 
 The ESP is already mounted and GPT correction verified. Inspect remaining failed units before clearing their recorded state; unrelated failures require investigation. `daemon-reload` reruns generators, but a failed unit record may persist until explicitly reset or the scheduled reboot. Do not start swap or force a partition reread to clear an obsolete failure.
+
+Jack supplied successful `findmnt --verify --verbose` output and failed-unit inspection. Read-only SSH confirms the retired NAS fstab entry is absent; both `mnt-NAS.mount` and `dev-sdb3.swap` have `LoadState=not-found`, `ActiveState=failed`. These are retained records of units that no longer exist, not active mount/swap configuration. Clear those two records and inspect the complete remaining failure list:
+
+```bash
+sudo systemctl reset-failed mnt-NAS.mount dev-sdb3.swap
+systemctl --failed --no-pager
+```
+
+This does not start services, mount filesystems, or activate swap. Clearing records alone does not substitute for the scheduled physical reboot/boot-image rehearsal.
 
 Verify these fixes on a scheduled reboot; clearing recorded failure state alone does not prove corrected boot behavior. Stop if EFI files or partition identities disagree. Record the actual sanitized fstab/partition changes in operational documentation and the execution log.
 
