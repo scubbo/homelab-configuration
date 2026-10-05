@@ -75,16 +75,31 @@ The ESP/fstab and textual GPT backup steps are complete. Jack supplied the GPT b
 ssh scubbo@culex 'cat /home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-gpt.before'
 ```
 
-Jack's privileged directory inspection reports 24 KiB used under `/mnt/second-drive`, containing `longhorn` and `lost+found`. Read-only SSH found no entries inside `longhorn`; preserve the complete contents rather than deleting these directories. Before the type edit, archive this small filesystem's files off-host with ownership/ACLs/xattrs preserved:
+Jack's privileged directory inspection reports 24 KiB used under `/mnt/second-drive`, containing `longhorn` and `lost+found`. Read-only SSH found no entries inside `longhorn`; preserve the complete contents rather than deleting these directories. Before the type edit, create the small archive locally with ownership/ACLs/xattrs preserved, then transfer it separately. Run each step only after the preceding commands succeed; sudo and password-authenticated SSH must not prompt concurrently on the same terminal.
 
 ```bash
-(
-  set -o pipefail
-  sudo tar --one-file-system --acls --xattrs --numeric-owner -C /mnt/second-drive -cpf - . \
-    | ssh scubbo@culex 'umask 077; set -C; cat > /home/scubbo/epsilon-recovery.mVvt2ir2/second-drive.before.tar'
-)
-ssh scubbo@culex 'tar -tvf /home/scubbo/epsilon-recovery.mVvt2ir2/second-drive.before.tar'
+umask 077
+BACKUP_DIR=$(mktemp -d "$HOME/second-drive-backup.XXXXXXXX")
+sudo -v
+sudo -n tar --one-file-system --acls --xattrs --numeric-owner \
+  -C /mnt/second-drive -cpf "$BACKUP_DIR/second-drive.before.tar" .
+sudo -n chown "$(id -u):$(id -g)" "$BACKUP_DIR/second-drive.before.tar"
+chmod 600 "$BACKUP_DIR/second-drive.before.tar"
+tar -tvf "$BACKUP_DIR/second-drive.before.tar"
+sha256sum "$BACKUP_DIR/second-drive.before.tar"
 ```
+
+Then transfer the completed file; SSH can prompt for culex's password without a simultaneous sudo prompt. Timeouts bound connection establishment and detect an unresponsive authenticated connection; they do not impose a password-prompt deadline.
+
+```bash
+ssh -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 \
+  scubbo@culex 'umask 077; set -C; cat > /home/scubbo/epsilon-recovery.mVvt2ir2/second-drive.before.tar' \
+  < "$BACKUP_DIR/second-drive.before.tar"
+ssh -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 \
+  scubbo@culex 'tar -tvf /home/scubbo/epsilon-recovery.mVvt2ir2/second-drive.before.tar && sha256sum /home/scubbo/epsilon-recovery.mVvt2ir2/second-drive.before.tar'
+```
+
+Compare the SHA-256 digests. Keep the local copy until the off-host archive is verified. If a transfer fails, inspect any partial destination and preserve it for diagnosis before retrying under a distinct filename; noclobber intentionally refuses to overwrite it.
 
 Only after successful backup/inspection, use the interactive fdisk type-only procedure above. Its `p` output must show partition 3 at start `973699072`, end `975697919`, and Linux filesystem; partitions 1/2 retain their existing boundaries/types. An in-use warning is expected on the live OS disk; do not resize/delete partitions or force a kernel reread. Prefer performing the edit from the planned rescue session if the tool refuses the type-only write. Capture full editor output and verify with `sudo /usr/sbin/sfdisk --dump <verified-disk>` plus `lsblk`/`findmnt` afterwards; do not treat a stale generated swap unit's failure state as evidence that the on-disk edit failed.
 
