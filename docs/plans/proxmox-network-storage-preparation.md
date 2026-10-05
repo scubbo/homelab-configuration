@@ -30,7 +30,7 @@ The split pools and reported absence of project conflicts are recorded in catalo
 
 ## 2. Galactus VM-backup dataset/export
 
-Jack created/configured `high-resiliency/proxmox-backups` on **galactus.avril (`192.168.1.39`)**, path `/mnt/high-resiliency/proxmox-backups`. NFS discovery from epsilon confirms that export with allowed host **`192.168.1.69`**; existing manual-nfs/media/Kubernetes shares remain listed. Jack reports the requested permissions/map-root setup using **`proxback`, UID/GID `1001:1001`**, with shell `nologin`. NAS free capacity and host mount/write test are not yet reported; export listing alone does not prove writes.
+Jack created/configured `high-resiliency/proxmox-backups` on **galactus.avril (`192.168.1.39`)**, path `/mnt/high-resiliency/proxmox-backups`. NFS discovery from epsilon confirms that export with allowed host **`192.168.1.69`**; existing manual-nfs/media/Kubernetes shares remain listed. Account `proxback` has reported UID/GID `1001:1001` and shell `nologin`. The preliminary host mount succeeded, but root file creation failed with Permission denied; epsilon sees dataset-root ownership `0:0` and mode `0755`. Jack confirms proxback ownership was applied and share Maproot is proxback, so server filesystem/export inspection is required to resolve the conflicting observations. NAS free capacity and VM backup/restore remain untested.
 
 In the NAS administration UI:
 
@@ -67,19 +67,41 @@ findmnt --mountpoint "$CHECK_MOUNT"
 sudo -n stat -c '%u:%g %a %n' "$CHECK_MOUNT"
 ```
 
-Proceed only after a successful mount and expected filesystem identity. Then test actual root writes (which should map to UID/GID `1001:1001`):
+Proceed only after a successful mount and expected filesystem identity/permissions. Then test actual root writes (which should map to UID/GID `1001:1001`). The subshell exits on the first error and requires a nonempty mount variable; cleanup occurs only after successful verification:
 
 ```bash
-CHECK_FILE=$(sudo -n mktemp "$CHECK_MOUNT/proxback-write.XXXXXXXX")
-printf 'Proxmox NFS backup access test\n' | sudo -n tee "$CHECK_FILE" >/dev/null
-sudo -n cat "$CHECK_FILE"
-sudo -n stat -c '%u:%g %a %s %n' "$CHECK_FILE"
-sudo -n rm -- "$CHECK_FILE"
-sudo -n umount "$CHECK_MOUNT"
-sudo -n rmdir "$CHECK_MOUNT"
+(
+  set -eu
+  set -o pipefail
+  : "${CHECK_MOUNT:?Set CHECK_MOUNT to the verified test mount}"
+  mountpoint -q "$CHECK_MOUNT"
+  CHECK_FILE=$(sudo -n mktemp "$CHECK_MOUNT/proxback-write.XXXXXXXX")
+  printf 'Proxmox NFS backup access test\n' | sudo -n tee "$CHECK_FILE" >/dev/null
+  sudo -n cat "$CHECK_FILE"
+  sudo -n stat -c '%u:%g %a %s %n' "$CHECK_FILE"
+  sudo -n rm -- "$CHECK_FILE"
+  sudo -n umount "$CHECK_MOUNT"
+  sudo -n rmdir "$CHECK_MOUNT"
+)
 ```
 
 Stop on a permission/mount/write error and share its output. Preserve the mount/test filename for targeted cleanup rather than continuing commands with unset/incorrect variables. Successful file I/O proves share-level access; scheduled VM backup and isolated restore remain later acceptance steps.
+
+#### Permission failure investigation
+
+The first failed test left `/mnt/proxback-check.FEVlibO9` mounted on epsilon; no test file was created. Client inspection confirms the correct export, NFSv4.2 `rw,sec=sys`, directory numeric ownership `0:0`, mode `0755`, and empty contents. A read-write export does not grant its mapped identity write permission to the directory. Client getfacl shows basic root-owned permissions, but does not establish the server's complete NFSv4 ACL or actual Maproot configuration.
+
+Jack confirms the UI applied proxback ownership/Maproot. Inspect actual galactus filesystem identity and generated export in **TrueNAS CORE → Shell**, using FreeBSD syntax:
+
+```bash
+id proxback
+stat -f '%u:%g %Lp %N' /mnt/high-resiliency/proxmox-backups
+getfacl -n /mnt/high-resiliency/proxmox-backups
+zfs get mountpoint,readonly,aclmode,aclinherit high-resiliency/proxmox-backups
+grep -n -F '/mnt/high-resiliency/proxmox-backups' /etc/exports
+```
+
+These are read-only. Compare the actual directory UID/GID, ACL, dataset mountpoint, and generated `maproot`/authorized-host entry with the reported UI state before fixing permissions, refreshing mounts, or changing export behavior. Do not broaden the share to world-writable or disable root mapping to make the test pass. No confirmed root cause or NAS corrective change has been established yet.
 
 References: [CORE dataset creation](https://www.truenas.com/docs/core/13.0/coretutorials/storage/pools/datasets/), [CORE NFS share creation](https://www.truenas.com/docs/core/13.0/coretutorials/sharing/nfsshare/), and [NFS map-root/authorized-host fields](https://www.truenas.com/docs/core/13.0/uireference/sharing/nfssharescreen/).
 

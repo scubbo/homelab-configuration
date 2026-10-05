@@ -125,7 +125,7 @@
     "nas_ipv4": "192.168.1.39",
     "nas_platform": "TrueNAS CORE",
     "planned_nas_export": "/mnt/high-resiliency/proxmox-backups",
-    "export_status": "created by Jack; export and allowed host observed from epsilon; mount/write test pending",
+    "export_status": "export visible and mount succeeds; root file creation denied; server permissions/export investigation pending",
     "nas_export": "/mnt/high-resiliency/proxmox-backups",
     "nas_user": "proxback",
     "nas_uid": 1001,
