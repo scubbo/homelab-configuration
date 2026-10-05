@@ -33,12 +33,14 @@ The [SQL restore exercise](k3s-postgres-ha.md#observed-state) proves a backup ar
 
 Package installation does **not** allocate `local-lvm`. Plan storage ID `vm-local` as Proxmox **directory** storage on a verified local filesystem; record its path/UUID/capacity. Confirm it is actually mounted before adding it, so a missing data mount cannot silently write VM disks into root. For a dedicated mounted directory, set Proxmox's directory-storage `is_mountpoint` option to the verified mountpoint and test that storage becomes unavailable when that mount is absent.
 
+Jack selected `/mnt/proxmox`. Its [fstab draft](../../non-k8s-iac/proxmox/host/fstab.fragment.in) keeps the filesystem UUID unresolved until disk assignment; the [storage draft](../../non-k8s-iac/proxmox/host/storage.cfg.fragment) records native Proxmox options. Read-only remote inventory found the 931 GiB candidate has no lsblk filesystem/partitions or sysfs holders, but privileged signature/controller checks and ownership confirmation are still required. From Jack's sudo session, `sudo /usr/sbin/wipefs --no-act <candidate-by-id>` and `sudo /usr/sbin/blkid -p <candidate-by-id>` inspect signatures without erasing; lack of signatures is not proof of disk ownership or RAID health.
+
 epsilon's root had about 126 GiB free; the production guests total 256 GiB virtual disks plus EFI, growth, probe, and host data. Sparse qcow2 allocation is not proof of adequate capacity. Establish additional/adequate local storage before production provisioning. An unmounted 931 GiB PERC logical device has not been established as empty/available: identify ownership/data/RAID health with Jack before allocating or formatting. Do not reformat/repartition the OS disk or Kubernetes iSCSI LUNs. ZFS over a hardware RAID logical volume is not the storage baseline.
 
 After verification, add directory storage with content types **Disk image** and **ISO image**, scoped to epsilon, using the UI or:
 
 ```bash
-pvesm add dir vm-local --path '<verified-mounted-local-path>' --content images,iso --nodes epsilon
+pvesm add dir vm-local --path /mnt/proxmox --content images,iso --format qcow2 --nodes epsilon --is_mountpoint /mnt/proxmox
 pvesm status
 ```
 
@@ -103,11 +105,15 @@ iface vmbr0 inet static
 
 Preserve required interfaces/includes for actual host services. The host address belongs only on the bridge, never simultaneously on `eno1`; guests have their own MACs/IPs. Test bridge changes with console recovery and verify Docker ports/firewall, Flannel, NAS, and Tailscale routing. Keep desired sysctls in `/etc/sysctl.d/`.
 
+The [checked-in bridge file](../../non-k8s-iac/proxmox/host/interfaces) and [host-resolution fragment](../../non-k8s-iac/proxmox/host/hosts.fragment) are prepared for review, not installed. Remote inspection on 2026-10-05 confirmed current `eno1` DHCP and empty interfaces.d; recheck before merging. Current resolver already uses `.1` and `avril`, while the future Proxmox/Tailscale ownership policy still needs acceptance.
+
 Document one resolver owner: Proxmox expects GUI-controlled `/etc/resolv.conf`; Tailscale must not continuously overwrite it. Explicitly configure Proxmox DNS `.1` and select `tailscale set --accept-dns=false` if that is the agreed host DNS policy, while verifying existing tailnet resolution/remote access. Guest HAOS uses `.1`; kubelet pod resolver settings must also avoid inheriting an inappropriate tailnet search domain ([investigation](../../agentic-investigations/2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods)). Record the selected policy before changing live resolver configuration.
 
 ## 3. Network probe and acceptance
 
 Create VM **199** from the [network-probe manifest](../../non-k8s-iac/proxmox/vms/199-network-probe.conf.in) using a pinned Debian 13 amd64 installer (filename and official checksum recorded in `host.json` before provisioning). Initially `onboot=0`; no production tokens, service state, radio, GPU, or shared data. Run the [probe matrix](proxmox-network-probe.md) and record results before production guests.
+
+The [read-only command renderer](../../non-k8s-iac/proxmox/README.md#render-staging-commands) prints manifest-derived staging commands for each Linux guest and HAOS, allowing remote review before Proxmox exists. It does not start guests or assign USB/PCI devices; final handoff/boot settings remain separate.
 
 The same native-template provisioning process is used for 199, 101, and 102:
 
@@ -169,6 +175,8 @@ Verify general workloads, PVC detach/reattach, CNPG/other DB recovery, DNS/ingre
 ### API endpoint and physical k3s retirement
 
 The registered API endpoint `https://epsilon:6443` is used by workstation kubeconfig, app destination definitions, and ArgoCD's cluster credential. Decide and prove a stable replacement **before** stopping physical k3s: either an independent stable TCP/API endpoint that routes to server guests/culex, or a reviewed migration to the guest API address. Include its SAN/CA validation and remote reachability. A `.69` host address becoming a hypervisor does not keep TCP 6443 working by itself.
+
+Jack selected drafting [`https://k3s-api.avril:6443`](k3s-api-endpoint.md) with redundant independent TCP proxies/VIP, while addresses and physical proxy placement remain pending. Follow that plan's certificate, client/ArgoCD registration, GitOps destination, cold-boot, and failover acceptance before endpoint cutover.
 
 For an endpoint change, inventory and update [application destinations](../../app-of-apps/app-definitions.libsonnet), hardcoded exceptions, clients, node registration URLs, monitoring, and the manual registered cluster credential together. Jack performs any necessary ArgoCD registration/credential changes; agents remain read-only. Preserve client certificate/CA semantics; this is not a certificate rotation or a blind reuse of an expired kubeconfig ([credential context](../../agentic-investigations/2026-07-12-k3s-client-cert-refresh.md)). Test ArgoCD's ability to reconcile, not merely a stale Healthy display.
 

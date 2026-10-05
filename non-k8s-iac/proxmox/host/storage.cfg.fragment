@@ -1,0 +1,7 @@
+dir: vm-local
+    path /mnt/proxmox
+    content images,iso
+    format qcow2
+    nodes epsilon
+    shared 0
+    is_mountpoint /mnt/proxmox

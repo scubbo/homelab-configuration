@@ -13,6 +13,7 @@ Jack selected Proxmox on epsilon's upgraded Debian installation. Practice physic
 5. [Minimal VM network/storage probe](proxmox-network-probe.md).
 6. [Home Assistant migration, Zigbee checks, and rollback](homeassistant-vm-migration.md).
 7. [Planning notes and task tracking](proxmox-planning-notes.md).
+8. [Stable Kubernetes API endpoint design](k3s-api-endpoint.md).
 
 Supporting documents: [VM manifests](../../non-k8s-iac/proxmox/README.md), [current asset catalogue](../asset-catalogue.md), and [unpublished blog draft](../blog-drafts/homeassistant-proxmox.md).
 

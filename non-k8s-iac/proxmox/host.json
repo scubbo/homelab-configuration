@@ -13,12 +13,15 @@
     "installation_method": "packages on Debian 13",
     "filesystem": "ext4",
     "vm_storage": "vm-local",
-    "vm_storage_path": null,
+    "vm_storage_path": "/mnt/proxmox",
+    "vm_storage_uuid": null,
+    "storage_candidate_wwn": "0x614187703cb534002c7d389b1499c8ab",
     "reserved_memory_mib": 8192,
     "linux_installer": {
       "os": "Debian 13 amd64",
-      "iso_name": null,
-      "iso_sha256": null
+      "iso_name": "debian-13.7.0-amd64-netinst.iso",
+      "iso_url": "https://cdimage.debian.org/debian-cd/13.7.0/amd64/iso-cd/debian-13.7.0-amd64-netinst.iso",
+      "iso_sha256": "a7ef94ac2fb9a7fec454552abd629b7cc9d5155c886165a45649f5ce6167e355"
     },
     "packages": {
       "major_version": 9,
@@ -91,6 +94,9 @@
     "physical_node_name_during_overlap": "epsilon",
     "current_api_endpoint": "https://epsilon:6443",
     "api_endpoint_after_physical_k3s_retirement": null,
+    "planned_api_endpoint": "https://k3s-api.avril:6443",
+    "api_virtual_ipv4": null,
+    "api_proxy_hosts": null,
     "datastore_ha_decision": null
   },
   "backup": {

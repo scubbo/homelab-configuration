@@ -14,6 +14,30 @@
 
 Native [`qm.conf`](https://pve.proxmox.com/pve-docs/qm.conf.5.html) manifests record desired virtual hardware. [Documented provisioning](../../docs/plans/proxmox-installation.md#3-network-probe-and-acceptance) allocates volumes and finalizes actual IDs. These templates are not an automatic apply/reconciler and are not deployed by ArgoCD.
 
+### Host configuration draft
+
+- [`host/interfaces`](host/interfaces): proposed static `.69` LAN bridge on `eno1`, preserving the interfaces.d include. Merge only after inspecting execution-time host configuration and reserving `.69`; its deployment changes live management networking.
+- [`host/hosts.fragment`](host/hosts.fragment): host name resolution independent of Kubernetes; merge with existing localhost/IPv6 entries, not replace the entire file.
+- [`host/fstab.fragment.in`](host/fstab.fragment.in): `/mnt/proxmox` ext4 mount with filesystem UUID still unresolved pending disk ownership/signature/RAID checks. This is not a disk-format command.
+- [`host/storage.cfg.fragment`](host/storage.cfg.fragment): Proxmox `vm-local` directory storage on that mount, with `is_mountpoint` checking so a missing mount is offline instead of consuming root space. Merge with actual Proxmox storage entries, preserving unique storage/volume identity.
+- [Stable API endpoint design](../../docs/plans/k3s-api-endpoint.md): `k3s-api.avril` is a draft target, with VIP/proxy placement pending.
+
+The Debian installer is pinned to `debian-13.7.0-amd64-netinst.iso` using the SHA-256 published in the version-specific official checksum file. Download/check it at the recorded URL before uploading it to `vm-local` ISO storage. The installer was not downloaded or booted as part of this draft.
+
+### Render staging commands
+
+[`render_vm.py`](render_vm.py) uses only Python's standard library, reads the selected guest's manifest/host intent, and **prints** one-time staging commands. It does not connect to a host, invoke `qm`, or allocate anything. It derives CPU/RAM/MAC/disk sizes from the manifest, allocates fresh EFI/OS disks, disables automatic boot, and omits USB/PCI assignment until their separate handoff steps. It refuses completed volume references, duplicate/unsupported options, and missing installer/image inputs.
+
+```bash
+python3 -B non-k8s-iac/proxmox/render_vm.py 199
+python3 -B non-k8s-iac/proxmox/render_vm.py 101
+python3 -B non-k8s-iac/proxmox/render_vm.py 102
+python3 -B non-k8s-iac/proxmox/render_vm.py 100 --disk-image /root/haos-image/haos_ova-18.3.qcow2
+python3 -B -m unittest discover -s non-k8s-iac/proxmox -p 'test_*.py'
+```
+
+Review the printed commands and run them deliberately in the Proxmox shell after host/image/storage acceptance; do not pipe renderer output into a shell. Existing VMIDs must be checked first. HAOS output uses native `scsi0` allocation/import-from and absolute resize, requiring the already verified, decompressed local image. Linux output attaches the pinned installer and uses ISO-first staging boot. The commands intentionally do not start guests or perform device handoffs. After installing Debian/ejecting its ISO, complete actual volume IDs and final boot/startup configuration using the existing runbooks.
+
 | VMID / manifest | Role | vCPU / fixed RAM | Local OS disk | Persistent MAC |
 | --- | --- | --- | --- | --- |
 | [100, homeassistant](vms/100-homeassistant.conf.in) | HAOS and USB coordinator | 2 / 4 GiB | 64 GiB minimum; increase for source usage/restore headroom | `02:00:00:01:00:64` |

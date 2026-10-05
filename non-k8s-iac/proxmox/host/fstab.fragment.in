@@ -1,0 +1,2 @@
+# A dedicated filesystem keeps VM capacity separate from the host root filesystem.
+UUID=@VM_STORAGE_UUID@ /mnt/proxmox ext4 defaults 0 2

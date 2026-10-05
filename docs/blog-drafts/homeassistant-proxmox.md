@@ -16,6 +16,8 @@ Proxmox stores guest hardware in a colon-separated configuration file. Keeping t
 
 That is a small foundation rather than an automatic configuration reconciler. The important boundary is clear: Git describes hardware and operational intent; off-host backups preserve the appliance's state. A configuration file by itself does not allocate a disk or restore Home Assistant.
 
+A small standard-library Python renderer prints staging `qm` commands directly from those templates. It keeps CPU/RAM/MAC/disk allocations in one manifest and separates staging from final auto-start and device handoff. Its tests use the actual guest manifests and round-trip shell quoting, so preparing commands does not require a running hypervisor. Host network/storage fragments and a stable API endpoint design can also be reviewed remotely while physical imaging waits.
+
 ## Preserve network identity, transfer ownership
 
 The internal Home Assistant DNS record already points to `192.168.1.134`. Preserving that address lets cutover update the OPNsense DHCP reservation from the Pi's MAC to the VM's persistent MAC. The guest uses a LAN bridge, so discovery protocols can reach the same network without NAT.
