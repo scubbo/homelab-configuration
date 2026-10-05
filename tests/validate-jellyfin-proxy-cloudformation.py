@@ -31,6 +31,9 @@ assert "ProxyAlertTopic" in resources
 assert "ProxyAlertEmailSubscription" in resources
 assert "ProxyAlertTopicPolicy" in resources
 assert "TailscaleAuthKeyExpiryRule" in resources
+assert "AlertEventLogGroup" in resources
+assert resources["AlertEventLogGroup"]["Properties"]["RetentionInDays"] == 90
+assert "InstanceStatusCheckAlarmEventRule" in resources
 assert resources["ProxyStateVolume"]["DeletionPolicy"] == "Snapshot"
 assert resources["ProxyStateVolume"]["UpdateReplacePolicy"] == "Snapshot"
 assert resources["ProxyStateVolume"]["Properties"]["Encrypted"] is True
