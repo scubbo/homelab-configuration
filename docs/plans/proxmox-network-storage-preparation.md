@@ -30,7 +30,7 @@ The split pools and reported absence of project conflicts are recorded in catalo
 
 ## 2. Galactus VM-backup dataset/export
 
-Jack created/configured `high-resiliency/proxmox-backups` on **galactus.avril (`192.168.1.39`)**, path `/mnt/high-resiliency/proxmox-backups`. NFS discovery from epsilon confirms that export with allowed host **`192.168.1.69`**; existing manual-nfs/media/Kubernetes shares remain listed. NAS `id proxback` confirms user `proxback` (UID 1001), primary group `proxmox-backup` (GID 1001), and supplementary group `builtin_users` (545). Shell `nologin` was reported by Jack. Host mount succeeded, but root file creation failed. NAS stat confirms ownership `1001:1001`/mode `0755`; its NFSv4 ACL contains only `everyone@` read/execute and no owner-write grant. Generated root mapping and complete ACL policy are still needed before corrective changes. NAS free capacity and VM backup/restore remain untested.
+Jack created/configured `high-resiliency/proxmox-backups` on **galactus.avril (`192.168.1.39`)**, path `/mnt/high-resiliency/proxmox-backups`. NFS discovery from epsilon confirms that export with allowed host **`192.168.1.69`**; existing manual-nfs/media/Kubernetes shares remain listed. NAS `id proxback` confirms user `proxback` (UID 1001), primary group `proxmox-backup` (GID 1001), and supplementary group `builtin_users` (545). Shell `nologin` was reported by Jack. Host mount and root file creation/write/read/delete test now pass after dataset ACL correction. Resulting file ownership `1001:1001` confirms the configured map-root identity. NAS free capacity and Proxmox VM backup/restore remain untested; temporary test-mount cleanup is pending.
 
 In the NAS administration UI:
 
@@ -39,7 +39,7 @@ In the NAS administration UI:
 3. Create a read-write NFS share for `/mnt/high-resiliency/proxmox-backups`, initially permitting only epsilon's verified host address `192.168.1.69`. If NAS root squashing prevents Proxmox root writes, use a **share-scoped map-root** to the dedicated backup account/group; do not disable root squashing globally or grant access to unrelated datasets. Match actual ACL/NFS version behavior on this NAS.
 4. Verify export discovery/access after saving. Do not restart/change unrelated NFS exports unnecessarily. Record exact export/path and permissions in host intent/catalogue once observed. NAS SSH is not available to the agent in this session, so the UI work requires Jack's access.
 5. Proxmox storage [`backup-storage.cfg.fragment`](../../non-k8s-iac/proxmox/host/backup-storage.cfg.fragment) then registers that export as `vm-backups`, backup-only content, epsilon scope, `keep-last=4`. Registering storage does not create a backup schedule; configure the accepted weekly job separately after production guests exist.
-6. Host intent now records the observed `nas_export`, account and permitted host. Its status remains mount/write-test pending. After Proxmox installation, write a probe VM backup and restore into an isolated guest; this is stronger than the preliminary host file-access test below.
+6. Host intent records the observed `nas_export`, account/permitted host and successful host file-access test. After Proxmox installation, write a probe VM backup and restore into an isolated guest; this tests archive recovery beyond preliminary file I/O.
 
 NAS snapshots can protect against accidental archive deletion, while replication/off-site recovery is a separate policy choice. Both use the same physical NAS if no replica is configured, so snapshots alone do not protect against losing galactus. Neither PostgreSQL state nor Zigbee coordinator NVRAM is captured solely by a VM backup.
 
@@ -107,7 +107,17 @@ Jack supplied the generated export: `/mnt/high-resiliency/proxmox-backups -mapro
 
 In **Storage → Pools → proxmox-backups → Edit Permissions → ACL Manager**, retain owner `proxback`, group `proxmox-backup` and the existing read-only `everyone@` entry. Add one **Allow** ACE for **`owner@`**, **Basic Permissions: Full Control**, **Flags: Inherit** (file/directory inheritance; not inherit-only). This grants the dataset owner creation/deletion and permission-management access and carries the owner rule to newly created files/directories. Apply only to this dataset, without recursive pool/child-dataset changes. Do not select an OPEN preset, grant everyone write, change maproot, or strip the ACL.
 
-Verify the server ACL with `getfacl -n /mnt/high-resiliency/proxmox-backups`, then repeat the guarded root-write test on the retained epsilon mount. Expected ACE includes owner write/append/delete rights and file/directory inheritance; a read-only everyone entry alone is insufficient. On successful creation/read/stat, delete only that uniquely named test file, unmount the temporary mount, and remove its empty mount directory. Record the actual resulting file UID/GID and outcome before marking backup access accepted. No correction or successful retest has yet been reported.
+Jack's retest successfully created/wrote/read `proxback-write.zPFDgGbB`, with expected payload `Proxmox NFS backup access test`, numeric ownership `1001:1001`, mode `0700`, size 31 bytes. The guarded test included targeted file removal; subsequent read-only inspection reports that named file absent and the NFS mount still present. This accepts preliminary host file access after ACL correction. The final NAS ACL listing was truncated, so exact ACE/inheritance settings have not been independently recorded; keep that distinct from the proved file-access result. Proxmox VM backup/restore remains later acceptance work.
+
+Finish cleanup on epsilon without creating another test file:
+
+```bash
+sudo -v
+sudo -n umount /mnt/proxback-check.FEVlibO9 && \
+  sudo -n rmdir /mnt/proxback-check.FEVlibO9
+```
+
+Do not force-unmount a busy share or recursively delete its mountpoint. Report cleanup errors if any; successful unmount/removal concludes the temporary test.
 
 References: [CORE dataset creation](https://www.truenas.com/docs/core/13.0/coretutorials/storage/pools/datasets/), [CORE NFS share creation](https://www.truenas.com/docs/core/13.0/coretutorials/sharing/nfsshare/), and [NFS map-root/authorized-host fields](https://www.truenas.com/docs/core/13.0/uireference/sharing/nfssharescreen/).
 

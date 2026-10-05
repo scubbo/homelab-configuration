@@ -46,6 +46,8 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Record signature-probe result and Jack's revised `.220–.229` address block consistently.
 - [x] Record accepted proxy/NAS placement and document VRRP election, partition behavior, and listener coexistence.
 - [x] Prepare router/NAS operator steps and verify configuration consistency; prepare review commit.
+- [x] Diagnose NAS owner-write ACL defect and accept the successful mapped-root file-access retest.
+- [ ] Unmount/remove the completed temporary NFS test mount and confirm probe DHCP mapping.
 
 ## Findings (2026-10-04, read-only)
 
@@ -154,3 +156,4 @@ The hypervisor and HA guest should boot without Kubernetes, external-dns, Vault,
 - Test block now exits on first failure and requires a verified mount variable, preventing downstream operations on an empty CHECK_FILE. NAS shell commands are read-only FreeBSD stat/getfacl/id/zfs/export inspection; do not repeat account/dataset creation or broaden permissions as a workaround.
 - Jack's NAS shell confirms proxback UID 1001, primary group **proxmox-backup** GID 1001 (not group proxback), and supplementary builtin_users 545. Actual exported directory is 1001:1001/0755 and ZFS readonly off at the expected mountpoint. ACL has only everyone@ read/execute, with no owner-write ACE. This is a confirmed ACL defect; ownership was applied. Client 0:0 mismatch remains unexplained, and complete aclmode/aclinherit/generated exports output is pending because the supplied text was truncated. Correct group names in current docs/host intent; do not repeat prior ownership assumption or apply speculative NAS fixes.
 - Jack supplied generated export `-maproot="proxback":"proxmox-backup" 192.168.1.69`; root mapping is correct. Missing owner-write NFSv4 ACE is the cause of mapped-root write denial. Plan the single dataset-specific owner@ Allow/Full Control/inherit ACE through CORE ACL Manager, preserving existing everyone read-only entry and identity. ZFS ACL policy truncation does not block ACL editing (it matters when replacing via chmod). No correction/retest is reported yet; preserve the guarded write test and retained mount for verification.
+- Jack supplied successful retest after ACL correction: expected payload read, test file UID/GID 1001:1001, mode 0700, size 31 bytes. Guarded block included targeted file deletion; read-only inspection reports named test file absent and temporary mount still present. Accept preliminary host file I/O/mapping; exact final ACE/inheritance remains unrecorded because final NAS ACL output was truncated. Cleanup is just unmount plus empty-directory removal, not a repeated write test. Capacity, Proxmox backup job/archive restore, and probe mapping confirmation remain pending.

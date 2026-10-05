@@ -125,7 +125,7 @@
     "nas_ipv4": "192.168.1.39",
     "nas_platform": "TrueNAS CORE",
     "planned_nas_export": "/mnt/high-resiliency/proxmox-backups",
-    "export_status": "mount and root mapping verified; writes denied by missing owner-write ACL; owner ACE correction/retest pending",
+    "export_status": "export and host mount/root file creation-write-read-delete accepted; Proxmox backup/restore pending",
     "nas_export": "/mnt/high-resiliency/proxmox-backups",
     "nas_user": "proxback",
     "nas_uid": 1001,
@@ -136,6 +136,14 @@
     "maproot_user": "proxback",
     "maproot_group": "proxmox-backup",
     "maproot_validation": "Jack supplied generated export: maproot proxback:proxmox-backup, authorized client 192.168.1.69",
+    "host_file_access_test": {
+      "client": "epsilon",
+      "file_uid": 1001,
+      "file_gid": 1001,
+      "file_mode": "0700",
+      "file_size_bytes": 31,
+      "result": "expected payload read successfully; named test file removed; temporary mount cleanup pending"
+    },
     "vm_backup_schedule": "weekly, stop mode, retain 4",
     "ha_backup_schedule": "daily, off-host, retain 7",
     "last_restore_exercise": null
