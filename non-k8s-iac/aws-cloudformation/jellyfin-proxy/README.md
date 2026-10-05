@@ -96,6 +96,20 @@ aws ssm start-session \
 
 This port-forward is the only supported way to access NPM administration. Do not add an Internet-facing port 81 or SSH rule as a convenience workaround.
 
+## Replacing the proxy instance
+
+The NPM state volume can attach to only one EC2 instance at a time. A direct CloudFormation replacement attempts to create the new instance before replacing its volume attachment, so the update rolls back while the old instance still owns the volume.
+
+For a controlled replacement after confirming a current AWS Backup recovery point:
+
+1. Stop the current `ProxyInstance` and wait for `stopped`.
+2. Detach the `ProxyStateVolume` and wait for `available`.
+3. Create and review a fresh CloudFormation change set.
+4. Execute it. CloudFormation creates the replacement instance, attaches the preserved state volume, and moves the existing Elastic IP.
+5. Wait for cloud-init and SSM, then verify NPM, Tailscale, `jellyfin.avril`, and external HTTPS before considering the outage complete.
+
+The replacement may return an upstream `502` briefly while a newly enrolled Tailscale node establishes its data-plane path to OPNsense. Confirm route/DNS convergence before changing OPNsense firewall or Unbound configuration.
+
 If the Session Manager port-forward accepts a local connection but reports that its connection to destination port 81 failed, investigate through SSM rather than changing security-group rules. The usual cause is that NPM has not started:
 
 ```bash
