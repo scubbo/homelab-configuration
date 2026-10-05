@@ -22,7 +22,7 @@ Third-party candidates include Docker CE 27 → 29 and containerd.io 1.7 → 2.3
 Observed root causes and operator actions:
 
 1. **ESP mount configured:** UEFI BootCurrent `0006` references Debian shim on ESP `/dev/sdb1` (UUID `6B0D-04C5`, PARTUUID `fb231222-651f-407c-96eb-f8f7841ab72d`). Jack added `UUID=6B0D-04C5 /boot/efi vfat umask=0077 0 1` to fstab and mounted it. Read-only SSH confirmed read-write mount with `fmask=0077,dmask=0077`; Debian boot files are present. Persistence across a reboot and upgraded bootloader operation remain acceptance checks.
-2. **Mislabelled data partition:** `/dev/sdb3`, UUID `428cea4d-9e78-4af9-99df-c9f13f06f680`, is ext4 mounted at `/mnt/second-drive`, but its GPT type is Linux swap. `systemd-gpt-auto-generator` creates `dev-sdb3.swap`, which fails reading a swap header. Correct the GPT type to Linux filesystem **without formatting or changing its UUID/PARTUUID**. Do not run `mkswap`, disable GPT discovery globally, or mask the symptom instead of correcting the label.
+2. **Data partition type corrected:** Jack's on-disk `sfdisk --dump` and `lsblk` results confirm partition 3 now has Linux filesystem GPT type `0fc63daf-8483-4772-8e79-3d69d8477de4`. Start/size, disk ID, and all PARTUUIDs match the saved table; ext4 UUID `428cea4d-9e78-4af9-99df-c9f13f06f680` and read-write `/mnt/second-drive` mount are intact. This resolves the incorrect swap label that caused `systemd-gpt-auto-generator` to attempt `swapon`. Generated-unit cleanup and reboot acceptance remain pending.
 3. **Retired NAS mount:** `rassigma.avril:/mnt/BERTHA → /mnt/NAS` timed out at boot; NFS TCP 2049 currently refuses connections. Jack approved retiring this mount. `/mnt/NAS` is unmounted/empty; no current pod hostPath or inspected systemd/backup path references it. Finish checking all container bind mounts, user jobs/services, and scripts; remove only this fstab record and preserve the directory/local files.
 4. **OpenSSH prerequisite:** Installed server `1:9.2p1-2+deb12u2` is below Debian's `deb12u7` minimum recommended for interrupted remote Trixie upgrades. Patch Bookworm first and prove a fresh SSH login before Trixie changes.
 
@@ -101,7 +101,7 @@ ssh -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 \
 
 Compare the SHA-256 digests. Keep the local copy until the off-host archive is verified. If a transfer fails, inspect any partial destination and preserve it for diagnosis before retrying under a distinct filename; noclobber intentionally refuses to overwrite it.
 
-Jack completed the sequential archive creation/transfer successfully. Local `/home/scubbo/second-drive-backup.CIXa6813/second-drive.before.tar` and off-host `/home/scubbo/epsilon-recovery.mVvt2ir2/second-drive.before.tar` have matching SHA-256 `2dfd0e0c7ac68a343e25207d47bb7d8d7c3c1067202eb43fb8200d05216489b9`. The remote tar listing contains `./`, `./longhorn/`, and `./lost+found/` with numeric root ownership and expected permissions. Contents backup is verified; the GPT type correction has not yet been executed.
+Jack completed the sequential archive creation/transfer successfully. Local `/home/scubbo/second-drive-backup.CIXa6813/second-drive.before.tar` and off-host `/home/scubbo/epsilon-recovery.mVvt2ir2/second-drive.before.tar` have matching SHA-256 `2dfd0e0c7ac68a343e25207d47bb7d8d7c3c1067202eb43fb8200d05216489b9`. The remote tar listing contains `./`, `./longhorn/`, and `./lost+found/` with numeric root ownership and expected permissions. Contents backup and subsequent type-only GPT correction are verified; do not repeat the backup or partition edit.
 
 Only after successful backup/inspection, use the interactive fdisk type-only procedure above. Its `p` output must show partition 3 at start `973699072`, end `975697919`, and Linux filesystem; partitions 1/2 retain their existing boundaries/types. An in-use warning is expected on the live OS disk; do not resize/delete partitions or force a kernel reread. Prefer performing the edit from the planned rescue session if the tool refuses the type-only write. Capture full editor output and verify with `sudo /usr/sbin/sfdisk --dump <verified-disk>` plus `lsblk`/`findmnt` afterwards; do not treat a stale generated swap unit's failure state as evidence that the on-disk edit failed.
 
@@ -109,13 +109,11 @@ For retiring `/mnt/NAS`, the inspected Docker mounts, current pod hostPaths, sys
 
 ```bash
 sudo systemctl daemon-reload
-sudo mount /boot/efi
-sudo ls -l /boot/efi/EFI/debian/
 sudo findmnt --verify --verbose
-sudo lsblk -o NAME,FSTYPE,UUID,PARTTYPE,PARTUUID,MOUNTPOINTS /dev/sdb
-sudo systemctl reset-failed mnt-NAS.mount dev-sdb3.swap
 systemctl --failed --no-pager
 ```
+
+The ESP is already mounted and GPT correction verified. Inspect remaining failed units before clearing their recorded state; unrelated failures require investigation. `daemon-reload` reruns generators, but a failed unit record may persist until explicitly reset or the scheduled reboot. Do not start swap or force a partition reread to clear an obsolete failure.
 
 Verify these fixes on a scheduled reboot; clearing recorded failure state alone does not prove corrected boot behavior. Stop if EFI files or partition identities disagree. Record the actual sanitized fstab/partition changes in operational documentation and the execution log.
 
