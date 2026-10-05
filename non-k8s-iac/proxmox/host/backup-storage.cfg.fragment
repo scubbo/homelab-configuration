@@ -1,0 +1,7 @@
+nfs: vm-backups
+    server 192.168.1.39
+    export /mnt/high-resiliency/proxmox-backups
+    path /mnt/pve/vm-backups
+    content backup
+    nodes epsilon
+    prune-backups keep-last=4

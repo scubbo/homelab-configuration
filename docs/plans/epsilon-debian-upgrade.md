@@ -48,7 +48,7 @@ Jack supplied these checks; they confirm the following identities:
 | Stable OS-disk path | `/dev/disk/by-id/wwn-0x614187703cb534002c36dde2320197ab` (symlink verified over SSH) |
 | ESP | Partition 1, UUID `6B0D-04C5`; PARTUUID `fb231222-651f-407c-96eb-f8f7841ab72d`; sectors 2048–1050623 |
 | Data filesystem | Partition 3, UUID `428cea4d-9e78-4af9-99df-c9f13f06f680`; PARTUUID `f79e479d-8050-4468-b35b-b9b9296966a9`; sectors 973699072–975697919 |
-| Separate unallocated candidate | 931 GiB PERC disk, WWN `0x614187703cb534002c7d389b1499c8ab`; ownership/data still unverified |
+| Separate unallocated candidate | 931 GiB PERC disk, WWN `0x614187703cb534002c7d389b1499c8ab`; signatures/retained data and intended use still unverified |
 
 Next inspect the ESP without writing it, using a separate empty inspection directory (confirm neither directory nor partition is already mounted before proceeding):
 

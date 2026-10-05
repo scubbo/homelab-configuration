@@ -58,7 +58,8 @@
     "101": {
       "name": "epsilon-k3s",
       "manifest": "vms/101-epsilon-k3s.conf.in",
-      "ipv4": null,
+      "ipv4": "192.168.1.220",
+      "address_validation": "pending OPNsense DHCP/static inventory and exclusion",
       "address_assignment": "static guest configuration",
       "os": "Debian 13 amd64",
       "k3s_role": "server",
@@ -68,7 +69,8 @@
     "102": {
       "name": "epsilon-gpu",
       "manifest": "vms/102-epsilon-gpu.conf.in",
-      "ipv4": null,
+      "ipv4": "192.168.1.221",
+      "address_validation": "pending OPNsense DHCP/static inventory and exclusion",
       "address_assignment": "static guest configuration",
       "os": "Debian 13 amd64",
       "k3s_role": "agent",
@@ -83,7 +85,8 @@
     "199": {
       "name": "network-probe",
       "manifest": "vms/199-network-probe.conf.in",
-      "ipv4": null,
+      "ipv4": "192.168.1.222",
+      "address_validation": "pending OPNsense DHCP/static inventory and reservation",
       "address_assignment": "temporary OPNsense DHCP reservation",
       "os": "Debian 13 amd64",
       "purpose": "network and storage acceptance before production guests"
@@ -95,13 +98,17 @@
     "current_api_endpoint": "https://epsilon:6443",
     "api_endpoint_after_physical_k3s_retirement": null,
     "planned_api_endpoint": "https://k3s-api.avril:6443",
-    "api_virtual_ipv4": null,
+    "api_virtual_ipv4": "192.168.1.223",
+    "api_address_validation": "pending OPNsense DHCP/static inventory and exclusion",
     "api_proxy_hosts": null,
     "datastore_ha_decision": null
   },
   "backup": {
     "proxmox_storage_id": "vm-backups",
-    "nas_host": null,
+    "nas_host": "galactus.avril",
+    "nas_ipv4": "192.168.1.39",
+    "planned_nas_export": "/mnt/high-resiliency/proxmox-backups",
+    "export_status": "proposed; absent from observed NFS export list",
     "nas_export": null,
     "vm_backup_schedule": "weekly, stop mode, retain 4",
     "ha_backup_schedule": "daily, off-host, retain 7",

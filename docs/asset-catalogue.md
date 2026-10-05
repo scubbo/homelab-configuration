@@ -2,7 +2,7 @@
 
 This catalogue identifies durable infrastructure assets controlled by or materially related to this repository. It records ownership, operational access, dependencies, and important constraints without recording secret values.
 
-This is live documentation of deployed state. Proposed assets and migrations belong in [active plans](plans/README.md); accepted implementations are recorded here and their plans are [archived after delivery](plans/delivered/README.md). See the [documentation index](README.md).
+This is live documentation of deployed state. Proposed infrastructure belongs in [active plans](plans/README.md); the address-allocation section also records intended reservations explicitly marked as pending router validation. Accepted implementations are recorded here and their plans are [archived after delivery](plans/delivered/README.md). See the [documentation index](README.md).
 
 ## Maintenance rule
 
@@ -15,17 +15,43 @@ Do **not** store secret material, private keys, API tokens, recovery codes, or c
 | Asset | Role | Managed by | Operational access and constraints |
 | --- | --- | --- | --- |
 | `epsilon` (physical) | Kubernetes control-plane/workload node and shared k3s PostgreSQL datastore host | k3s; PostgreSQL in Docker/systemd; manual Debian administration | Debian 12 host at `192.168.1.69`. Cluster endpoint: `https://epsilon:6443`. Datastore: `epsilon.avril:5432`; [recovery procedure](k3s-ha-postgres/README.md). GPU-pinned media workloads depend on its NVIDIA driver. Libvirt packages remain installed; no defined guests remain after Jack-approved test-guest teardown. See the [host-selection assessment](plans/proxmox-host-selection.md). |
-| epsilon OS/boot disk (physical RAID logical disk) | Debian root, EFI boot, and `/mnt/second-drive` ext4 filesystem | PERC H730 Mini; manual GPT/fstab configuration | 465.25 GiB, WWN `0x614187703cb534002c36dde2320197ab`, GPT ID `96DF694E-2C1D-4F6A-9629-4D96AFAD94CA`. ESP UUID `6B0D-04C5` is mounted read-write at `/boot/efi` via fstab with `umask=0077`; boot files verified, reboot persistence pending. Partition 3 has Linux filesystem GPT type and ext4 UUID `428cea4d-9e78-4af9-99df-c9f13f06f680`, mounted read-write at `/mnt/second-drive`; boundaries/PARTUUID preserved. [Boot preflight](plans/epsilon-debian-upgrade.md#fix-bootstorage-configuration-first) tracks reboot acceptance. Separate 931 GiB disk ownership remains unverified. |
-
 | `culex` (physical) | Kubernetes control-plane/workload node; standalone services and media storage | k3s; manual Fedora/Podman/NFS configuration | Active Fedora node at `192.168.1.13`, also observed with `.200`. About 770 GB under `/mnt/data` and a standalone Podman Jellyfin service. [Rehearsal tooling](plans/epsilon-debian-upgrade.md#rehearse-on-culex) installed: QEMU 7.2.10, libvirt 9.0.0, virt-install 4.1.0, OVMF 20230524; QEMU/log/lock sockets active, no rehearsal VM provisioned. |
 | Home Assistant Raspberry Pi (physical) | Home automation appliance; current production installation | Manual Home Assistant administration | Functional installation on unreliable hardware. Repository DNS declares `homeassistant.avril → 192.168.1.134`; actual address, installation type, remote-access path, and backup coverage remain [migration preflight inputs](plans/homeassistant-vm-migration.md#1-identify-the-source-and-dependencies). |
 | Home Assistant Zigbee USB coordinator (physical) | Radio/network identity for paired Zigbee devices | Current HA radio integration | Plugged into the Pi. Model/serial and integration owner have not been inventoried. The [migration plan](plans/homeassistant-vm-migration.md#physically-move-and-pass-through-zigbee) covers physical relocation, passthrough, and real-device checks. Coordinator NVRAM is not included in VM backups. |
 | `rasnu1` (physical) | Kubernetes workload node | k3s | Debian Linux Raspberry Pi node; currently cordoned. |
 | OPNsense (`192.168.1.1`) | Router, AdGuard Home, Unbound DNS | Manual appliance configuration and external-dns | external-dns manages `*.avril` Unbound records; do not create unmanaged host overrides. |
 | TrueNAS storage hosts (`rassigma.avril`, `rasnu2.avril`) | NFS/iSCSI storage for Kubernetes | Manual appliance configuration and democratic-csi | Kubernetes uses `freenas-nfs-csi` and `freenas-iscsi-csi`; credentials are not stored in this repository. |
+| `galactus.avril` (physical NAS, `192.168.1.39`) | NFS/iSCSI data and recovery storage | Manual NAS administration; democratic-csi for Kubernetes volumes | Verified NFS exports include `/mnt/high-resiliency/manual-nfs`, Kubernetes PVC exports, and media/library exports. Epsilon mounts manual-nfs for k3s recovery copies. NAS disks/pool-member identities, capacity and redundancy need NAS/controller inventory; they have not been inferred from attached iSCSI LUNs. [VM backup export proposal](plans/proxmox-installation.md#5-off-host-backups-and-maintenance). |
 | Jellyfin proxy | Internet-facing EC2 reverse proxy for Jellyfin | `non-k8s-iac/aws-cloudformation/jellyfin-proxy/` | Replacement stack `jellyfin-proxy-replacement` currently uses Elastic IP `34.231.142.91`. It accepts the Tailscale route to `192.168.1.0/24` and proxies to `jellyfin.avril:80` through Traefik. Use AWS SSM Session Manager, never public SSH. NPM admin access is an SSM port-forward to local port 8181. NPM state is encrypted EBS data with AWS Backup. |
 
+### Local disks and controller volumes
+
+All hardware belongs to Jack. 'Use/data status' records what an asset serves and which contents must be preserved. `/dev/sdX` names are observations, not durable identifiers. PERC devices below are **RAID-controller logical disks**; physical member drives and RAID levels require separate controller inventory.
+
+| Host / asset | Size and durable identity | Use/data status and recovery constraints |
+| --- | --- | --- |
+| epsilon OS logical disk (currently `sdb`, PERC H730 Mini) | 499,558,383,616 bytes (465.25 GiB); WWN `0x614187703cb534002c36dde2320197ab`; serial `00ab970132e2dd362c0034b53c708741`; GPT ID `96DF694E-2C1D-4F6A-9629-4D96AFAD94CA` | Debian root, ESP, `/mnt/second-drive`. Root UUID `cc40fa70-d651-4d7c-910f-d6067f1958a4`; ESP `6B0D-04C5` mounted at `/boot/efi` via fstab with `umask=0077`; ext4 data UUID `428cea4d-9e78-4af9-99df-c9f13f06f680` has corrected Linux filesystem GPT type. Boundaries/PARTUUID preserved. Table/fstab/small data-directory backups verified; full boot image and reboot acceptance pending. [Boot preflight](plans/epsilon-debian-upgrade.md#fix-bootstorage-configuration-first). |
+| epsilon VM-storage candidate logical disk (currently `sda`, PERC H730 Mini) | 999,653,638,144 bytes (931 GiB reported); WWN `0x614187703cb534002c7d389b1499c8ab`; serial `00abc899149b387d2c0034b53c708741` | Unmounted; no partitions/filesystem/UUID reported by lsblk and no sysfs holders. Raw signature reads require sudo and have not completed; any retained data/intended prior use is unconfirmed. Proposed backing for `/mnt/proxmox`, not formatted/allocated. Verify read-only signatures/controller health and discuss any found data with Jack before formatting. |
+| culex OS physical disk (currently `sda`, Seagate ST2000NX0463) | 2,000,398,934,016 bytes; serial `W461KKGV`; WWN `0x5000c500a6d24637` | Fedora EFI/boot and LVM root; root XFS UUID `ddaab49d-6f5b-46ec-91fc-d68974c79e66`. Root hosts protected epsilon recovery staging and rehearsal tools; preserve both production host data and recovery copies. |
+| culex media logical disk (currently `sdb`, PERC H730 Mini) | 3,999,688,294,400 bytes; WWN `0x614187703cb6b3002c05681339226c44`; serial `00446c22391368052c00b3b63c708741` | XFS partition UUID `c8a0d035-04dc-4408-a33f-af0e7b31af10`, mounted at `/mnt/data`, approximately 770 GB used during inventory. Music/Videos/services-config and standalone-service consumers; preserve contents. |
+| Kubernetes iSCSI LUNs attached to epsilon/culex (remote virtual disks) | TrueNAS-exported block devices with individual PVC/LUN identifiers; inventories available through Kubernetes PV/CSI and NAS administration | Active mounted Kubernetes filesystems; not local physical drives and not free Proxmox storage. Do not format, reuse or attach read-write to another host outside CSI's volume lifecycle. NAS physical pool-member inventory is separate. |
+
 Epsilon's retired `rassigma.avril:/mnt/BERTHA → /mnt/NAS` fstab entry is removed; active NFS entries still target galactus. Current fstab validates without errors/warnings, and the retired NAS/generated-swap units are no longer found by systemd. Scheduled reboot validation is tracked in the [Debian maintenance plan](plans/epsilon-debian-upgrade.md).
+
+### Intended address allocations (not yet reserved in OPNsense)
+
+These addresses are allocated in this repository for the VM/API plan at Jack's request. They are **candidates pending authoritative DHCP/lease/static-assignment checks and OPNsense exclusions/reservations**, not claims of deployed guests or available addresses. Router SSH access was unavailable during preparation; absent ping/DNS answers are not enough to validate an address. If any conflicts exist, revise this table and host intent together before deployment.
+
+| Asset / name | IPv4 | MAC / address mechanism | Status |
+| --- | --- | --- | --- |
+| Proxmox host `epsilon.avril` | `192.168.1.69` | Physical LAN MAC `14:18:77:28:11:0c`; target static bridge address | Existing address; confirm router reservation/exclusion before changing DHCP to static |
+| HAOS guest `homeassistant.avril` | `192.168.1.134` | `02:00:00:01:00:64`; DHCP reservation | Existing Pi service address; transfer only after Pi shutdown |
+| k3s server guest `epsilon-k3s.avril` | `192.168.1.220` | `02:00:00:01:00:65`; static guest, DHCP exclusion | Repository allocation; pending router validation |
+| GPU worker guest `epsilon-gpu.avril` | `192.168.1.221` | `02:00:00:01:00:66`; static guest, DHCP exclusion | Repository allocation; pending router validation |
+| Probe guest `network-probe.avril` | `192.168.1.222` | `02:00:00:01:00:c7`; temporary DHCP reservation | Repository allocation; pending router validation |
+| API endpoint `k3s-api.avril` | `192.168.1.223` | Floating VIP, not a VM DHCP lease | Repository allocation; proxy placement/VRRP and router validation pending |
+
+Planned API proxies use existing physical hosts epsilon and culex, independently started by their host OS; placement is a recommendation for Jack's review. [Endpoint design](plans/k3s-api-endpoint.md) and [versioned host intent](../non-k8s-iac/proxmox/host.json) describe implementation/acceptance.
 
 ## Domains and public exposure
 

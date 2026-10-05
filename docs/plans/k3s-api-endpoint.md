@@ -1,10 +1,25 @@
 # Stable k3s API endpoint
 
-**Status: design draft approved for preparation; addresses/placement unresolved.** Jack selected drafting `https://k3s-api.avril:6443` before [physical k3s retirement](proxmox-installation.md#api-endpoint-and-physical-k3s-retirement). Current production clients still use `https://epsilon:6443`. [Host intent](../../non-k8s-iac/proxmox/host.json) distinguishes the proposed endpoint from the accepted deployed endpoint.
+**Status: design draft; address candidate selected, router validation/placement acceptance pending.** Jack selected drafting `https://k3s-api.avril:6443` before [physical k3s retirement](proxmox-installation.md#api-endpoint-and-physical-k3s-retirement). Candidate VIP is `192.168.1.223`; server guest candidate is `.220`. They are recorded in the [catalogue address allocations](../asset-catalogue.md#intended-address-allocations-not-yet-reserved-in-opnsense), not yet validated/excluded at the router. Current production clients still use `https://epsilon:6443`.
 
 ## Endpoint architecture
 
 Use two independently started TCP proxy instances (candidate: HAProxy + Keepalived/VRRP), on **different physical failure domains**, sharing a reserved LAN virtual IP. One proxy location must survive epsilon maintenance. culex and epsilon's physical host are candidates, subject to placement review; a proxy only on epsilon or two proxies in its guests are not physically redundant. Proxy and VIP lifecycle must not depend on the Kubernetes cluster they expose.
+
+The recommendation is a small host-OS service on **epsilon and culex**, not another pair of physical machines or Kubernetes pods. Clients connect to `.223:6443`; the current VIP holder forwards those connections to a ready k3s server. Keepalived moves VIP ownership to the other host when the proxy/host fails. Existing management addresses `.69` and `.13` remain, so no additional individual proxy IPs are needed. Epsilon's eventual Proxmox/k3s separation does not remove the independently managed host proxy. Compare/approve placement before installing host packages or creating live VIP/DNS records.
+
+```text
+kubectl / ArgoCD / joining nodes
+            |
+     k3s-api.avril (.223)
+            |
+  epsilon proxy OR culex proxy
+            |
+   ready k3s API server
+  culex (.13) / epsilon-k3s (.220)
+```
+
+This preserves the endpoint during proxy/host maintenance, but cannot keep the shared PostgreSQL datastore alive during epsilon failure; the [SQL HA workstream](k3s-postgres-ha.md) addresses that separate dependency.
 
 Forward raw TCP 6443 to verified k3s **server** addresses: culex `.13` and guest `epsilon-k3s`'s reserved address once joined. Physical epsilon `.69` is a temporary backend during overlap. `epsilon-gpu` is an agent and is not a backend. TLS passes through to the API server; this avoids introducing a second certificate/authentication layer. Add `k3s-api.avril` and the selected VIP to the relevant server `tls-san` configuration, retain the cluster CA, and validate certificates/clients before transition.
 
@@ -29,4 +44,4 @@ Rollback preserves the working physical/guest server and current registration un
 
 ## Remote preparation versus unresolved inputs
 
-The endpoint name, TCP/TLS behavior, transition sequence, and acceptance are drafted. VIP, proxy hosts/interfaces, guest backend address, repository/versions, and readiness authentication are required to finalize concrete proxy configuration. Do not publish placeholder DNS or modify the existing cluster endpoint while these are unresolved.
+The endpoint name, candidate VIP/guest addresses, TCP/TLS behavior, transition sequence, and acceptance are drafted. Router validation, epsilon/culex host-service placement acceptance, interfaces, repository/versions, and readiness authentication are required to finalize concrete proxy configuration. Do not publish candidate DNS or modify the existing cluster endpoint before those checks and staged endpoint acceptance.

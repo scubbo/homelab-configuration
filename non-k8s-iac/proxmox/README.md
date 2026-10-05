@@ -20,6 +20,7 @@ Native [`qm.conf`](https://pve.proxmox.com/pve-docs/qm.conf.5.html) manifests re
 - [`host/hosts.fragment`](host/hosts.fragment): host name resolution independent of Kubernetes; merge with existing localhost/IPv6 entries, not replace the entire file.
 - [`host/fstab.fragment.in`](host/fstab.fragment.in): `/mnt/proxmox` ext4 mount with filesystem UUID still unresolved pending disk ownership/signature/RAID checks. This is not a disk-format command.
 - [`host/storage.cfg.fragment`](host/storage.cfg.fragment): Proxmox `vm-local` directory storage on that mount, with `is_mountpoint` checking so a missing mount is offline instead of consuming root space. Merge with actual Proxmox storage entries, preserving unique storage/volume identity.
+- [`host/backup-storage.cfg.fragment`](host/backup-storage.cfg.fragment): galactus backup-only NFS storage and four-copy retention, referring to a proposed dedicated export that must be created/permission-tested before deployment.
 - [Stable API endpoint design](../../docs/plans/k3s-api-endpoint.md): `k3s-api.avril` is a draft target, with VIP/proxy placement pending.
 
 The Debian installer is pinned to `debian-13.7.0-amd64-netinst.iso` using the SHA-256 published in the version-specific official checksum file. Download/check it at the recorded URL before uploading it to `vm-local` ISO storage. The installer was not downloaded or booted as part of this draft.
@@ -45,13 +46,13 @@ Review the printed commands and run them deliberately in the Proxmox shell after
 | [102, epsilon-gpu](vms/102-epsilon-gpu.conf.in) | k3s agent, Jellyfin/Tdarr P1000 | 8 / 16 GiB | 64 GiB | `02:00:00:01:00:66` |
 | [199, network-probe](vms/199-network-probe.conf.in) | Minimal network/storage acceptance | 1 / 1 GiB | 16 GiB | `02:00:00:01:00:c7` |
 
-Confirm all locally administered MACs and VMIDs are unused; allocate IDs across any future Proxmox hosts. Guest 101/102/probe addresses remain inputs; HA retains `.134`. The host retains `.69`/`epsilon`; guests never share its Kubernetes name/IP. No `epsilon-physical` node rename is needed to achieve physical/guest overlap.
+Confirm all locally administered MACs and VMIDs are unused; allocate IDs across any future Proxmox hosts. Guest/API candidates `.220`/`.221`/`.222`/`.223` are assigned in [catalogue address allocations](../../docs/asset-catalogue.md#intended-address-allocations-not-yet-reserved-in-opnsense), with router validation/exclusion still pending. HA retains `.134`. The host retains `.69`/`epsilon`; guests never share its Kubernetes name/IP. No `epsilon-physical` node rename is needed to achieve physical/guest overlap.
 
 Production guest RAM totals 36 GiB; reserve at least 8 GiB for host services/Proxmox and measure **overlap** consumption before starting all guests. GPU workers/physical PostgreSQL still consume host RAM until their respective migration. More guest separation does not provide physical HA. `cpu: host` favors this host; migration to unlike CPUs uses a powered-off move or an explicitly selected shared model.
 
 ## Storage and completing a manifest
 
-Use verified local **directory** storage `vm-local` with qcow2 volumes. Package installation does not create `local-lvm`. The current root alone does not have enough free space to reserve the full 256 GiB production disk allocation with growth/headroom. Record actual local path/filesystem/disk ownership after verifying capacity, RAID health, and mount behavior; never format an unmounted device on assumption. Network CSI PVCs are mounted inside k3s guests and have separate recovery coverage.
+Use verified local **directory** storage `vm-local` with qcow2 volumes. Package installation does not create `local-lvm`. The current root alone does not have enough free space to reserve the full 256 GiB production disk allocation with growth/headroom. Record actual local path/filesystem and intended disk use after verifying capacity, raw signatures, RAID health, and mount behavior; preserve any contents Jack wants to keep. Network CSI PVCs are mounted inside k3s guests and have separate recovery coverage.
 
 | Token | Source |
 | --- | --- |
@@ -68,4 +69,4 @@ Create with `qm` instead of copying a file into `/etc/pve`: configs do not alloc
 
 ## Recovery boundary
 
-Manifests recreate hardware, not HA state, PostgreSQL/PVC contents, protected k3s tokens, or coordinator NVRAM. Proposed jobs: weekly stop-mode backups of **100/101/102** to independent `vm-backups`, retaining four; daily native HA backups retaining seven off-host copies. Actual NAS/export and restore exercise remain inputs. Follow [VM recovery](../../docs/plans/proxmox-installation.md#5-off-host-backups-and-maintenance), [HA recovery](../../docs/plans/homeassistant-vm-migration.md#5-recovery-and-retirement), and [SQL HA/recovery](../../docs/plans/k3s-postgres-ha.md). Record deployed state and accepted exercise results in the [asset catalogue](../../docs/asset-catalogue.md).
+Manifests recreate hardware, not HA state, PostgreSQL/PVC contents, protected k3s tokens, or coordinator NVRAM. Proposed jobs: weekly stop-mode backups of **100/101/102** to galactus `vm-backups`, retaining four; daily native HA backups retaining seven off-host copies. Dedicated `/mnt/high-resiliency/proxmox-backups` export is proposed and absent from observed shares; creation, permissions, capacity, and restore exercise remain inputs. Follow [VM recovery](../../docs/plans/proxmox-installation.md#5-off-host-backups-and-maintenance), [HA recovery](../../docs/plans/homeassistant-vm-migration.md#5-recovery-and-retirement), and [SQL HA/recovery](../../docs/plans/k3s-postgres-ha.md). Record deployed state and accepted exercise results in the [asset catalogue](../../docs/asset-catalogue.md).
