@@ -1,0 +1,99 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Least-privilege AWS identity for Grafana's Jellyfin proxy CloudWatch datasource.",
+  "Resources": {
+    "GrafanaCloudWatchUser": {
+      "Type": "AWS::IAM::User",
+      "Properties": {
+        "UserName": "grafana-cloudwatch",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "grafana-cloudwatch"
+          },
+          {
+            "Key": "ManagedBy",
+            "Value": "homelab-configuration"
+          },
+          {
+            "Key": "Purpose",
+            "Value": "Grafana CloudWatch datasource"
+          }
+        ]
+      }
+    },
+    "GrafanaCloudWatchUserPolicy": {
+      "Type": "AWS::IAM::UserPolicy",
+      "Properties": {
+        "UserName": {
+          "Ref": "GrafanaCloudWatchUser"
+        },
+        "PolicyName": "ReadJellyfinProxyCloudWatch",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "ReadCloudWatchMetricsAndAlarms",
+              "Effect": "Allow",
+              "Action": [
+                "cloudwatch:DescribeAlarms",
+                "cloudwatch:DescribeAlarmsForMetric",
+                "cloudwatch:DescribeAlarmHistory",
+                "cloudwatch:GetMetricData",
+                "cloudwatch:GetMetricStatistics",
+                "cloudwatch:ListMetrics"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Sid": "DiscoverJellyfinProxyInstance",
+              "Effect": "Allow",
+              "Action": [
+                "ec2:DescribeInstances",
+                "ec2:DescribeRegions",
+                "ec2:DescribeTags"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Sid": "QueryJellyfinProxyAlertEvents",
+              "Effect": "Allow",
+              "Action": [
+                "logs:DescribeLogGroups",
+                "logs:GetLogGroupFields",
+                "logs:StartQuery"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Sid": "ReadJellyfinProxyAlertQueryResults",
+              "Effect": "Allow",
+              "Action": [
+                "logs:GetQueryResults",
+                "logs:StopQuery"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "UserName": {
+      "Description": "Create one access key for this user and store it only in the manual prometheus/grafana-cloudwatch Kubernetes Secret.",
+      "Value": {
+        "Ref": "GrafanaCloudWatchUser"
+      }
+    },
+    "UserArn": {
+      "Description": "Grafana CloudWatch IAM user ARN.",
+      "Value": {
+        "Fn::GetAtt": [
+          "GrafanaCloudWatchUser",
+          "Arn"
+        ]
+      }
+    }
+  }
+}
