@@ -32,6 +32,8 @@ Moving the radio can also change RF coverage. An extension cable keeps it away f
 
 ## Accept downtime, keep rollback simple
 
+Physical-node rehearsal starts with an offline image captured from a verified SystemRescue USB to an independent host. A changing live ext4 root is not a consistent disk-image source. Even before an OS upgrade, boot recovery requires usable console/media access and sufficient transfer/hash time; the full raw disk transfer is hundreds of gigabytes. Booting a private clone proves more than package dependency resolution alone.
+
 Provision and test an empty HAOS VM first. Create a final complete backup, stop the source, move the radio and network ownership, then restore. Running two restored copies concurrently risks duplicate automations and cloud/MQTT clients even when only one has a radio.
 
 Rollback reverses ownership: stop the VM and disable its auto-start, move the radio back, restore the Pi's reservation/access settings, and boot its intact media. Keep coordinator firmware and pairings stable throughout the move.

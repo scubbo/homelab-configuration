@@ -124,6 +124,8 @@ systemctl --failed --no-pager
 
 This does not start services, mount filesystems, or activate swap. Clearing records alone does not substitute for the scheduled physical reboot/boot-image rehearsal.
 
+Jack cleared both obsolete failure records. Read-only SSH confirms `systemctl --failed` reports **0 loaded units**, ESP/data mounts remain intact, and the physical host has not rebooted. Current configuration preparation is complete; next prepare rescue media and the notified offline-imaging window.
+
 Verify these fixes on a scheduled reboot; clearing recorded failure state alone does not prove corrected boot behavior. Stop if EFI files or partition identities disagree. Record the actual sanitized fstab/partition changes in operational documentation and the execution log.
 
 ## Rehearse on culex
@@ -166,22 +168,43 @@ Jack confirmed physical access to epsilon; recovery means viewing its boot scree
 
 Jack selected **culex's home directory**, not epsilon's OS disk, for off-host recovery storage. A mode-0700 directory owned by scubbo was created at `/home/scubbo/epsilon-recovery.mVvt2ir2` on culex. Its backing filesystem `/dev/mapper/fedora-root` has about 1.7 TiB free. Store baseline images, partition-table/fstab copies, checksums, and protected service recovery files there; secret-bearing files remain outside Git. Keep master images mode-0600 and make separate rehearsal copies/overlays. Image/checksum/restore has not yet been performed.
 
+#### Rescue USB preparation on the Mac
+
+Jack selected preparation on his Mac. Use official [SystemRescue 13.02 amd64](https://www.system-rescue.org/Download/), ISO `systemrescue-13.02-amd64.iso`, SHA-256 `ad4d670b72859d887c7960142a9a9d36a3e50446694a035e254442f65d6e7572`, from `https://fastly-cdn.system-rescue.org/releases/13.02/systemrescue-13.02-amd64.iso`. This is a rescue environment, not a Debian/Proxmox installation image. Record download verification and USB identity before writing. A raw ISO write erases the selected USB device.
+
+The Mac had no external physical disks attached and approximately 2.5 GiB free when checked. Stage/verify the 1.3 GiB ISO on culex first. Plug in an expendable USB stick (at least 2 GiB), identify it with `diskutil list external physical` and `diskutil info <exact-device>`, and confirm its size/model/contents before any device write. Do not guess a `/dev/diskN` from a previous connection. Use the verified ISO with a Mac-compatible image writer or a device-specific operator `dd` command after identification; no USB disk has yet been erased. The ISO may be copied locally only after checking available space, or streamed from its verified culex copy with a subsequent exact-byte device-readback checksum. A USB write failure is not an acceptable rescue medium.
+
+Keep a separate workstation terminal available for runbook/log access. From the physical machine, use its one-time boot menu (commonly Dell F11) to boot **UEFI USB**, not an installed-OS installer or format option. SystemRescue starts a root shell and normally configures the wired LAN with DHCP via NetworkManager. Its NIC name/address may differ from the installed OS; inspect rather than assume:
+
+```bash
+id
+lsblk -o NAME,SIZE,MODEL,WWN,FSTYPE,MOUNTPOINTS
+ip -br address
+ip route
+nmcli device status
+```
+
+Confirm the PERC OS disk identity and that all its partitions are unmounted. Authenticate outbound SSH to culex in a standalone test **before** starting `dd`. Obtain culex's actual SSH host-key fingerprint from an already trusted workstation connection and compare it when the rescue environment prompts for first trust; do not disable host-key checking. Outgoing SSH needs no rescue SSH-server/firewall changes. Use `192.168.1.13` if rescue DNS is unavailable and confirm the same host identity. Reference: [SystemRescue networking](https://www.system-rescue.org/manual/Network_configuration_and_programs/).
+
+At the measured 1 Gbit/s epsilon link, transferring the complete 499.6 GB raw disk takes **at least about 67 minutes** before SSH/disk overhead; source/destination hashing adds disk reads. Reserve a multi-hour imaging window, with return-to-production and rollback time based on observed progress. Compression/partition-aware images may reduce transfer, but are a separate format/recovery choice to discuss; the documented baseline is the full-disk raw image.
+
 First boot the rescue medium, identify the OS disk by WWN and exact byte size, and confirm **all its filesystems are unmounted**. Do not image the current live mounted root with `dd`, even if PostgreSQL alone has been stopped. Full raw image size is 499,558,383,616 bytes; sparse allocation/compression savings depend on actual contents, not just filesystem-used space. Check destination free space for master and rehearsal copies.
 
-From the rescue session, after verifying SSH to culex and the disk/mount state, capture the raw master (replace username only if the rescue environment requires a different privilege mechanism):
+From SystemRescue's **root shell**, after verifying SSH to culex and the disk/mount state, capture the raw master. There is no sudo authentication in this pipeline; the standalone SSH preflight proves destination/credentials before imaging:
 
 ```bash
 bash
 set -euo pipefail
 DISK=/dev/disk/by-id/wwn-0x614187703cb534002c36dde2320197ab
 IMAGE=/home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-os.raw
-sudo blockdev --getsize64 "$DISK"
+blockdev --getsize64 "$DISK"
 lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINTS "$DISK"
-ssh scubbo@culex "test ! -e '$IMAGE' && df -h /home/scubbo"
-sudo dd if="$DISK" bs=16M iflag=fullblock status=progress \
-  | ssh scubbo@culex "umask 077; test ! -e '$IMAGE' && dd of='$IMAGE' bs=16M iflag=fullblock conv=sparse,fsync"
-ssh scubbo@culex "stat -c '%s %n' '$IMAGE'; sha256sum '$IMAGE' > '$IMAGE.sha256'"
-sudo sha256sum "$DISK"
+ssh -o ConnectTimeout=10 scubbo@culex "test ! -e '$IMAGE' && df -h /home/scubbo"
+dd if="$DISK" bs=16M iflag=fullblock status=progress \
+  | ssh -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 \
+    scubbo@culex "umask 077; test ! -e '$IMAGE' && dd of='$IMAGE' bs=16M iflag=fullblock conv=sparse,fsync"
+ssh scubbo@culex "umask 077; stat -c '%s %n' '$IMAGE'; sha256sum '$IMAGE' > '$IMAGE.sha256'"
+sha256sum "$DISK"
 ssh scubbo@culex "cat '$IMAGE.sha256'"
 ```
 
