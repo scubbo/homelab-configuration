@@ -110,10 +110,20 @@
     },
     "datastore_ha_decision": null
   },
+  "router": {
+    "dhcp_backend": "ISC DHCPv4 [legacy]",
+    "current_dynamic_pool": {
+      "start": "192.168.1.1",
+      "end": "192.168.1.254"
+    },
+    "project_range_conflict_check": "Jack reports no existing assignments in 192.168.1.220-229",
+    "project_range_exclusion_status": "not yet applied; preserve exclusions for other static addresses when splitting pools"
+  },
   "backup": {
     "proxmox_storage_id": "vm-backups",
     "nas_host": "galactus.avril",
     "nas_ipv4": "192.168.1.39",
+    "nas_platform": "TrueNAS CORE",
     "planned_nas_export": "/mnt/high-resiliency/proxmox-backups",
     "export_status": "approved by Jack; creation/permission test pending",
     "nas_export": null,
