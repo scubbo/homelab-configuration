@@ -49,6 +49,24 @@ Jack approved a reversible framework SAE-upgrade test, then approved restoring t
 - Compare another saved AP/extender or a genuinely PSK-only native profile to distinguish this AP's association handling from the phone's cross-AKM behavior. Preserve existing network credentials; no password in chat or command output.
 - Review AP-side authentication/client-blocking/capacity/radio logs before selecting firmware/configuration changes. A targeted AP restart can restore service but alone would not establish root cause; record evidence first.
 
+## AP access discovery and scoped SSH approval
+
+Jack does not remember the original setup/controller. No UniFi controller process, application or backup was found in the checked laptop locations; no Ubiquiti/UniFi app is installed on the attached Pixel. Common controller names did not resolve, and TCP8443 refused on localhost/epsilon/culex. Bounded LAN TCP8443 discovery found only `.141`; its web responses and MAC indicate an unrelated service, not a confirmed controller. Ubiquiti UDP discovery did not return a response from laptop or culex. These checks do not establish that no controller exists elsewhere or that the AP was configured in standalone mode.
+
+Laptop ARP directly verifies `.100` at `78:45:58:29:4b:02`. RSA host-key retrieval presents fingerprint `SHA256:ScCSfkhfvU/z4IbX7pVXllCojxsMZNRRNnpTN1l0Zec` (2048-bit); this is observed from the endpoint, not independently authenticated. Jack explicitly approves `HostKeyAlgorithms=+ssh-rsa` for this AP connection only. Agent strict-check probe then fails at first-use host-key verification, before authentication. No host key has been accepted by the agent and no AP login is established.
+
+Operator first login uses password authentication in Jack's terminal, bypassing unrelated key attempts:
+
+```sh
+ssh -o HostKeyAlgorithms=+ssh-rsa \
+  -o PreferredAuthentications=password \
+  -o PubkeyAuthentication=no \
+  -o NumberOfPasswordPrompts=1 \
+  ubnt@192.168.1.100
+```
+
+The [vendor access reference](https://help.ui.com/hc/en-us/articles/204909374-Connecting-to-UniFi-with-Debug-Tools-SSH) documents `ubnt/ubnt` for older devices before adoption. An adopted AP uses controller-defined device SSH credentials, not necessarily its Wi-Fi or administrator login password. One vendor-default attempt is the proposed test if Jack has no saved credentials; no credential guesses/attempts have been executed by the agent. Successful login should run `info` and `uptime` to establish firmware and configured inform/controller address before selecting AP log commands. Login outcome remains pending.
+
 ## References consulted
 
 - [Android 16 WifiGlobals](https://android.googlesource.com/platform/packages/modules/Wifi/+/refs/heads/android16-release/service/java/com/android/server/wifi/WifiGlobals.java): separate framework resource lookup and cached SAE-upgrade offload.
