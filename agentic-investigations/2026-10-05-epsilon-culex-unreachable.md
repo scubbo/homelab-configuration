@@ -293,4 +293,21 @@ Arr-stack automated sync remains paused and Jack must re-enable it; Immich remai
 
 Final kernel check found fresh `ext4_journal_check_start: Detected aborted journal` for epsilon `/dev/sdn`, known Tdarr configuration LUN `pvc-d2da3f10-bdca-4728-bb78-d0720ac52007`, at 05:20:31 UTC. Pod `tdarr-857b79766b-smbjg` is Ready with zero restarts and no matching errors in the sampled application logs; this does not negate host filesystem errors. Deployment `tdarr/tdarr` has one replica, Recreate strategy, configuration PVC plus NFS media/emptyDir transcode cache. Its Argo application remains automated. No Tdarr stop/start was authorized or executed in the scoped maintenance above. Request separate approval and stable auto-sync pause before controlled remount; snapshot exact stopped configuration zvol and verify it just as for other workloads. Monitoring's Vault403 is a separate observed issue, not a reason to expand storage recovery to Vault blindly.
 
+### Tdarr maintenance approved and volume detached (22:32 PDT)
+
+Jack explicitly approved extending agent-run stop/snapshot/remount recovery to Tdarr. Jack reports no active jobs and completed UI policy changes. Read-only policy verification confirms arr-stack `automated.enabled=true` restored and Tdarr `automated.enabled=false` paused. Tdarr mounts its configuration PVC at `/app/server`, `/app/configs` and `/app/logs` using subpaths; transcode cache is emptyDir and is recreated by pod replacement.
+
+Agent scaled `tdarr/tdarr` from one to zero and waited for pod removal. Verification at `2026-10-06T05:32:38Z` confirms desired replicas zero, no Tdarr pods or matching VolumeAttachment, configuration PVC still Bound without deletion timestamp, and no epsilon host mounts/device links/iSCSI session for the exact LUN. NAS inventory identifies its zvol as `high-resiliency/k8s/iscsi/vols/pvc-d2da3f10-bdca-4728-bb78-d0720ac52007` (4.66 GiB). No filesystem repair or media changes were performed.
+
+Next operator snapshot:
+
+```sh
+sh -eu <<'SH'
+zfs snapshot high-resiliency/k8s/iscsi/vols/pvc-d2da3f10-bdca-4728-bb78-d0720ac52007@recovery-20261005-tdarr
+zfs list -t snapshot -o name,creation high-resiliency/k8s/iscsi/vols/pvc-d2da3f10-bdca-4728-bb78-d0720ac52007@recovery-20261005-tdarr
+SH
+```
+
+Snapshot confirmation and normal resume remain pending. Keep Tdarr automatic sync paused until agent restores one replica and verifies journal replay, application HTTP/configuration persistence and fresh errors; then Jack re-enables it. Arr-stack policy restoration is complete and does not need repetition.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
