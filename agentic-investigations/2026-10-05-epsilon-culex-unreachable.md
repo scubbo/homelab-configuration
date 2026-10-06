@@ -278,4 +278,19 @@ SH
 
 Snapshot output is pending; agent will resume each stopped workload and verify application/persistence after confirmation. Keep arr-stack automated sync paused until desired replicas are restored and recovery accepted, then Jack re-enables it. Check its policy after restoration; never use agent ArgoCD writes to resolve reconciliation.
 
+### Sonarr, Readarr and Prometheus recovery verified (22:18–22:21 PDT)
+
+Jack supplied the three exact `@recovery-20261005-sonarr`, `@recovery-20261005-readarr` and `@recovery-20261005-prometheus` snapshot listings. NAS displays creation October 5 22:05; NAS clock alignment remains unverified. Before restart, agent verified all three replica counts zero, no matching VolumeAttachments, and arr-stack automated sync still disabled. Agent resumed and verified each workload sequentially under Jack's approved maintenance exception.
+
+- Sonarr: scale zero to one, rollout complete, zero restarts, HTTP `/ping` 200. Exact IQN resolves to epsilon `/dev/sdc`; ext4 recovered/mounted at 05:18:31 UTC. Main/log SQLite databases opened successfully. Last recorded ext4 error precedes remount.
+- Readarr: scale zero to one, rollout complete, zero restarts, HTTP `/ping` 200. IQN resolves to epsilon `/dev/sdd`; ext4 recovered/mounted at 05:19:22 UTC. Main/cache/log SQLite databases opened. The earlier SQLite IoErr startup exception no longer blocks startup; no database restoration was needed. Startup warned about an unencrypted ASP.NET data-protection key; this was not established as an outage blocker.
+- Prometheus: CR replicas restored from zero to one with a JSON precondition; operator StatefulSet rollout complete. Pod runs on culex, exact IQN resolves to `/dev/sdm`, ext4 recovered/mounted read-write at 05:20:11 UTC. Application completed TSDB/WAL replay, wrote new blocks and a WAL checkpoint. Query returns 32 `up` series with sample ages 1–17 seconds at 05:21:13 UTC; no sampled fresh read-only/WAL errors. One down target is Vault metrics HTTP403; it is not an ingestion/storage failure and its pre-incident status has not been established.
+- All pods reported Ready (80 Running, one Succeeded). All arr Deployments are restored to one. Kernel still recommends offline filesystem checks for remounted volumes with recorded errors; service recovery is not full filesystem-integrity acceptance. No manual repair, rollback, file deletion, or restore was performed.
+
+Arr-stack automated sync remains paused and Jack must re-enable it; Immich remained automated. Preservation snapshots are retained. Real arr import/download workflow and Authentik login/SSO acceptance remain unverified; Jellyfin playback passed separately.
+
+### Additional active storage evidence: Tdarr (open)
+
+Final kernel check found fresh `ext4_journal_check_start: Detected aborted journal` for epsilon `/dev/sdn`, known Tdarr configuration LUN `pvc-d2da3f10-bdca-4728-bb78-d0720ac52007`, at 05:20:31 UTC. Pod `tdarr-857b79766b-smbjg` is Ready with zero restarts and no matching errors in the sampled application logs; this does not negate host filesystem errors. Deployment `tdarr/tdarr` has one replica, Recreate strategy, configuration PVC plus NFS media/emptyDir transcode cache. Its Argo application remains automated. No Tdarr stop/start was authorized or executed in the scoped maintenance above. Request separate approval and stable auto-sync pause before controlled remount; snapshot exact stopped configuration zvol and verify it just as for other workloads. Monitoring's Vault403 is a separate observed issue, not a reason to expand storage recovery to Vault blindly.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
