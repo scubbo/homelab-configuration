@@ -1,6 +1,6 @@
 # Epsilon and culex unreachable from remote workstation
 
-**Status: DHCP root cause confirmed; host access and recovered service health verified. Ombi still has an active aborted configuration-volume journal despite pod readiness. Offline filesystem checks, full application workflow acceptance and Kasa reconnections remain follow-ups.** ISC DHCP refused to start because two address pools overlapped. Jack corrected the lower pool endpoint to `.219`; clients acquired leases and host connectivity returned. Jack reported the initial SSH failure after the temporary NAS-test sequence. Earlier DHCP pool changes are documented in the [network preparation plan](../docs/plans/proxmox-network-storage-preparation.md).
+**Status: immediate service recovery verified, including Ombi; maintenance sync settings restored. Offline filesystem checks, full application workflow acceptance and Kasa reconnections remain follow-ups.** ISC DHCP refused to start because two address pools overlapped. Jack corrected the lower pool endpoint to `.219`; clients acquired leases and host connectivity returned. Jack reported the initial SSH failure after the temporary NAS-test sequence. Earlier DHCP pool changes are documented in the [network preparation plan](../docs/plans/proxmox-network-storage-preparation.md).
 
 ## Evidence (2026-10-05, approximately 22:40–22:44 UTC)
 
@@ -372,5 +372,15 @@ SH
 ```
 
 Snapshot confirmation and normal restart remain pending. Keep arr-stack automatic sync paused until agent restores one replica and verifies startup/database write access; then Jack restores automatic sync. The preceding all-pods-Ready check predates this deliberate stop and must not be represented as Ombi currently serving. All other recovery maintenance counts have been restored.
+
+### Ombi recovery and final stability check (October 6)
+
+Jack supplied the exact stopped-zvol snapshot `@recovery-20261006-ombi` listing (NAS creation display October 6 10:11; NAS clock alignment still unverified). Agent verified replica zero, no VolumeAttachment, PVC retention and arr-stack sync pause, then restored Ombi to one under the approved maintenance exception. Rollout completed; pod `arr-stack-ombi-5b85779867-g8jpr` on epsilon is Ready with zero restarts. Local web page and `/api/v1/Status` return HTTP200.
+
+The configuration LUN was reidentified by IQN, resolving to epsilon `/dev/sdg`. Kernel reports journal recovery complete and mount at `2026-10-06T17:24:48Z`, with the offline e2fsck recommendation. Recorded error count46/last-error16:38:09 precede recovery. A unique mode0600 file under `/config` passed create/write/fsync/read/delete as application user `abc` (UID1000/GID911), and the file was removed. Startup logs show no sampled failures. This verifies restored application filesystem access; a real request/database workflow remains untested. No manual filesystem repair or database restore occurred.
+
+Jack re-enabled arr-stack automatic sync. Agent check at 21:13 UTC confirms `automated.enabled=true`, Synced/Healthy, 80 Running pods all Ready and two Succeeded. Neither epsilon nor culex records an ext4 last-error timestamp since the Ombi remount, nearly four hours earlier. Maintenance replica counts and automatic-sync settings are restored. Retain the post-outage snapshots until integrity/application acceptance is complete.
+
+Immediate outage recovery is closed at the service/access level. Next priorities are fresh application-consistent backups with verified restore coverage, followed by snapshot-protected offline filesystem assessment in an agreed maintenance window. Real user workflows and pre-existing host/monitoring cleanup remain tracked; no additional restarts are indicated by the current evidence. Kasa reconnections remain with Jack and phone recovery is accepted for now.
 
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
