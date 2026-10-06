@@ -222,4 +222,17 @@ SH
 
 Snapshot confirmation is pending. No clone/image/check/repair is needed before the agreed normal-remount trial. Keep replicas zero until preservation is confirmed, then operator restores one replica and agent verifies journal replay, application startup, fresh storage errors and HTTP readiness. Playback acceptance follows service recovery.
 
+### Jellyfin preservation confirmed; restart pending
+
+Jack supplied successful creation/listing of the exact configuration-zvol snapshot `@recovery-20261005-jellyfin`; NAS displays creation `Mon Oct 5 19:20 2026`. NAS clock alignment remains unverified, so this displayed timestamp does not override the operator sequence or cluster timestamps. Agent recheck confirms desired replicas zero and no Jellyfin pods. Snapshot preserves post-outage state; no clone, manual repair or rollback was performed.
+
+Approved operator restart:
+
+```bash
+kubectl -n jellyfin scale deployment/jellyfin --current-replicas=0 --replicas=1
+kubectl -n jellyfin rollout status deployment/jellyfin --timeout=180s
+```
+
+Restart output remains pending. If rollout times out or startup fails, inspect the specific mount/application error before further actions. Verify the configuration filesystem's journal replay, fresh kernel/application errors, HTTP health and playback after startup.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
