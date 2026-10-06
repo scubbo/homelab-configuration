@@ -138,4 +138,36 @@ Jack supplied the exact snapshot listing for `high-resiliency/k8s/iscsi/vols/pvc
 
 Authentik remains hibernated per agent recheck. Epsilon has 133 GiB free on local root and `/usr/sbin/e2fsck` installed. The backup-test NFS mount still targets the expected NAS export. Proposed assessment path: create an unexported, read-only ZFS clone `high-resiliency/authentik-recovery-20261005`, read its 5 GiB block contents into a private image under the existing backup export, then copy to a private local epsilon directory and check the regular file. This avoids reattaching the production LUN or exporting a second writable filesystem with the same UUID. The image contains authentication database secrets: directory 0700, file 0600, NAS ownership `proxback:proxmox-backup` for existing mapped-root access; no image contents or credentials enter Git. Clone/image creation and any filesystem check remain unexecuted.
 
+### Authentik read-only clone confirmed
+
+Jack supplied clone properties: `high-resiliency/authentik-recovery-20261005` has the exact preservation snapshot as its origin, local `readonly=on`, `volsize=5G`, and local `volmode=dev`. Character-device path `/dev/zvol/high-resiliency/authentik-recovery-20261005` exists. No iSCSI export was requested for the clone. NAS `date -u` in that output is `2026-10-06 01:07:46 UTC`; workstation and epsilon subsequently read `01:20:33 UTC`. This suggests NAS clock lag, but these are not simultaneous samples, so the exact offset remains unmeasured. Hibernation remains on in the cluster recheck. Epsilon e2fsck version is 1.47.0.
+
+Next operator step reads the clone into a protected regular file. Only the freshly created recovery directory's inherited ACL is reset to mode-derived permissions; the dataset/share ACL and existing files are not altered. Exact size validation distinguishes a complete 5 GiB image from a partial read. Source clone stays read-only, and an interrupted transfer retains a `.part` image for diagnosis.
+
+```sh
+sh -eu <<'SH'
+umask 077
+test "$(zfs get -H -o value readonly high-resiliency/authentik-recovery-20261005)" = on
+test "$(zfs get -Hp -o value volsize high-resiliency/authentik-recovery-20261005)" = 5368709120
+
+RECOVERY_DIR=$(mktemp -d /mnt/high-resiliency/proxmox-backups/authentik-recovery.XXXXXXXX)
+printf 'Recovery directory: %s\n' "$RECOVERY_DIR"
+setfacl -b "$RECOVERY_DIR"
+chmod 700 "$RECOVERY_DIR"
+
+dd if=/dev/zvol/high-resiliency/authentik-recovery-20261005 \
+  of="$RECOVERY_DIR/authentik.img.part" bs=1m
+test "$(stat -f '%z' "$RECOVERY_DIR/authentik.img.part")" = 5368709120
+mv "$RECOVERY_DIR/authentik.img.part" "$RECOVERY_DIR/authentik.img"
+sha256 -q "$RECOVERY_DIR/authentik.img" > "$RECOVERY_DIR/authentik.img.sha256"
+chmod 600 "$RECOVERY_DIR/authentik.img" "$RECOVERY_DIR/authentik.img.sha256"
+chown proxback:proxmox-backup "$RECOVERY_DIR" \
+  "$RECOVERY_DIR/authentik.img" "$RECOVERY_DIR/authentik.img.sha256"
+stat -f '%u:%g %Lp %z %N' "$RECOVERY_DIR" "$RECOVERY_DIR/authentik.img"
+cat "$RECOVERY_DIR/authentik.img.sha256"
+SH
+```
+
+Clone/raw-image transfer completes before any filesystem check. Image creation, hash and ownership output remain pending. The local assessment will run against a verified regular-file copy, not a production device or live NFS path.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
