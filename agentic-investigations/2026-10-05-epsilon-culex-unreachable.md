@@ -86,4 +86,31 @@ Recovery sequence for discussion with Jack:
 
 No maintenance writes have been initiated. Snapshot availability and the maintenance method remain unresolved choices. Proxmox/OS migration stays paused until storage/application recovery is accepted. Light-switch recovery remains tracked but deferred at Jack's request.
 
+## NAS inventory and Authentik maintenance decision
+
+Jack supplied NAS `zpool status -x`: **all pools are healthy**. Zvols for the affected workloads exist under `high-resiliency/k8s/iscsi/vols/`; the separate `.../v/` directory also contains other zvols and must not be confused with these claims. Listed snapshots cover the boot pool, an NFS volume, an iocage release, and the two Vault test volumes; none covers the affected Authentik/Jellyfin/Valkey claims. External backups remain unestablished. Healthy ZFS pools do not establish the health of ext4 inside each zvol.
+
+Verified Authentik identity:
+
+- Claim `authentik/authentik-database-1`, PV `pvc-475d986c-57bc-4a07-beb1-29e8ba5c38db`.
+- NAS zvol `high-resiliency/k8s/iscsi/vols/pvc-475d986c-57bc-4a07-beb1-29e8ba5c38db`, **5 GiB**.
+- Epsilon iSCSI path `/dev/disk/by-path/ip-galactus.avril:3260-iscsi-iqn.2005-10.org.freenas.ctl:csi-pvc-475d986c-57bc-4a07-beb1-29e8ba5c38db-clustera-lun-0`, observed resolving to `/dev/sdl`.
+- Observed WWN `/dev/disk/by-id/wwn-0x6589cfc00000084c50cd9372e10f2e8b`; verify path/WWN again after any attach cycle rather than reusing `/dev/sdl` blindly.
+- Current pod belongs to CNPG Cluster `authentik-database`, one instance, with no configured CNPG backup. Pod continues crash-looping; epsilon kernel logs corroborate aborted journal errors. `/usr/sbin/e2fsck` exists but has not been run.
+
+Jack approved **temporary operator maintenance** for Authentik, explicitly permitting a live CNPG hibernation/unhibernate annotation as an exception to the documented GitOps-only scheduling rule. Jack runs the annotation and privileged NAS/host commands; the agent verifies each stage. ArgoCD remains read-only. No database/PVC deletion or snapshot rollback is approved.
+
+[CNPG 1.24 declarative hibernation](https://cloudnative-pg.io/documentation/1.24/declarative_hibernation/) removes instance pods while retaining PVCs. The current Authentik ArgoCD application has automated prune with no explicit selfHeal; the checked-in Cluster has no hibernation annotation. Observe the annotation/pod state throughout maintenance rather than assuming reconciliation cannot intervene.
+
+First operator step:
+
+```bash
+kubectl -n authentik annotate cluster.postgresql.cnpg.io authentik-database \
+  cnpg.io/hibernation=on --overwrite
+kubectl -n authentik wait --for=condition=cnpg.io/hibernation \
+  cluster.postgresql.cnpg.io/authentik-database --timeout=120s
+```
+
+On success, verify the database pod is absent, PVC retained, CSI attachment removed/detached, and all mounts/consumers of that exact LUN gone. A hibernation condition alone does not prove complete CSI cleanup. Preserve the stopped zvol with a dataset-specific snapshot (not a pre-outage backup), inspect a clone before production repair, and agree each repair action from observed evidence. The annotation has not yet been reported executed, and no preservation snapshot/clone has been created.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
