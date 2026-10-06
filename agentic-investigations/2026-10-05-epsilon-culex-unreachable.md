@@ -178,4 +178,16 @@ Some workloads have recovered automatically, including Immich PostgreSQL; Valkey
 
 Read-only/aborted-journal state proves unresolved storage failure, not necessarily permanent filesystem or database corruption. Preservation/clone assessment is conservative; blanket repair/restore has not been justified. Controlled exclusive unmount/remount with journal replay may suffice for some volumes; select further repair only from offline findings. Keep Authentik hibernated pending an agreed next step; no additional maintenance writes are initiated during this pause.
 
+### Authentik normal recovery accepted (18:31–18:33 PDT)
+
+Jack resumed CNPG with `cnpg.io/hibernation=off`. Authentik database pod was recreated on culex, with zero restarts and Ready status. The exact LUN now resolves to `/dev/sdk` on culex; device paths changed and were identified by IQN rather than assumed from epsilon's `/dev/sdl`.
+
+- At 01:31:32 UTC, ext4 completed recovery and mounted the filesystem read-write. The kernel also warns `mounting fs with errors, running e2fsck is recommended`; this remains an offline-maintenance follow-up, not proof that service restoration failed.
+- PostgreSQL logs show automatic crash recovery, redo completion, a successful end-of-recovery checkpoint writing 66 buffers/syncing 38 files, and `database system is ready to accept connections` at 01:31:40 UTC. The end-of-WAL `invalid record length ... got 0` message was followed by successful redo/checkpoint completion; it was not a fatal recovery error. No manual e2fsck, database restore or raw-image export was performed.
+- Reconnecting clients briefly exhausted the 100-connection limit. Read-only SQL observation then showed six Authentik client sessions and `pg_is_in_recovery()=false`. Connection-limit errors last appeared at 01:32:01; last-60-second log check at 01:33:31 showed no PostgreSQL ERROR/FATAL/PANIC entries.
+- Jack explicitly confirms deleting the existing Authentik server pod. ReplicaSet created replacement `authentik-server-77b4dfb487-dfnd6` on culex. Its startup reported no migrations to apply. Database, server and worker all became Ready, and agent HTTP probe to `https://auth.avril/-/health/ready/` returned **200**.
+- Culex Authentik filesystem error counter remains 98, with last-error timestamp predating reattachment; no fresh device kernel errors were observed after remount. Recorded ext4 errors do not reset merely because journal replay succeeds. Offline filesystem assessment and user login/SSO acceptance remain follow-up work.
+
+This restores Authentik service readiness through normal CSI/ext4/PostgreSQL recovery plus Jack's server pod recreation. Preservation snapshot/read-only clone remain retained; no repair/rollback is required to explain this recovery. Jellyfin still crash-loops on epsilon and is the next workload to assess for controlled remount; no Jellyfin maintenance command has been executed by the agent.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
