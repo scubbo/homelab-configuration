@@ -132,4 +132,10 @@ zfs list -o name,available,used high-resiliency
 
 Snapshot creation/verification and available capacity output remain pending. This is preservation, not a pre-outage restore point or a change to the live zvol contents. Clone assessment follows its confirmed creation.
 
+### Authentik preservation snapshot confirmed
+
+Jack supplied the exact snapshot listing for `high-resiliency/k8s/iscsi/vols/pvc-475d986c-57bc-4a07-beb1-29e8ba5c38db@recovery-20261005-authentik`. NAS reports creation `Mon Oct 5 18:05 2026`; this precedes the laptop/cluster hibernation timestamps despite being supplied after the snapshot request. Clock alignment and actual creation sequence have not been independently established; request NAS `date -u` before using those times as ordered evidence. Pool reports 10.3 TiB available, 443 GiB used.
+
+Authentik remains hibernated per agent recheck. Epsilon has 133 GiB free on local root and `/usr/sbin/e2fsck` installed. The backup-test NFS mount still targets the expected NAS export. Proposed assessment path: create an unexported, read-only ZFS clone `high-resiliency/authentik-recovery-20261005`, read its 5 GiB block contents into a private image under the existing backup export, then copy to a private local epsilon directory and check the regular file. This avoids reattaching the production LUN or exporting a second writable filesystem with the same UUID. The image contains authentication database secrets: directory 0700, file 0600, NAS ownership `proxback:proxmox-backup` for existing mapped-root access; no image contents or credentials enter Git. Clone/image creation and any filesystem check remain unexecuted.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
