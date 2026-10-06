@@ -322,4 +322,12 @@ Final checks: 80 Running pods all Ready, one Succeeded; neither epsilon nor cule
 
 Remaining acceptance/operations: Authentik user login/SSO; arr import/download workflows; Jellyfin hardware transcode; Tdarr actual-job verification; offline filesystem consistency checks; backup policy and clock alignment; temporary NFS-test mount cleanup/probe DHCP mapping; affected Kasa switches. Vault metrics403 remains a separately recorded observation. These follow-ups do not invalidate the verified readiness/HTTP, Jellyfin playback, Valkey save and Prometheus ingestion outcomes.
 
+### Stable recovery checkpoint and next priorities (23:09 PDT)
+
+Fresh read-only checks at 06:09 UTC show all three nodes Ready (rasnu1 retains its prior cordon), 80 Running pods all Ready, and no ext4 last-error timestamps within 30 minutes on epsilon/culex. Prometheus returns fresh samples for 52 targets, maximum sample age approximately 30 seconds. Eleven currently mounted CSI filesystems across the two hosts retain recorded errors; no current failure was reproduced in this check.
+
+Arr-stack, Tdarr, Immich and Authentik Argo applications are Healthy/Synced with automated sync enabled. Jellyfin and Prometheus are Healthy/OutOfSync; resource statuses identify Jellyfin Deployment and Prometheus node-exporter ServiceMonitor respectively. Exact differences are not established: read-only `argocd app diff` failed because the CLI session token is expired. Do not infer maintenance drift or trigger a sync from these statuses alone; inspect desired/live differences after authenticated read-only access is restored or through Jack's UI.
+
+Next recovery work is real application acceptance (login/SSO, Immich upload/view, arr import, actual transcode), followed by a scheduled, snapshot-protected offline filesystem assessment one PVC at a time. Start with non-writing offline assessment; agree repair only from findings. Do not run e2fsck on mounted volumes or perform blanket restarts while observed service health is stable. Establish application-consistent backups and tested restore coverage separately from the post-outage preservation snapshots. OS/Proxmox conversion remains gated on recovery/maintenance acceptance.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
