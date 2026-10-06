@@ -170,4 +170,12 @@ SH
 
 Clone/raw-image transfer completes before any filesystem check. Image creation, hash and ownership output remain pending. The local assessment will run against a verified regular-file copy, not a production device or live NFS path.
 
+### Recovery reassessment and pause (18:22 PDT)
+
+Jack requested a pause to question whether automatic recovery makes the image/repair workflow excessive. Pause image export and repair work; image creation has not been reported executed. Fresh read-only checks show 79 Running pods, 71 Ready and eight not Ready (five arr applications, Authentik server, Jellyfin, Vault). Authentik's database is absent because of deliberate hibernation; that removes one known failing pod from the list but does not cause other applications to recover.
+
+Some workloads have recovered automatically, including Immich PostgreSQL; Valkey is now Ready, with no storage-error lines in the sampled recent logs, but persistence acceptance remains unverified. Active problems are not merely historical error counts: Prometheus reports failed WAL writes on a read-only filesystem at 01:22:58 UTC despite Ready status; Jellyfin reports read-only `/config`, and Prowlarr's current write test fails on read-only `/config`. Epsilon ext4 last-error timestamps continue updating on several CSI volumes, while local load is normal.
+
+Read-only/aborted-journal state proves unresolved storage failure, not necessarily permanent filesystem or database corruption. Preservation/clone assessment is conservative; blanket repair/restore has not been justified. Controlled exclusive unmount/remount with journal replay may suffice for some volumes; select further repair only from offline findings. Keep Authentik hibernated pending an agreed next step; no additional maintenance writes are initiated during this pause.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
