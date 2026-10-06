@@ -83,6 +83,8 @@ Post-restart phone verification:
 
 This accepts observed phone connectivity restoration. Power cycling restored association with the phone's original settings and identity, so earlier statements that the SAE override comparison conclusively proved the underlying cause were too strong. Native SAE/cross-AKM selection remains a relevant trace finding; AP state, firmware behavior and the precise interaction cannot be determined without AP logs/access. Do not introduce a persistent global SAE override or claim an AP firmware defect from this recovery alone. If disconnects recur, retain failure timestamps/BSSID and pursue management/firmware recovery deliberately. No factory reset is required for the observed recovery. AP management credentials/controller/configuration backup remain an operational follow-up.
 
+Jack explicitly accepts the phone as fixed for now and chooses to move on to cluster/household recovery. He is reconnecting smart switches through Kasa himself. No further phone changes are planned unless the problem recurs; AP management/firmware/backup follow-up remains tracked independently.
+
 ## References consulted
 
 - [Android 16 WifiGlobals](https://android.googlesource.com/platform/packages/modules/Wifi/+/refs/heads/android16-release/service/java/com/android/server/wifi/WifiGlobals.java): separate framework resource lookup and cached SAE-upgrade offload.

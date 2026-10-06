@@ -1,6 +1,6 @@
 # Epsilon and culex unreachable from remote workstation
 
-**Status: DHCP root cause confirmed; host access and affected application service recovery verified. Offline filesystem checks, full application workflow acceptance and some Wi-Fi light switches remain follow-ups.** ISC DHCP refused to start because two address pools overlapped. Jack corrected the lower pool endpoint to `.219`; clients acquired leases and host connectivity returned. Jack reported the initial SSH failure after the temporary NAS-test sequence. Earlier DHCP pool changes are documented in the [network preparation plan](../docs/plans/proxmox-network-storage-preparation.md).
+**Status: DHCP root cause confirmed; host access and recovered service health verified. Ombi still has an active aborted configuration-volume journal despite pod readiness. Offline filesystem checks, full application workflow acceptance and Kasa reconnections remain follow-ups.** ISC DHCP refused to start because two address pools overlapped. Jack corrected the lower pool endpoint to `.219`; clients acquired leases and host connectivity returned. Jack reported the initial SSH failure after the temporary NAS-test sequence. Earlier DHCP pool changes are documented in the [network preparation plan](../docs/plans/proxmox-network-storage-preparation.md).
 
 ## Evidence (2026-10-05, approximately 22:40–22:44 UTC)
 
@@ -339,5 +339,38 @@ Laptop initially had an ISP-network DHCP packet during these checks, then fresh 
 October 6 ADB evidence supersedes that initial narrowing: Pixel joins fail at native Wi-Fi authentication before DHCP, with SAE/cross-AKM behavior on a WPA2-only Ubiquiti UAP-AC-PRO advertisement. A framework SAE-disabled trial connected once but did not reliably recover subsequent attempts because separate native offload remains enabled; ineffective override/verbose logging were restored. Phone currently disconnected. [Dedicated investigation](2026-10-06-pixel-wifi-auth-timeouts.md) records fresh traces, approved comparisons and remaining AP-side access needs. AP identity is now in the catalogue.
 
 Jack subsequently power-cycled the AP after management access recovery was blocked. Phone association and validated Internet access returned on the same BSSID/MAC with original framework/native SAE settings enabled; router pings pass and connection holds through the six-minute verification. Laptop also regained `.1.50`. Diagnostic logging/overrides restored. This establishes service restoration, not the precise authentication bug; [post-restart evidence](2026-10-06-pixel-wifi-auth-timeouts.md#access-recovery-blocked-ap-power-cycle-restored-service) corrects the earlier overconfident SAE-causation claim. AP management/firmware access and Kasa acceptance remain follow-ups.
+
+### October 6 impact review: k3s healthy, Ombi storage failure remains
+
+Jack accepts the phone as fixed for now and is reconnecting switches through Kasa himself. Agent recheck at 16:35–16:38 UTC finds all three nodes Ready (rasnu1's existing cordon retained), 80 Running pods all Ready, two Succeeded, and no recorded container terminations in the preceding hour. API `/readyz?verbose` passes every check. All checked endpoints return HTTP200: Authentik readiness, Immich server ping, Jellyfin internal/public health, five arr app pings, Tdarr, Prometheus readiness and Vault health. Both CNPG databases report one ready instance with no sampled ERROR/FATAL/PANIC in the last hour. Valkey has 157 successful RDB saves, status ok; Prometheus returns 52 fresh samples with maximum age approximately 31 seconds. No failed VolumeAttachments were observed. These are API/service/persistence checks, not full user-workflow or offline consistency acceptance.
+
+**One remaining outage-related storage failure is confirmed: Ombi.** Exact IQN maps epsilon `/dev/sdk` to `arr-stack/arr-stack-ombi-config-iscsi-pvc`, PV `pvc-3cba06cc-eb00-4630-b065-9cc7ed8f0011`, 1 GiB. Kernel at 16:15 UTC reports aborted journal/read-only remount; error count is 45, advancing after prior recovery. Ombi logged a failed SQLite `DELETE FROM RadarrCache` during the review window. Its readiness probe is TCP-only, so Ready cannot establish writable configuration/database. Pod `/proc/mounts` still displays rw, illustrating why mount options are insufficient evidence. A sampled storage-error-string scan across 124 running containers found no matching messages and had no retrieval failures; that scan did not negate the known Ombi kernel/database failures.
+
+Recommend the same snapshot-protected full detach/remount trial for Ombi, with Jack explicitly extending maintenance scope and pausing arr-stack auto-sync first. No Ombi stop, test-file write, snapshot, repair or database deletion has been performed. Other remounted volumes have only historical error records; offline consistency checks still need a planned outage.
+
+Other findings:
+
+- Culex `mnt-NAS.mount` is failed since April 12 and still generated from `rassigma.avril:/mnt/BERTHA` in fstab. It predates this outage. `plocate-updatedb.service` hits its 131072 open-file limit while indexing Loki's CSI tree; logs on October 5 at 07:26 UTC prove the same failure before DHCP configuration failed. Current PRUNEPATHS does not exclude kubelet data. Host cleanup should address consumers/fstab and indexing scope, not merely reset failure records or arbitrarily increase limits. No host changes made.
+- Vault application is healthy/unsealed (health HTTP200), but `/v1/sys/metrics` returns403; its ServiceMonitor has no authentication. Vault TargetDown plus k3s control-plane alert noise and blackbox CPU throttling also appear in the August investigation. They are monitoring/configuration follow-ups, not proof of a current k3s control-plane failure.
+- `democratic-csi/manually-created-pvc` is an unconsumed Pending test claim created July2025 from `initial-manually-created-snapshot-testing`; provisioning reports missing dataset. It is not a production volume. Preserve/investigate the test snapshot/PVC before any proposed deletion; no cleanup authorized or executed.
+- Argo applications are Healthy; drift remains on Jellyfin Deployment, Prometheus node-exporter ServiceMonitor, Vault injector MutatingWebhookConfiguration and root app's Kyverno Application. Exact desired/live differences remain unverified while CLI credentials are expired. Automatic sync pauses used for recovery are restored; do not trigger Argo writes or infer corruption from drift status.
+- Protected post-outage snapshots/Authentik clone and temporary NFS test mount remain. Backup/restore coverage, AP management/configuration backup, clock alignment and offline filesystem checks are still open operational gaps.
+
+### Ombi maintenance approved and detached (October 6, 10:12 PDT)
+
+Jack explicitly approved extending agent-run stop/snapshot/remount maintenance to **Ombi only**, then paused arr-stack auto-sync through his UI. Agent read-only verification confirms `automated.enabled=false` and no running sync operation. Deployment has one configuration-PVC consumer, no HPA, and epsilon node pin; its configuration PVC is 1 GiB.
+
+Agent scaled `arr-stack/arr-stack-ombi` from one to zero and waited for pod deletion. At `2026-10-06T17:12:11Z`, desired replicas zero, no consuming pods/VolumeAttachments, and configuration PVC still Bound without a deletion timestamp. Epsilon host checks show no matching mount, device path or iSCSI session. No database/PVC deletion, filesystem repair, snapshot rollback or ArgoCD write was performed.
+
+Next NAS operator step preserves the exact stopped configuration zvol identified in Jack's supplied inventory:
+
+```sh
+sh -eu <<'SH'
+zfs snapshot high-resiliency/k8s/iscsi/vols/pvc-3cba06cc-eb00-4630-b065-9cc7ed8f0011@recovery-20261006-ombi
+zfs list -t snapshot -o name,creation high-resiliency/k8s/iscsi/vols/pvc-3cba06cc-eb00-4630-b065-9cc7ed8f0011@recovery-20261006-ombi
+SH
+```
+
+Snapshot confirmation and normal restart remain pending. Keep arr-stack automatic sync paused until agent restores one replica and verifies startup/database write access; then Jack restores automatic sync. The preceding all-pods-Ready check predates this deliberate stop and must not be represented as Ombi currently serving. All other recovery maintenance counts have been restored.
 
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
