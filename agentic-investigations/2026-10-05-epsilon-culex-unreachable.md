@@ -113,4 +113,23 @@ kubectl -n authentik wait --for=condition=cnpg.io/hibernation \
 
 On success, verify the database pod is absent, PVC retained, CSI attachment removed/detached, and all mounts/consumers of that exact LUN gone. A hibernation condition alone does not prove complete CSI cleanup. Preserve the stopped zvol with a dataset-specific snapshot (not a pre-outage backup), inspect a clone before production repair, and agree each repair action from observed evidence. The annotation has not yet been reported executed, and no preservation snapshot/clone has been created.
 
+### Authentik hibernation acceptance (18:15–18:16 PDT)
+
+Jack ran the annotation and wait successfully. Agent read-only verification at 01:16 UTC confirms:
+
+- `cnpg.io/hibernation=on`; hibernation condition True, reason Hibernated, transition `2026-10-06T01:15:31Z`.
+- No Kubernetes pod consumes `authentik/authentik-database-1`; PVC remains Bound to the expected 5 GiB PV, with no deletion timestamp. No matching VolumeAttachment remains on any node.
+- Epsilon has no matching pod/globalmount records, no Authentik iSCSI session, and neither the recorded by-path nor WWN link exists. Culex also has no matching mount/session/device path. Direct rasnu1 SSH authentication failed; host-local verification there is unavailable, while Kubernetes reports no consumer/attachment for the claim on any node.
+- These checks establish cleanup of the observed Kubernetes consumers and epsilon/culex attachments. NAS iSCSI connections have not been independently inspected. No filesystem repair has run; keep the Cluster hibernated throughout preservation/assessment.
+
+Next operator step in galactus Shell is a snapshot of the exact stopped Authentik zvol, retaining its post-outage state. The supplied snapshot inventory has no existing snapshot with this name:
+
+```sh
+zfs snapshot high-resiliency/k8s/iscsi/vols/pvc-475d986c-57bc-4a07-beb1-29e8ba5c38db@recovery-20261005-authentik
+zfs list -t snapshot -o name,creation high-resiliency/k8s/iscsi/vols/pvc-475d986c-57bc-4a07-beb1-29e8ba5c38db@recovery-20261005-authentik
+zfs list -o name,available,used high-resiliency
+```
+
+Snapshot creation/verification and available capacity output remain pending. This is preservation, not a pre-outage restore point or a change to the live zvol contents. Clone assessment follows its confirmed creation.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
