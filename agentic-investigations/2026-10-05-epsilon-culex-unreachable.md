@@ -243,4 +243,39 @@ Configuration LUN was reidentified by exact IQN and resolves to `/dev/sdj` on ep
 
 Internal `http://jellyfin.avril/health` and public `https://jellyfin.scubbo.org/health` return **200 / Healthy**. Jack confirms known-item playback/seek works. Hardware transcoding has not been tested. Snapshot `@recovery-20261005-jellyfin` remains retained. No clone, raw-image export, manual filesystem repair or database restore was required. Cluster snapshot now shows only five non-Ready pods: Lidarr, Prowlarr, Radarr, Readarr and Sonarr, all crash-looping. Prometheus/Valkey persistence must still be checked independently of readiness.
 
+### Remaining workloads: agent-run maintenance approved
+
+Jack explicitly approves extending temporary live scheduling maintenance to five arr Deployments (Lidarr, Prowlarr, Radarr, Readarr, Sonarr), Prometheus and Immich Valkey, with the agent executing targeted Kubernetes stop/start and Jack executing stopped-zvol snapshots. This is a scoped exception to the GitOps scheduling rule; no ArgoCD writes, PVC deletion or manual filesystem repair is approved.
+
+Fresh failure evidence: four arr applications fail because `/config` is not writable; Readarr wraps SQLite `IoErr (10)` as a corrupt-database exception, so actual database corruption is not established while its storage is failing. Prometheus still cannot write WAL segments despite readiness. Valkey restarts repeatedly and previous-container logs show read-only final/background RDB saves; its reset `rdb_last_bgsave_status=ok` with zero saves does not establish persistence success. Stopping Valkey may lose volatile changes since the last successful save; this cannot be preserved by a zvol snapshot alone, and ongoing restarts already make queue persistence unreliable.
+
+All seven claims have unique observed consumers on epsilon, known galactus IQNs/zvols, and remain Bound. No relevant HPAs exist. Applications have automated prune/no explicit selfHeal; Prometheus is OutOfSync. Prometheus StatefulSet is operator-owned and its PVC retention is Retain when scaled/deleted. Stop Prometheus through the owning Prometheus CR's replicas field, rather than fighting its operator through StatefulSet scaling. Observe actual desired counts/consumers after writes and preserve stopped zvols before restarting.
+
+### Automatic reconciliation interrupted the stop; recovery state verified
+
+Agent scaled all five arr Deployments and Valkey from one to zero and patched Prometheus CR replicas from one to zero with a JSON precondition. Pod-delete waits failed because automated ArgoCD syncs restored arr/Immich replicas at `2026-10-06T03:29:01Z`; managed fields identify `argocd-controller` owning/restoring arr replica fields at 03:29:04. Jack confirms no concurrent manual writes. No ArgoCD write was executed by the agent. Absence of explicit selfHeal does not guarantee a maintenance stop holds: these applications performed automated syncs.
+
+Lidarr, Prowlarr and Radarr fully remounted and recovered during replacement; Sonarr/Readarr were recreated while their failing mounts remained. Valkey moved to culex and recovered persistence. No stopped-volume snapshots were taken before these automatic restarts; do not claim preservation or a coordinated restart for them. Prometheus stayed at zero; its pod terminated after the initial 120-second wait (configured grace is 600 seconds), and its volume detached without force deletion.
+
+Following the interrupted question, Jack agreed to pause automatic sync in his UI. Read-only verification confirms **arr-stack automated.enabled=false**. Immich still has automated sync enabled, but Valkey recovered and no further Immich maintenance is required. Agent then stopped only Sonarr/Readarr, with pod-delete wait succeeding. At `2026-10-06T05:16:09Z`, all three target PVCs remain Bound; no consuming pods/VolumeAttachments or matching epsilon host mounts/device paths/iSCSI sessions remain. Prometheus CR/status replicas are zero. These are deliberate service stops pending snapshot/restart, not recovery acceptance.
+
+At the same check, Lidarr/Prowlarr/Radarr `/ping` returns HTTP 200, their replacement containers have zero restarts and no sampled recent storage errors. Valkey has `rdb_saves=21`, `rdb_last_bgsave_status=ok`, zero restarts in the replacement, and no recent sampled storage errors. This verifies successful persistence rather than just reset status.
+
+Next NAS operator step snapshots only the three stopped zvols, using exact names from the supplied NAS inventory:
+
+```sh
+sh -eu <<'SH'
+zfs snapshot \
+  high-resiliency/k8s/iscsi/vols/pvc-48e8445b-44b1-4df0-b0a9-67ce3f2e4e60@recovery-20261005-sonarr \
+  high-resiliency/k8s/iscsi/vols/pvc-12fcb3d6-1213-46e8-8c36-10854adf6a20@recovery-20261005-readarr \
+  high-resiliency/k8s/iscsi/vols/pvc-3bc597ac-e4c1-428a-9106-61b25959fdbc@recovery-20261005-prometheus
+zfs list -t snapshot -o name,creation \
+  high-resiliency/k8s/iscsi/vols/pvc-48e8445b-44b1-4df0-b0a9-67ce3f2e4e60@recovery-20261005-sonarr \
+  high-resiliency/k8s/iscsi/vols/pvc-12fcb3d6-1213-46e8-8c36-10854adf6a20@recovery-20261005-readarr \
+  high-resiliency/k8s/iscsi/vols/pvc-3bc597ac-e4c1-428a-9106-61b25959fdbc@recovery-20261005-prometheus
+SH
+```
+
+Snapshot output is pending; agent will resume each stopped workload and verify application/persistence after confirmation. Keep arr-stack automated sync paused until desired replicas are restored and recovery accepted, then Jack re-enables it. Check its policy after restoration; never use agent ArgoCD writes to resolve reconciliation.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
