@@ -1,6 +1,6 @@
 # Pixel Wi-Fi authentication timeouts
 
-**Status: current failure reproduced before DHCP; native SAE/cross-AKM behavior implicated, durable resolution pending.** Jack's Pixel 10a sees `TroyAndAbedOnTheWifiNights`, briefly shows Connecting and returns to Saved. This investigation follows the [DHCP outage and k3s recovery](2026-10-05-epsilon-culex-unreachable.md); do not assume the remaining wireless join failure is caused by the corrected DHCP pools.
+**Status: Wi-Fi/Internet access restored after Jack power-cycled the AP; underlying authentication failure remains unestablished.** The Pixel connects with original framework SAE-upgrade and native offload enabled. Earlier attempts timed out before DHCP; the single framework override trial did not provide a reliable fix. This investigation follows the [DHCP outage and k3s recovery](2026-10-05-epsilon-culex-unreachable.md); do not assume the wireless join failure is caused by the corrected DHCP pools.
 
 ## Assets and access
 
@@ -66,6 +66,22 @@ ssh -o HostKeyAlgorithms=+ssh-rsa \
 ```
 
 The [vendor access reference](https://help.ui.com/hc/en-us/articles/204909374-Connecting-to-UniFi-with-Debug-Tools-SSH) documents `ubnt/ubnt` for older devices before adoption. An adopted AP uses controller-defined device SSH credentials, not necessarily its Wi-Fi or administrator login password. One vendor-default attempt is the proposed test if Jack has no saved credentials; no credential guesses/attempts have been executed by the agent. Successful login should run `info` and `uptime` to establish firmware and configured inform/controller address before selecting AP log commands. Login outcome remains pending.
+
+## Access recovery blocked; AP power cycle restored service
+
+Jack's one local vendor-default SSH attempt reached password authentication and was denied. Jack confirms no saved device credentials, does not remember initial setup, and found no account/site data at UniFi Site Manager. Further read-only checks find no standard UniFi directories/unit files on epsilon/culex and no controller backup in the checked laptop Downloads/Documents locations. This establishes an access blocker, not proof that the AP is unadopted or that all possible controller copies are absent. Jack accepted the AP RSA key in his local SSH attempt; its known-host fingerprint matches the retrieved endpoint fingerprint. No AP login or firmware version is established.
+
+Agent recommended one targeted AP power cycle while retaining its configured Wi-Fi settings; Jack reports it completed. No factory reset, re-adoption, firmware change or radio/security reconfiguration was requested or reported. Laptop initially fell back to ISP Wi-Fi (`192.168.42.66`), with AP `.100` reachable through Tailscale; USB ADB remained available. Subsequent laptop status returned to homelab address `.1.50`.
+
+Post-restart phone verification:
+
+- Framework SAE-upgrade default is **true**, native `mIsWpa3SaeUpgradeOffloadEnabled=true`; no diagnostic override remains. Verbose logging was temporarily enabled at ordinary level for this check, then restored to **disabled** and verified.
+- Successful connection metric at phone-local **09:14:44** (`16:14:44 UTC`), duration 903 ms, connectionResult 1, no L2/connectivity failure.
+- Same SSID/BSSID `7a:45:58:2b:4b:02`, same randomized MAC `e6:18:f2:0a:35:fe`, 5180 MHz/channel 36, security WPA2-PSK, supplicant COMPLETED. IP `192.168.1.26/24`, DHCP/DNS/gateway `.1`, domain `avril`.
+- Android reports WIFI CONNECTED, INTERNET and VALIDATED. Five pings explicitly bound to wlan0 reach `.1` with no packet loss. Three subsequent ADB status samples through 16:21:04 UTC stay connected, over six minutes after the recorded connection.
+- Private post-restart dumps/logs retained outside Git. The successful native authentication log itself aged out of the collected logcat buffer; connection metrics and link/validation state establish success, but do not show the exact successful native auth-mode selection.
+
+This accepts observed phone connectivity restoration. Power cycling restored association with the phone's original settings and identity, so earlier statements that the SAE override comparison conclusively proved the underlying cause were too strong. Native SAE/cross-AKM selection remains a relevant trace finding; AP state, firmware behavior and the precise interaction cannot be determined without AP logs/access. Do not introduce a persistent global SAE override or claim an AP firmware defect from this recovery alone. If disconnects recur, retain failure timestamps/BSSID and pursue management/firmware recovery deliberately. No factory reset is required for the observed recovery. AP management credentials/controller/configuration backup remain an operational follow-up.
 
 ## References consulted
 
