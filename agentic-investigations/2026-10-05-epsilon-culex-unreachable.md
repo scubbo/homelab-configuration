@@ -1,6 +1,6 @@
 # Epsilon and culex unreachable from remote workstation
 
-**Status: investigating; no root cause or corrective change established.** Jack reported SSH to epsilon.avril timing out after completing the temporary NAS mount test/cleanup. Jack confirms only targeted NFS cleanup since the successful file-access test, with no additional host/router commands reported. Earlier DHCP pool changes are documented in the [network preparation plan](../docs/plans/proxmox-network-storage-preparation.md).
+**Status: DHCP root cause confirmed and host/network access restored; storage/application recovery and some Wi-Fi light switches remain unresolved.** ISC DHCP refused to start because two address pools overlapped. Jack corrected the lower pool endpoint to `.219`; clients acquired leases and host connectivity returned. Jack reported the initial SSH failure after the temporary NAS-test sequence. Earlier DHCP pool changes are documented in the [network preparation plan](../docs/plans/proxmox-network-storage-preparation.md).
 
 ## Evidence (2026-10-05, approximately 22:40–22:44 UTC)
 
@@ -28,5 +28,62 @@ Next capture traffic on galactus interface `ix0` while probing both hosts' SSH a
 4. If LAN-local reachability succeeds but the routed path fails, inspect OPNsense/Tailscale forwarding/firewall/source routing using packet evidence. If both hosts are unreachable locally at their actual addresses, establish power/NIC/switch/console state before remote restart attempts.
 
 **Initial hypothesis to test:** DHCP address ownership or shared host-LAN reachability changed. This is not yet a diagnosis. Successful LAN probes/lease data determine which hypothesis to pursue. An NFS unmount/rmdir removes a mounted filesystem/test directory; it does not itself reconfigure the hosts' IP interfaces or DHCP service.
+
+## Home-LAN investigation and confirmed DHCP cause
+
+Times below are PDT (UTC minus seven hours); the recovery probes occurred on October 6 in UTC, still October 5 locally.
+
+- On arrival, Jack reported Wi-Fi light switches offline. The laptop initially joined the ISP gateway Wi-Fi, receiving `192.168.42.66` from `.42.1` (gateway/DNS, domain `gateway.sonic.net`). Jack confirmed this was the ISP Wi-Fi, not the homelab SSID. This was not evidence of a rogue DHCP server on the homelab LAN.
+- Joining `TroyAndAbedOnTheWifiNights` initially failed, then worked without a reported equipment restart. Laptop received `.1.50` from OPNsense `.1`, gateway/DNS `.1`, domain `avril`. Local ping/DNS/HTTPS to OPNsense succeeded, but `.39/.69/.13/.134` had incomplete ARP entries. Jack also reported router-source pings to `.39/.69` failed. A switch-path fault was a hypothesis at this stage, not an established cause.
+- Jack found the actual pools were `.10–.254` and `.230–.254`, contradicting the earlier report that `.219` was applied. Jack corrected the lower endpoint to `.219` around 17:00. The intended nonoverlapping pools in this repository are `.10–.219` and `.230–.254`.
+- Jack supplied the decisive OPNsense log at **15:14:36** (`22:14:36 UTC`): `/etc/dhcpd.conf line 22: lease 192.168.1.251 is declared twice!`, equivalent errors for `.252/.253/.254`, `range 192.168.1.230 192.168.1.254;`, then **`Configuration file errors encountered -- exiting`**. Overlap caused a configuration-parser failure and DHCP service exit; it was not merely duplicate addresses being handed out by a running server.
+- Culex NetworkManager logs show DHCP `state changed no lease` at 15:38:18 and transition `activated -> failed (ip-config-unavailable)` at **15:39:04**, followed by repeated acquisition failures. At **17:00:11** it received a fresh `.13` lease from `.1` and activated successfully. Queried NIC kernel logs had no matching link-loss event; its current `eno1` link is 1000 Mb/s full duplex. Uptime remained 175 days.
+- Culex SSH and HA `.134:8123` responded after correction; epsilon then responded from culex and later directly. By **17:05:27**, workstation TCP probes succeeded to OPNsense DNS/HTTPS, epsilon and culex SSH/API, galactus HTTPS/NFS/iSCSI, and HA HTTP. ARP entries matched the expected NICs. All three Kubernetes nodes were Ready; rasnu1 retained its existing SchedulingDisabled state.
+- This establishes the outage chain: invalid overlapping pools prevented DHCP startup; clients lost usable IPv4 configuration as lease handling failed; NAS/server disconnection broke storage/application access. Old lease-page rows and cached ARP entries did not establish live addressing. Recovery happened without agent network, switch, host, ArgoCD, or workload writes.
+- The preparation record had accepted operator-reported pool bounds without a successful daemon reload/client-renewal check. Acceptance now includes the actual server log and observed fresh client lease. OPNsense successful startup log after correction has not yet been supplied, but its DHCP ACK/client renewal proves it is serving clients.
+
+## Storage and household aftermath (open)
+
+- Epsilon kernel logs show iSCSI `detected conn error (1022)` at **15:41:44**, offline-device/write failures at **15:43:44**, and aborted ext4 journals on NAS-backed devices. Current local root `/dev/sdb2` and second-drive `/dev/sdb3` remain `rw`; the observed errors involve remote CSI volumes.
+- Load averaged approximately 972 at 17:03, then 432, 310, and 4.67 as the host recovered. Thread snapshots after network return showed only one to three D-state threads rather than sustained CPU saturation. Root cause of every historical blocked task was not individually established.
+- NAS NFS/iSCSI ports recovered, and epsilon could read metadata on the temporary backup test mount. `/mnt/proxback-check.FEVlibO9` still exists as a mount: cleanup did not complete and remains an operator task.
+- Workloads did not all recover: Jellyfin reports `Read-only file system: /config/log/.jellyfin-log`; Authentik PostgreSQL cannot remove `postmaster.pid` or create its WAL probe on a read-only filesystem; Immich Valkey reports `Unexpected EOF reading RDB file` at offset zero. Immich PostgreSQL is Pending/PodInitializing on culex. Loki, promtail and arr applications have readiness/storage errors. Vault reports sealed; whether its state predates this incident has not been established.
+- Kernel logs continue reporting aborted journals/remount-read-only requests even where `findmnt` and `/proc/mounts` display `rw`. A displayed mount option is not evidence that the filesystem accepts writes or its journal is healthy. Do not force a remount, run repair on mounted CSI filesystems, or delete database files to clear these symptoms.
+- All recovery work must first establish exact PVC/LUN identity, exclusive ownership and current backups/snapshots. Then coordinate stopping consumers/unmounting and choosing filesystem repair versus restore with Jack. No filesystem repair, snapshot rollback, file removal, node reboot or workload restart has been performed by the agent.
+- Jack reports some light switches still offline after host recovery. Device names, current leases/MACs and HA integration status remain needed; HA HTTP reachability alone is not household acceptance.
+
+### Epsilon CSI identity evidence
+
+Device paths are observations during this incident, not persistent recovery identifiers. The claims below map to PVs and galactus iSCSI IQNs through Kubernetes; verify again before any repair.
+
+| Observed device | Namespace / claim | PV |
+| --- | --- | --- |
+| `/dev/sdj` | `jellyfin/jf-config-pvc` | `pvc-25cf682d-394e-47c7-98e2-697af375b4d5` |
+| `/dev/sdl` | `authentik/authentik-database-1` | `pvc-475d986c-57bc-4a07-beb1-29e8ba5c38db` |
+| `/dev/sdf` | `immich/immich-valkey` | `pvc-874b9b0f-8e9c-4db7-8702-60b847907858` |
+| `/dev/sdd` | `prometheus/prometheus-prometheus-kube-prometheus-prometheus-db-prometheus-prometheus-kube-prometheus-prometheus-0` | `pvc-3bc597ac-e4c1-428a-9106-61b25959fdbc` |
+| `/dev/sdn` | `tdarr/tdarr-config-pvc` | `pvc-d2da3f10-bdca-4728-bb78-d0720ac52007` |
+
+Additional epsilon CSI devices with journal/I/O error evidence belong to arr-stack configuration claims (Sonarr, Prowlarr, Readarr, Radarr, Ombi, Lidarr) and SABnzbd downloads. Culex also recorded journal/I/O errors, followed by several automatic unmount/recovery/mount events during k3s recovery. Per-application data integrity is not yet verified.
+
+## k3s recovery priority and status (18:03 PDT / 01:03 UTC)
+
+Jack deferred light-switch recovery and requested k3s status/priorities. Keep the corrected nonoverlapping DHCP pools: removing the split is not a filesystem recovery step and would relinquish the intended guest/VIP exclusion if the lower pool expands across it. DHCP lease acquisition and network reachability are restored.
+
+- All three nodes remain Ready; rasnu1 remains cordoned. Both CSI controller deployments are available. Epsilon load is 1.74/1.85/20.30, with active k3s/Docker and low current I/O pressure.
+- Snapshot: 80 Running pods, one Succeeded; nine Running pods not Ready (Lidarr, Prowlarr, Radarr, Readarr, Authentik database/server, Immich Valkey, Jellyfin, Vault). Running does not establish application health.
+- Immich PostgreSQL has recovered: operator reports one ready instance and Ready condition updated at 17:15 PDT. Authentik operator status still says healthy with an old Ready transition, but its current PostgreSQL pod is crash-looping and logs read-only WAL-probe failures. Actual pod/process evidence takes precedence over stale status.
+- Valkey now runs, superseding the initial EOF-only startup diagnosis. It repeatedly fails background saves because `/data` is read-only; its data/queue persistence is not accepted. Jellyfin and Authentik still fail due to read-only storage. Prometheus appears Ready but its mounted volume continues reporting an aborted journal.
+- Epsilon ext4 sysfs records zero errors on local `sdb2/sdb3` and nonzero errors on 11 CSI filesystems (`sdc/sdd/sde/sdf/sdg/sdh/sdj/sdk/sdl/sdm/sdn`); SABnzbd `sdi` has zero recorded errors. Filesystem error counters are evidence of affected volumes, not proof of irreparable corruption or a reason to restore every volume.
+- Kubernetes has no CNPG Backup objects, and its three VolumeSnapshot objects are unrelated to the affected Jellyfin/Authentik/Immich claims. NAS-native snapshots and external backups remain unknown; absence of Kubernetes backup objects does not prove no backups exist.
+
+Recovery sequence for discussion with Jack:
+
+1. Establish NAS pool health, recovery points and the exact affected zvol/PVC identities; preserve recoverable state before filesystem writes. Coordinate affected consumer downtime and exclusive ownership.
+2. Recover one affected volume at a time: stop consumers/controllers through the agreed GitOps/operator maintenance path, verify complete unmount and healthy iSCSI connectivity, inspect offline filesystem state, then choose journal replay/check/repair or backup restoration based on the findings. Never repair a mounted filesystem or attach a second writer.
+3. Prioritize Authentik's database and server, then Jellyfin configuration, then remaining arr/Immich queue state and monitoring volumes. Immich PostgreSQL is already up but still needs application/data verification. Prometheus requires persistence verification despite Ready status.
+4. Verify fresh writes, database/application checks and recovery logs, not only pod state. Address Vault's sealed state with Jack's existing unseal procedure; do not transmit unseal shares in chat.
+
+No maintenance writes have been initiated. Snapshot availability and the maintenance method remain unresolved choices. Proxmox/OS migration stays paused until storage/application recovery is accepted. Light-switch recovery remains tracked but deferred at Jack's request.
 
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).

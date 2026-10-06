@@ -117,7 +117,8 @@
       {"start": "192.168.1.230", "end": "192.168.1.254"}
     ],
     "project_range_conflict_check": "Jack reports no existing assignments in 192.168.1.220-229",
-    "project_range_exclusion_status": "split pools applied and confirmed by Jack; 192.168.1.220-229 outside dynamic pools"
+    "project_range_exclusion_status": "Jack corrected overlapping pools on 2026-10-05; 192.168.1.220-229 outside dynamic pools",
+    "dhcp_service_validation": "duplicate-range startup failure confirmed in server log; culex fresh 192.168.1.13 lease observed at 2026-10-06T00:00:11Z after correction; host/NAS/HA network access restored"
   },
   "backup": {
     "proxmox_storage_id": "vm-backups",
