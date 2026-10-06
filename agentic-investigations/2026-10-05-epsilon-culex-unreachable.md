@@ -1,6 +1,6 @@
 # Epsilon and culex unreachable from remote workstation
 
-**Status: DHCP root cause confirmed and host/network access restored; storage/application recovery and some Wi-Fi light switches remain unresolved.** ISC DHCP refused to start because two address pools overlapped. Jack corrected the lower pool endpoint to `.219`; clients acquired leases and host connectivity returned. Jack reported the initial SSH failure after the temporary NAS-test sequence. Earlier DHCP pool changes are documented in the [network preparation plan](../docs/plans/proxmox-network-storage-preparation.md).
+**Status: DHCP root cause confirmed; host access and affected application service recovery verified. Offline filesystem checks, full application workflow acceptance and some Wi-Fi light switches remain follow-ups.** ISC DHCP refused to start because two address pools overlapped. Jack corrected the lower pool endpoint to `.219`; clients acquired leases and host connectivity returned. Jack reported the initial SSH failure after the temporary NAS-test sequence. Earlier DHCP pool changes are documented in the [network preparation plan](../docs/plans/proxmox-network-storage-preparation.md).
 
 ## Evidence (2026-10-05, approximately 22:40–22:44 UTC)
 
@@ -309,5 +309,17 @@ SH
 ```
 
 Snapshot confirmation and normal resume remain pending. Keep Tdarr automatic sync paused until agent restores one replica and verifies journal replay, application HTTP/configuration persistence and fresh errors; then Jack re-enables it. Arr-stack policy restoration is complete and does not need repetition.
+
+### Tdarr recovery and GitOps restoration verified (22:40 PDT)
+
+Jack supplied the exact stopped-zvol snapshot `@recovery-20261005-tdarr` listing (NAS creation display October 5 22:27, clock alignment unverified). Agent verified replica zero/no VolumeAttachment/auto-sync pause, then scaled Tdarr back to one under the approved maintenance exception. Rollout succeeded; pod `tdarr-857b79766b-xjdr7` on epsilon is Ready with zero restarts and HTTP web UI returns 200.
+
+Exact configuration IQN resolves to `/dev/sdf` on epsilon. Kernel reports journal recovery complete and remount at 05:39:55 UTC, with the offline e2fsck recommendation. Error count 2242/last-error 05:30:32 precede recovery; no fresh errors observed. All three configuration subpaths (`/app/server`, `/app/configs`, `/app/logs`) passed unique private-file create/write/fsync/read/delete probes. Each test file was removed after payload verification. These probes establish live file persistence beyond the HTTP readiness probe.
+
+Tdarr internal node registered, downloaded plugins and completed scanner/binary tests. Built-in H.264/HEVC NVENC tests report working. This is encoder-path evidence, not a completed real-media transcode job. Startup warned about deriving serverURL from serverIP/serverPort; no startup errors observed in sampled logs. No user media transcode or file modification was initiated by the agent.
+
+Final checks: 80 Running pods all Ready, one Succeeded; neither epsilon nor culex had a recorded ext4 last-error timestamp within the preceding three minutes at 05:40:50 UTC. Remounted filesystem error counters retain pre-recovery history; offline consistency checks remain required follow-up. Jack re-enabled Tdarr automatic sync. Read-only verification confirms **arr-stack and Tdarr automated.enabled=true, both Synced**. Maintenance replica counts are restored; preservation snapshots and Authentik read-only clone remain retained. Raw images, manual filesystem repair, data rollback and backup restores were not needed for observed service recovery.
+
+Remaining acceptance/operations: Authentik user login/SSO; arr import/download workflows; Jellyfin hardware transcode; Tdarr actual-job verification; offline filesystem consistency checks; backup policy and clock alignment; temporary NFS-test mount cleanup/probe DHCP mapping; affected Kasa switches. Vault metrics403 remains a separately recorded observation. These follow-ups do not invalidate the verified readiness/HTTP, Jellyfin playback, Valkey save and Prometheus ingestion outcomes.
 
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
