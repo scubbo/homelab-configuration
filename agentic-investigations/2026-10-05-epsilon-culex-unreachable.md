@@ -235,4 +235,12 @@ kubectl -n jellyfin rollout status deployment/jellyfin --timeout=180s
 
 Restart output remains pending. If rollout times out or startup fails, inspect the specific mount/application error before further actions. Verify the configuration filesystem's journal replay, fresh kernel/application errors, HTTP health and playback after startup.
 
+### Jellyfin service recovery and playback accepted (20:11 PDT)
+
+Jack reported successful rollout after scaling back to one. Agent checks confirm pod `jellyfin-f4c59fc79-8vl95` on epsilon, both containers Ready with zero restarts. Jellyfin 10.11.11 startup completed, opened its configuration/SQLite database, checked storage paths successfully and began monitoring its media libraries. Startup includes warnings about ephemeral ASP.NET data-protection keys and missing `/wwwroot`; service health and playback pass, so these messages are not established outage blockers or silently counted as pristine logs.
+
+Configuration LUN was reidentified by exact IQN and resolves to `/dev/sdj` on epsilon. Kernel reports journal recovery complete and mount at 03:08:22 UTC, plus `mounting fs with errors, running e2fsck is recommended`. Error count 59 has last-error timestamp 02:18:34 UTC, before the stop/remount; no fresh configuration-volume errors were recorded at the 03:11:33 UTC check. This accepts service recovery, while offline filesystem follow-up remains tracked.
+
+Internal `http://jellyfin.avril/health` and public `https://jellyfin.scubbo.org/health` return **200 / Healthy**. Jack confirms known-item playback/seek works. Hardware transcoding has not been tested. Snapshot `@recovery-20261005-jellyfin` remains retained. No clone, raw-image export, manual filesystem repair or database restore was required. Cluster snapshot now shows only five non-Ready pods: Lidarr, Prowlarr, Radarr, Readarr and Sonarr, all crash-looping. Prometheus/Valkey persistence must still be checked independently of readiness.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
