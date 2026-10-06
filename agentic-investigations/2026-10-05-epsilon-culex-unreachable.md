@@ -330,4 +330,10 @@ Arr-stack, Tdarr, Immich and Authentik Argo applications are Healthy/Synced with
 
 Next recovery work is real application acceptance (login/SSO, Immich upload/view, arr import, actual transcode), followed by a scheduled, snapshot-protected offline filesystem assessment one PVC at a time. Start with non-writing offline assessment; agree repair only from findings. Do not run e2fsck on mounted volumes or perform blanket restarts while observed service health is stable. Establish application-consistent backups and tested restore coverage separately from the post-outage preservation snapshots. OS/Proxmox conversion remains gated on recovery/maintenance acceptance.
 
+### Android Wi-Fi disconnection investigation (open)
+
+Jack reports Android sees the home SSID, connects, then repeatedly disconnects. Phone details show a `192.168.1.x` address; exact IP/gateway, phone/access-point model and any No Internet message remain unspecified. This establishes some lease acquisition, not continuous Wi-Fi association or phone Internet access.
+
+Laptop initially had an ISP-network DHCP packet during these checks, then fresh observations confirmed `192.168.1.50`, router/DNS/DHCP server `.1`, and direct en0 routing to `.1`. Eight local router pings had zero packet loss. Android validation URL `https://connectivitycheck.gstatic.com/generate_204` returned HTTP204 from the laptop; phone-specific DNS/VPN/validation and radio-path failures remain possible. No phone/AP/router settings were changed by the agent. Next minimal phone test is briefly disable cellular fallback, use Wi-Fi near the access point, and compare local router versus public browsing while capturing exact disconnection text/address.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
