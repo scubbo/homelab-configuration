@@ -190,4 +190,21 @@ Jack resumed CNPG with `cnpg.io/hibernation=off`. Authentik database pod was rec
 
 This restores Authentik service readiness through normal CSI/ext4/PostgreSQL recovery plus Jack's server pod recreation. Preservation snapshot/read-only clone remain retained; no repair/rollback is required to explain this recovery. Jellyfin still crash-loops on epsilon and is the next workload to assess for controlled remount; no Jellyfin maintenance command has been executed by the agent.
 
+### Jellyfin controlled stop/start approved
+
+Read-only checks confirm Jellyfin still fails with read-only `/config/log/.jellyfin-log`. Deployment `jellyfin/jellyfin` has one replica, Recreate strategy, no HPA, and node selector `kubernetes.io/hostname=epsilon` for GPU placement. Its only configuration-volume consumer is `jellyfin-f4c59fc79-nxzds`; `jf-config-pvc` remains Bound to `pvc-25cf682d-394e-47c7-98e2-697af375b4d5`. The media PVC is NFS; cache is emptyDir. Recreating the pod replaces that ephemeral cache, not configuration/media data.
+
+Jack explicitly approves operator-run temporary live scaling to zero/back to one as a GitOps scheduling exception, including a stopped-volume preservation snapshot before normal restart. ArgoCD remains read-only. Jellyfin Application is OutOfSync, automated prune with no explicit selfHeal; monitor actual replicas/consumers and resolve any concurrent reconciliation before proceeding. No PVC deletion, repair, rollback, or global node restart is approved.
+
+First stop only:
+
+```bash
+kubectl -n jellyfin scale deployment/jellyfin --current-replicas=1 --replicas=0
+kubectl -n jellyfin wait --for=delete pod \
+  -l app.kubernetes.io/instance=jellyfin,app.kubernetes.io/name=jellyfin \
+  --timeout=120s
+```
+
+Wait for operator output, then verify replica zero, no PVC consumers/VolumeAttachment and complete host unmount/session cleanup for the exact IQN. Stop success has not yet been reported; restart follows those checks and snapshot confirmation.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
