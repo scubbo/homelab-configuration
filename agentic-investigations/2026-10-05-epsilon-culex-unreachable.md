@@ -207,4 +207,19 @@ kubectl -n jellyfin wait --for=delete pod \
 
 Wait for operator output, then verify replica zero, no PVC consumers/VolumeAttachment and complete host unmount/session cleanup for the exact IQN. Stop success has not yet been reported; restart follows those checks and snapshot confirmation.
 
+### Jellyfin stop and detach verified (19:21–19:22 PDT)
+
+Jack ran scale-to-zero and pod-delete wait successfully. Agent verification at `2026-10-06T02:22:45Z` confirms desired replicas zero, no claim-consuming pods, no matching VolumeAttachment, and configuration PVC still Bound with no deletion timestamp. Epsilon has no matching pod/globalmount records, by-path/WWN links, or iSCSI session. Its deployment availability condition is True at zero replicas; that is not evidence of a serving Jellyfin instance.
+
+The NAS inventory identifies the configuration zvol as `high-resiliency/k8s/iscsi/vols/pvc-25cf682d-394e-47c7-98e2-697af375b4d5`, reported 9.31 GiB. Next operator step preserves this exact stopped zvol:
+
+```sh
+sh -eu <<'SH'
+zfs snapshot high-resiliency/k8s/iscsi/vols/pvc-25cf682d-394e-47c7-98e2-697af375b4d5@recovery-20261005-jellyfin
+zfs list -t snapshot -o name,creation high-resiliency/k8s/iscsi/vols/pvc-25cf682d-394e-47c7-98e2-697af375b4d5@recovery-20261005-jellyfin
+SH
+```
+
+Snapshot confirmation is pending. No clone/image/check/repair is needed before the agreed normal-remount trial. Keep replicas zero until preservation is confirmed, then operator restores one replica and agent verifies journal replay, application startup, fresh storage errors and HTTP readiness. Playback acceptance follows service recovery.
+
 Related: [DNS investigation](2026-04-17-intermittent-dns-failures.md), [node Tailscale resolver investigation](2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods), [planning evidence](../docs/plans/proxmox-planning-notes.md), and [asset catalogue](../docs/asset-catalogue.md).
