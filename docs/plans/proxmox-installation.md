@@ -29,6 +29,8 @@ Accept [Debian upgrade](epsilon-debian-upgrade.md#physical-acceptance-and-rollba
 
 The [SQL restore exercise](k3s-postgres-ha.md#observed-state) proves a backup artifact; physical and k3s recovery still need practice. Preserve the existing PostgreSQL image ID/configuration and independent off-host dumps/roles/token. Proxmox install must not accidentally pull a different PostgreSQL major from mutable `postgres`. Preserve host services and files, including Docker workloads, NFS/iSCSI mounts, Obsidian data, and node tuning.
 
+The [outage recovery handoff](k3s-outage-recovery-handoff.md) tracks application backup/restore, CSI filesystem integrity and workflow acceptance after the DHCP outage. Coordinate its live maintenance with host imaging/rehearsal. Stable pod readiness does not discharge that recovery work; package conversion needs protected recovery artifacts and Jack's explicit acceptance of remaining filesystem findings.
+
 `debian-test` and its dedicated disk have been removed with Jack's approval. Debian libvirt/QEMU packages/default network remain; verify no guests or consumers before stopping libvirt and removing its default network during Proxmox preparation. Inspect a simulated package transaction for conflicting QEMU/libvirt packages. Remove only confirmed unused packages/configuration; preserve unrelated host files and avoid broad autoremove.
 
 ### Local VM storage

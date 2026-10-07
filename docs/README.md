@@ -14,6 +14,7 @@ These documents describe infrastructure and operational procedures. Keep them cu
 ## Plans and drafts
 
 - [Active plans](plans/README.md): proposed work and execution-time acceptance criteria.
+- [k3s outage recovery handoff](plans/k3s-outage-recovery-handoff.md): backup/restore, filesystem integrity and workflow acceptance after service restoration; coordinates with epsilon imaging.
 - [Delivered plans](plans/delivered/README.md): archive of completed infrastructure plans.
 - [Existing TODO proposals](todo/): detailed proposals for future work.
 - [Blog drafts](blog-drafts/): unpublished writing, with deployment status identified in each draft.
