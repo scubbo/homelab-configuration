@@ -1,6 +1,6 @@
 # Epsilon iDRAC access for rescue imaging
 
-**Status: local RACADM restored; dedicated iDRAC NIC reports no link and has no active IPv4 address. Cabling, licence and remote-console proof pending.** Jack is ready for epsilon downtime but lacks a VGA cable, so the physical monitor route is unavailable. Do not shut down or boot rescue until an actual console/recovery route is verified. Related: [imaging runbook](../docs/plans/epsilon-debian-upgrade.md#recovery-access-and-image-destination), [recovery handoff](../docs/plans/k3s-outage-recovery-handoff.md), [asset catalogue](../docs/asset-catalogue.md).
+**Status: local RACADM and dedicated iDRAC networking restored; Enterprise licence verified. Web login rejected the vendor default, account inventory and actual remote-console proof pending.** Jack is ready for epsilon downtime but lacks a VGA cable, so the physical monitor route is unavailable. Do not shut down or boot rescue until an actual console/recovery route is verified. Related: [imaging runbook](../docs/plans/epsilon-debian-upgrade.md#recovery-access-and-image-destination), [recovery handoff](../docs/plans/k3s-outage-recovery-handoff.md), [asset catalogue](../docs/asset-catalogue.md).
 
 ## Evidence (October 7, read-only)
 
@@ -58,3 +58,52 @@ sudo -n /opt/dell/srvadmin/bin/idracadm7 get iDRAC.VirtualConsole
 ```
 
 Record licence description/status and console capability without entitlement identifiers. Verify actual web login, keyboard/video interaction and continued management reachability independently of the host OS before booting SystemRescue. No BMC reset, static-address assignment, DHCP change, licence import or host shutdown has occurred.
+
+## Dedicated LAN access and Enterprise licence verified
+
+After Jack connected the dedicated port, `getniccfg` reports DHCP address **192.168.1.33/24**, gateway `.1`, dedicated NIC active, link detected, 1 Gb/s/full duplex. Stored static `.138` remains inactive. Workstation ARP identifies iDRAC MAC `14:18:77:28:11:10`; TCP443/22/5900 and ping respond. One initial workstation HTTPS probe timed out, but a later TLS1.2 handshake succeeded; Jack confirms the login page opens. Read-only Redfish root responds from epsilon/culex. No iDRAC credentials were sent by the agent.
+
+Jack's inventory confirms **iDRAC8 Enterprise License**, status OK, perpetual/no expiration. Licence entitlement, transaction and server identifiers are intentionally omitted from this record. `getversion` reports BIOS1.2.6, iDRAC2.50.50.50 and Lifecycle Controller2.50.50.50; firmware supports HTML5 console, but the actual console has not been launched.
+
+Observed VirtualConsole properties: Enable Enabled, AttachState Auto-Attach, encryption/local video Enabled, MaxSessions6, PluginType0, Port5900, Timeout1800, AccessPrivilege Deny Access. The meaning of AccessPrivilege for this firmware has not been independently established; do not infer that changing it will fix login or blindly broaden it. User account privileges and plug-in selection will be checked after authenticated access.
+
+Jack has no saved iDRAC credentials and one browser attempt using the vendor default was rejected. This is an authentication result, not proof that the account is named root, enabled, unlocked or otherwise correctly configured. Unlike the unavailable AP management path, working local RACADM can inspect and recover a specific iDRAC account without factory-resetting the controller or losing its network/licence configuration.
+
+Next operator checks only account attributes, not password/credential contents:
+
+```bash
+sudo -v
+sudo -n /opt/dell/srvadmin/bin/idracadm7 get iDRAC.Users.2.UserName
+sudo -n /opt/dell/srvadmin/bin/idracadm7 get iDRAC.Users.2.Enable
+sudo -n /opt/dell/srvadmin/bin/idracadm7 get iDRAC.Users.2.Privilege
+```
+
+Index2 is a candidate from Dell's documentation, not an assumed verified account. If it is not the intended account, inventory other usernames/enabled states before choosing a target. Jack must approve any account/password/privilege change; replacement secrets stay in his local terminal/password manager. No user changes, controller reset, console settings change or host shutdown has been performed.
+
+Reference: [Dell iDRAC8 account/password recovery tutorial](https://www.dell.com/support/contents/en-ai/videos/videoplayer/how-to-connect-to-idrac8-and-change-the-default-password/6079794814001) confirms the account name/index before a targeted password change. Avoid configuration-reset commands when the specific account can be recovered locally.
+
+## Account identity verified; targeted password recovery approved
+
+Jack supplied the three account results: **index2 username root, Enabled, privilege mask0x1ff** (full administrator privileges). No privilege change is needed to recover login. Jack explicitly approves changing only account2's password through local RACADM; username/enable/privileges, network configuration and licence remain as observed. This does not authorize controller/configuration reset or unrelated user changes.
+
+Jack chooses a unique generated 20-character alphanumeric password and stores it in his password manager. The operator command uses a hidden terminal prompt inside a root Bash process, rather than putting a literal password into shell history or a separate sudo command line. No password is requested in chat or persisted in this repository. The 8–20-character length guard avoids this firmware generation's password-length compatibility limit.
+
+Run in Jack's epsilon terminal:
+
+```bash
+sudo -v
+sudo -n bash -c '
+  set -eu
+  set +x
+  trap "unset IDRAC_PASSWORD" EXIT
+  IFS= read -r -s -p "New iDRAC root password: " IDRAC_PASSWORD
+  printf "\n"
+  if (( ${#IDRAC_PASSWORD} < 8 || ${#IDRAC_PASSWORD} > 20 )); then
+    printf "%s\n" "Use a password between 8 and 20 characters." >&2
+    exit 1
+  fi
+  /opt/dell/srvadmin/bin/idracadm7 set iDRAC.Users.2.Password "$IDRAC_PASSWORD"
+'
+```
+
+Command result and successful browser login remain pending. Stop on a RACADM error; do not reset account privileges or the controller to work around an unknown failure. After successful login, inspect/select HTML5 console through the UI and verify actual video/keyboard behavior while epsilon is still running. Console AccessPrivilege interpretation remains unresolved until observed access clarifies whether any further configuration is necessary. No user password or console-setting change has been reported executed yet.
