@@ -1,6 +1,6 @@
 # Epsilon iDRAC access for rescue imaging
 
-**Status: local RACADM, dedicated iDRAC networking and authenticated web login restored; Enterprise licence verified. Console launch downloaded Java viewer.jnlp; HTML5 selection and actual video/keyboard proof pending.** Jack is ready for epsilon downtime but lacks a VGA cable, so the physical monitor route is unavailable. Do not shut down or boot rescue until an actual console/recovery route is verified. Related: [imaging runbook](../docs/plans/epsilon-debian-upgrade.md#recovery-access-and-image-destination), [recovery handoff](../docs/plans/k3s-outage-recovery-handoff.md), [asset catalogue](../docs/asset-catalogue.md).
+**Status: local RACADM, dedicated iDRAC networking, authenticated web login and HTML5 video/keyboard console verified. Rescue boot and offline imaging preflight pending.** Jack lacks a VGA cable; the verified remote console is the imaging console route. Related: [imaging runbook](../docs/plans/epsilon-debian-upgrade.md#recovery-access-and-image-destination), [recovery handoff](../docs/plans/k3s-outage-recovery-handoff.md), [asset catalogue](../docs/asset-catalogue.md).
 
 ## Evidence (October 7, read-only)
 
@@ -117,3 +117,7 @@ The attempted console launch downloaded **viewer.jnlp**. Jack's screenshot shows
 Next operator step: in **Overview → Server → Virtual Console**, select **HTML5** for Plug-in Type, apply the setting and launch again. Firmware2.50.50.50 supports HTML5. If that option is absent or launch still downloads a file, inspect the settings page before other changes. No Java installation, macOS protection override, console AccessPrivilege change, iDRAC reset or host reboot is proposed for this test.
 
 After a browser console appears, verify the live epsilon screen and keyboard input: at a Linux login prompt, type the non-secret username `scubbo` and clear it with Ctrl+U; at an already authenticated shell, run `hostname`. Do not send Ctrl+Alt+Delete or power/boot actions during this test. HTML5 setting application and actual console video/keyboard acceptance remain pending; epsilon remains in production.
+
+## HTML5 console verified
+
+Jack switched to the browser console and confirms visible live screen plus typing/clearing input works. This accepts video/keyboard interaction before host shutdown. No Java or macOS protection override was needed. The observed AccessPrivilege value did not prevent this console test; no change to it is reported. Keep the console and dedicated management cable available through shutdown/POST/rescue and recheck interaction there. Host-off management and rescue boot have not yet been exercised.

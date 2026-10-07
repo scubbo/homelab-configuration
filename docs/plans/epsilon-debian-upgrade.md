@@ -164,7 +164,7 @@ An empty domain list is expected before creating the rehearsal. Do not start the
 
 ### Recovery access and image destination
 
-Jack confirmed physical access to epsilon, but the October 7 imaging attempt lacks a VGA cable for its monitor. Establish a working physical display/keyboard or verified iDRAC console before shutdown. The prepared rescue USB still needs UEFI/PERC/network proof. Epsilon is a Dell PowerEdge R430, with `/dev/ipmi0` and installed local RACADM `/opt/dell/srvadmin/bin/idracadm7`. Jack started `instsvcdrv.service`, restoring local queries, and connected the dedicated iDRAC port. DHCP management address is **192.168.1.33**, MAC `14:18:77:28:11:10`, 1 Gb/s/full-duplex link; stored static `.138` is inactive. Enterprise perpetual licence is OK, iDRAC/Lifecycle Controller firmware2.50.50.50 supports HTML5, and authenticated web login works after targeted account-password recovery. Console launch downloaded Java viewer.jnlp, which macOS did not open; select/apply HTML5 in the console settings before retrying. Actual video/keyboard console access remains unverified. The [iDRAC investigation](../../agentic-investigations/2026-10-07-epsilon-idrac-access.md#web-login-verified-java-viewer-launch-selected) records the observed launch and next check. Management login/licensing alone does not replace boot-console proof.
+Jack lacks a VGA cable, but October 7 **iDRAC HTML5 video/keyboard interaction is verified**: live screen visible and typing/clearing works. Keep that console and dedicated management link open during shutdown/POST/rescue. Rescue USB still needs UEFI/PERC/network proof. Epsilon is a Dell PowerEdge R430; local RACADM `/opt/dell/srvadmin/bin/idracadm7` works after Jack started `instsvcdrv.service`. Dedicated iDRAC DHCP address is **192.168.1.33**, MAC `14:18:77:28:11:10`, 1 Gb/s/full duplex; stored static `.138` inactive. Enterprise perpetual licence is OK, firmware2.50.50.50; authenticated web login works after targeted password recovery. Java viewer download was resolved by HTML5 selection. [Console evidence](../../agentic-investigations/2026-10-07-epsilon-idrac-access.md#html5-console-verified) records successful interaction; management while host-off and rescue boot remain execution checks.
 
 Jack selected **culex's home directory**, not epsilon's OS disk, for off-host recovery storage. A mode-0700 directory owned by scubbo was created at `/home/scubbo/epsilon-recovery.mVvt2ir2` on culex. Its backing filesystem `/dev/mapper/fedora-root` has about 1.7 TiB free. Store baseline images, partition-table/fstab copies, checksums, and protected service recovery files there; secret-bearing files remain outside Git. Keep master images mode-0600 and make separate rehearsal copies/overlays. Image/checksum/restore has not yet been performed.
 
@@ -177,6 +177,43 @@ October 6 recheck confirms culex's staging directory remains mode0700 with appro
 Before booting rescue, Jack confirms the imaging outage/consumer notification, physical console/USB readiness and fresh protected datastore/service recovery artifacts. Epsilon hosts the singleton k3s SQL datastore, so culex's control plane is not independent during epsilon shutdown. Coordinate clean application shutdown and CSI/NFS/iSCSI unmount/logout while the API, datastore and galactus are still available; this preserves the remount recovery achieved after the outage. Do not assume `systemctl stop k3s` alone stops every container or releases storage. Verify the actual consumers/mounts and agree the shutdown sequence before executing it. Stop other host writers and Docker PostgreSQL gracefully only after dependent workloads have quiesced; preserve volatile/local workload state as inventoried. Jack performs a clean shutdown, then selects UEFI SystemRescue from the one-time boot menu.
 
 Inserting the prepared USB is safe preparation. Booting it takes epsilon out of production and starts the multi-hour image window. SystemRescue must see the exact local OS WWN/size with all source filesystems unmounted. It must not attach production CSI LUNs or boot a networked production-identity clone. The raw image includes only epsilon's local OS disk, not remote PVC/media data; keep those separate backup/assessment responsibilities explicit.
+
+### October 7 imaging preflight checkpoint
+
+Jack confirms verified Lexar USB inserted, consumers notified, no active jobs and no concurrent recovery maintenance. USB observed on epsilon as a 116.1 GiB device, serial `04N85DFCUMYUDDCG`, iso9660/EFI partitions unmounted; device letters are not stable identities. Culex staging has about 1.7 TiB free and no `epsilon-os.raw`.
+
+Fresh SQL/roles and private Docker recovery metadata were staged at epsilon `/home/scubbo/epsilon-imaging-preflight.ft1ia8ql` and copied to culex `/home/scubbo/epsilon-recovery.mVvt2ir2/imaging-preflight-20261007.o2rg3a6_`. Both directories mode0700, files0600, hashes verified. `kubernetes.sql` is 80,499,187 bytes, SHA256 `fdaa55c62036aacf47f9254544a5abed98c08f3a2f0b0f9e6171ee1f287d09b6`; globals dump519 bytes, SHA256 `29335ea90c4eb7aebd98586dc2a52eeff319f24a611a7f44693cf6351a7d53c3`. PostgreSQL17.5/image identity unchanged; dump verification proves structure/transfer, not a new restore exercise. Root-owned service/token archive remains pending. Existing scheduled SQL dumps are mode0644, a separate recovery-agent permission follow-up; the fresh imaging artifacts use private modes.
+
+`great_herschel` is a long-running CI runner (`Runner.Listener`), no mounts/published ports/restart policy. Preserve its private inspect metadata and explicitly restart the retained container after host return; verify no active CI job before stopping. No libvirt guests are defined. Lidarr is crash-looping at this preflight following the recovery agent's user-credential reset/restart; Jack supplied that baseline. No fresh ext4 errors observed. Preserve that known application failure and coordinate follow-up rather than claim imaging caused it.
+
+**Do not use the installed `k3s-killall.sh` for this shutdown:** full inspection shows it stops every `k3s*.service` including `k3s-postgres-docker`, force-kills processes, forces unmount/removal and changes Tailscale advertisement. It would bypass the required CSI cleanup while the datastore/API remain available. Use normal node drain, verify full remote-volume cleanup and stop explicitly named services in the agreed order. No drain, container/service stop or reboot has been executed yet.
+
+Jack's next operator step preserves root-owned service, TLS/token and host configuration in the same private staging directory. Existing SQL/roles/container metadata must not be overwritten. Archive secrets stay outside Git/chat; print only file metadata/hash:
+
+```bash
+sudo -v
+bash <<'BASH'
+set -euo pipefail
+umask 077
+BACKUP_DIR=/home/scubbo/epsilon-imaging-preflight.ft1ia8ql
+test -d "$BACKUP_DIR"
+test ! -e "$BACKUP_DIR/host-service-recovery.tar"
+test ! -e "$BACKUP_DIR/host-service-recovery.tar.part"
+sudo -n tar --acls --xattrs --numeric-owner -C / \
+  -cpf "$BACKUP_DIR/host-service-recovery.tar.part" \
+  etc/systemd/system etc/rancher/k3s etc/iscsi etc/network etc/fstab \
+  var/lib/rancher/k3s/server/token var/lib/rancher/k3s/server/tls \
+  var/lib/rancher/k3s/server/cred \
+  home/scubbo/k3s-ha-postgres/docker-compose.yaml
+sudo -n chmod 600 "$BACKUP_DIR/host-service-recovery.tar.part"
+sudo -n chown scubbo:scubbo "$BACKUP_DIR/host-service-recovery.tar.part"
+mv "$BACKUP_DIR/host-service-recovery.tar.part" "$BACKUP_DIR/host-service-recovery.tar"
+stat -c '%a %U:%G %s %n' "$BACKUP_DIR/host-service-recovery.tar"
+sha256sum "$BACKUP_DIR/host-service-recovery.tar"
+BASH
+```
+
+If any required path is absent or tar reports an error, preserve the partial artifact and investigate before changing the file list. Agent transfers/verifies the completed archive on culex separately, avoiding concurrent sudo/SSH prompts. This configuration archive is not a snapshot of live PVC contents or a replacement for the forthcoming offline host image. Return-to-production must explicitly restore the CI runner (no restart policy), epsilon scheduling state and any maintenance service changes; Lidarr's pre-existing application failure is not a post-imaging regression.
 
 #### Rescue USB preparation on the Mac
 
