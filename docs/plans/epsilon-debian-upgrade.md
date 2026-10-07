@@ -277,6 +277,33 @@ BASH
 
 PostgreSQL fast shutdown disconnects remaining clients, rolls back unfinished transactions and checkpoints before stopping; it does not restore earlier data. `pg_ctl -w` waits up to120 seconds and returns an error if shutdown is not confirmed; it does not escalate to SIGKILL at timeout. Capture output and stop on any failure before further shutdown actions. The compose service may remove its stopped PostgreSQL container through ExecStop; its bind-mounted data stays on the local OS disk and recorded image/config allow recreation. Host return must explicitly verify/start the PostgreSQL service before accepting k3s recovery, restart the retained CI runner and verify cron/Ollama/NFS and scheduling state. No service stop or PostgreSQL shutdown in this stage has yet been reported; no reboot command is included.
 
+### Datastore shutdown verified; UEFI rescue boot next
+
+Jack's terminal showed only `waiting for server to shut down....`. Agent inspection at October7 22:51UTC establishes the result independently: k3s, Ollama and `k3s-postgres-docker` inactive/dead with successful service results; PostgreSQL container removed by compose ExecStop; no PostgreSQL processes, NFS mounts or iSCSI sessions remain. Datastore/API ports5432/6443 refuse connections, while epsilon SSH, culex SSH and iDRAC HTTPS remain reachable.
+
+The PostgreSQL service journal records fast shutdown at22:50:47UTC, expected administrator-termination messages for remaining clients, a completed shutdown checkpoint and **`database system is shut down`**, then container/network removal and successful unit deactivation. Do not interpret these expected client FATAL messages as a failed database shutdown or repeat the stop based only on the truncated terminal progress line. The local bind-mounted database files remain for the offline image.
+
+Jack now uses a normal OS reboot with the iDRAC HTML5 console open:
+
+```bash
+sudo -v
+sudo -n systemctl reboot
+```
+
+SSH disconnection is expected. During Dell POST, send **F11** through the virtual console to open the one-time Boot Manager, then select the **UEFI** entry for the prepared Lexar USB. Use the console's virtual keyboard if the laptop intercepts function keys. Do not select a disk-format/OS-installation operation or persistent boot-order change. Start the default SystemRescue entry. If Debian boots instead, report it before imaging; enabled production services may have restarted and the source is no longer offline.
+
+From SystemRescue's root console, gather identity/mount/network evidence before any disk imaging:
+
+```bash
+id
+test -d /sys/firmware/efi && echo 'Booted in UEFI mode'
+lsblk -b -o NAME,SIZE,MODEL,WWN,FSTYPE,MOUNTPOINTS
+ip -br address
+ip route
+```
+
+Match the OS disk WWN `0x614187703cb534002c36dde2320197ab` and exact size499,558,383,616 bytes, with all its source filesystems unmounted. Recheck console input during rescue; then establish trusted standalone SSH to culex and destination capacity/path before the raw transfer. No reboot/rescue boot or raw image has yet been reported executed.
+
 #### Rescue USB preparation on the Mac
 
 Jack selected preparation on his Mac. Use official [SystemRescue 13.02 amd64](https://www.system-rescue.org/Download/), ISO `systemrescue-13.02-amd64.iso`, SHA-256 `ad4d670b72859d887c7960142a9a9d36a3e50446694a035e254442f65d6e7572`, from `https://fastly-cdn.system-rescue.org/releases/13.02/systemrescue-13.02-amd64.iso`. This is a rescue environment, not a Debian/Proxmox installation image. Record download verification and USB identity before writing. A raw ISO write erases the selected USB device.
