@@ -391,22 +391,39 @@ First boot the rescue medium, identify the OS disk by WWN and exact byte size, a
 From SystemRescue's **root shell**, after verifying SSH to culex and the disk/mount state, capture the raw master. There is no sudo authentication in this pipeline; the standalone SSH preflight proves destination/credentials before imaging:
 
 ```bash
-bash
+bash <<'BASH'
 set -euo pipefail
 DISK=/dev/disk/by-id/wwn-0x614187703cb534002c36dde2320197ab
-IMAGE=/home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-os.raw
-blockdev --getsize64 "$DISK"
-lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINTS "$DISK"
-ssh -o ConnectTimeout=10 scubbo@culex "test ! -e '$IMAGE' && df -h /home/scubbo"
+BASE=/home/scubbo/epsilon-recovery.mVvt2ir2
+PART=$BASE/epsilon-os.raw.part
+test -b "$DISK"
+test "$(blockdev --getsize64 "$DISK")" = 499558383616
+test -z "$(lsblk -nr -o MOUNTPOINTS "$DISK" | tr -d '[:space:]')"
+lsblk -b -o NAME,SIZE,WWN,FSTYPE,MOUNTPOINTS "$DISK"
+ssh -n -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes \
+  -o ConnectTimeout=10 scubbo@192.168.1.13 \
+  "test -d '$BASE' && test ! -e '$BASE/epsilon-os.raw' && test ! -e '$PART'"
 dd if="$DISK" bs=16M iflag=fullblock status=progress \
-  | ssh -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 \
-    scubbo@culex "umask 077; test ! -e '$IMAGE' && dd of='$IMAGE' bs=16M iflag=fullblock conv=sparse,fsync"
-ssh scubbo@culex "umask 077; stat -c '%s %n' '$IMAGE'; sha256sum '$IMAGE' > '$IMAGE.sha256'"
-sha256sum "$DISK"
-ssh scubbo@culex "cat '$IMAGE.sha256'"
+  | ssh -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes \
+    -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 \
+    scubbo@192.168.1.13 \
+    "umask 077; dd of='$PART' bs=16M iflag=fullblock conv=sparse,fsync,excl"
+ssh -n -o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=yes \
+  -o ConnectTimeout=10 scubbo@192.168.1.13 \
+  "test \"\$(stat -c %s '$PART')\" = 499558383616 && stat -c '%a %s %n' '$PART'"
+printf 'Transfer complete; image remains .part pending hash verification.\n'
+BASH
 ```
 
-Compare source/destination hashes and exact image byte size. Source hashing rereads the disk while still offline; budget that time. If transfer fails, treat any partial file as incomplete and investigate before choosing a distinct retry path. Do not overwrite an existing recovery artifact blindly. Restore rehearsal uses a working copy/overlay, never writes the master. Raw image checksum verifies transfer integrity; a successful isolated boot/restore exercise proves usability.
+`conv=excl` atomically refuses an existing partial destination; sparse allocation keeps zero blocks sparse without changing logical image size. The final filename is not created until transfer and SHA256 verification are accepted. Non-transfer SSH commands use `-n` so they cannot consume the remaining Bash script; the transfer SSH reads only the `dd` pipe. Password prompts for separate SSH connections remain local to the rescue terminal; no keys/credentials are copied into chat. Keep epsilon booted in rescue, all source filesystems unmounted and culex running throughout transfer and verification. A console/browser disconnect does not establish that the copy stopped; inspect the running process/file before any retry. Never start a second transfer against the same path or overwrite a partial artifact.
+
+After transfer success, hash the complete **source disk while still offline** and the destination `.part` file. Retain both checksums in protected recovery storage, compare exact SHA256 values and logical size499,558,383,616 bytes, then promote the accepted partial to `epsilon-os.raw` with a no-overwrite operation and checksum file naming that refers to the final basename. Source/destination hashing adds two full disk reads; budget that time. Do not reboot or mount the source before its hash is captured. Any mismatch/read/transfer error keeps the artifact unaccepted and requires investigation before a distinct retry path. Restore rehearsal uses a working copy/overlay, never writes the master. Raw image checksum verifies transfer integrity; a successful isolated boot/restore exercise proves usability.
+
+### Rescue-to-culex authentication accepted; transfer pending
+
+Jack's screenshot shows culex's matching ED25519 fingerprint accepted into rescue known_hosts, password authentication completed and destination disk space approximately1.7TiB. The pasted remote command contains `hostname:` (colon), which returned command-not-found; the successful SSH authentication/df output and trusted workstation `uname -n` confirmation establish the destination. An OpenSSH warning says this connection uses no post-quantum key exchange; it is informational for the existing server/client combination, not a transfer/authentication failure. No SSH security setting was changed to suppress it.
+
+Agent recheck at October7 23:14UTC confirms destination mode0700/ownership, no existing final/partial/checksum files and approximately1.814 trillion available bytes. The full OS-source size/WWN/unmounted state already match Jack's rescue screenshot; the transfer command rechecks those automatically. Raw capture, checksum comparison and master promotion are not yet reported executed.
 
 ### Clone and isolation procedure
 
