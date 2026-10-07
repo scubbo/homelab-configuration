@@ -302,7 +302,29 @@ ip -br address
 ip route
 ```
 
-Match the OS disk WWN `0x614187703cb534002c36dde2320197ab` and exact size499,558,383,616 bytes, with all its source filesystems unmounted. Recheck console input during rescue; then establish trusted standalone SSH to culex and destination capacity/path before the raw transfer. No reboot/rescue boot or raw image has yet been reported executed.
+Match the OS disk WWN `0x614187703cb534002c36dde2320197ab` and exact size499,558,383,616 bytes, with all its source filesystems unmounted. Recheck console input during rescue; then establish trusted standalone SSH to culex and destination capacity/path before the raw transfer.
+
+### SystemRescue UEFI and source-disk preflight accepted
+
+Jack's iDRAC console screenshot confirms SystemRescue13.02/root shell and UEFI firmware directory. The console remained usable across reboot and rescue boot. Rescue disk names differ from installed Debian:
+
+| Rescue device | Identity and role | Mount state |
+| --- | --- | --- |
+| `/dev/sda` | PERC OS disk, WWN `0x614187703cb534002c36dde2320197ab`, **499,558,383,616 bytes** | ESP/root/data partitions all unmounted |
+| `/dev/sdb` | Spare PERC candidate, WWN `0x614187703cb534002c7d389b1499c8ab`, 999,653,638,144 bytes | Unallocated/unmounted; not the image source |
+| `/dev/sdc` | Prepared Lexar USB, 124,623,257,600 bytes | ISO boot partition mounted at `/run/archiso/bootmnt`; expected |
+
+The live rescue root is squashfs on loop0, not the installed OS filesystem. Wired `eno1` is UP with `192.168.1.69/24`, default route/DHCP gateway `.1`; remaining physical NICs DOWN. No production iSCSI devices appear in this disk inventory. Minor mistyped commands were corrected in the screenshot; resulting identity/network checks pass.
+
+Agent recheck from trusted workstation at October7 23:09UTC confirms culex's private destination mode0700, unused `epsilon-os.raw`/`.sha256` paths, approximately 1.814 trillion bytes available and the recorded ED25519 fingerprint. Next Jack authenticates **from the rescue shell** using a standalone command before starting the raw stream:
+
+```bash
+ssh -o HostKeyAlgorithms=ssh-ed25519 -o ConnectTimeout=10 \
+  scubbo@192.168.1.13 \
+  'hostname; id; stat -c "%a %U:%G %n" /home/scubbo/epsilon-recovery.mVvt2ir2; test ! -e /home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-os.raw && df -h /home/scubbo'
+```
+
+On first trust, compare against **`SHA256:KOcw0lhK3K1y/UMKzQfZpsPGthfkB5rG7Nz+FsNvFbY`**. Enter scubbo's culex password only in that terminal if prompted; a rescue environment does not inherit installed-host SSH private keys. If authentication fails, arrange a scoped recovery access method with Jack rather than copying secrets into chat or starting a piped transfer. Do not mount the OS source while waiting. Rescue-to-culex authentication and raw imaging remain pending.
 
 #### Rescue USB preparation on the Mac
 
