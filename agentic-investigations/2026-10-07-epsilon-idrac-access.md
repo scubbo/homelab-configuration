@@ -1,6 +1,6 @@
 # Epsilon iDRAC access for rescue imaging
 
-**Status: local RACADM and dedicated iDRAC networking restored; Enterprise licence verified. Web login rejected the vendor default, account inventory and actual remote-console proof pending.** Jack is ready for epsilon downtime but lacks a VGA cable, so the physical monitor route is unavailable. Do not shut down or boot rescue until an actual console/recovery route is verified. Related: [imaging runbook](../docs/plans/epsilon-debian-upgrade.md#recovery-access-and-image-destination), [recovery handoff](../docs/plans/k3s-outage-recovery-handoff.md), [asset catalogue](../docs/asset-catalogue.md).
+**Status: local RACADM, dedicated iDRAC networking and authenticated web login restored; Enterprise licence verified. Console launch downloaded Java viewer.jnlp; HTML5 selection and actual video/keyboard proof pending.** Jack is ready for epsilon downtime but lacks a VGA cable, so the physical monitor route is unavailable. Do not shut down or boot rescue until an actual console/recovery route is verified. Related: [imaging runbook](../docs/plans/epsilon-debian-upgrade.md#recovery-access-and-image-destination), [recovery handoff](../docs/plans/k3s-outage-recovery-handoff.md), [asset catalogue](../docs/asset-catalogue.md).
 
 ## Evidence (October 7, read-only)
 
@@ -107,3 +107,13 @@ sudo -n bash -c '
 ```
 
 Command result and successful browser login remain pending. Stop on a RACADM error; do not reset account privileges or the controller to work around an unknown failure. After successful login, inspect/select HTML5 console through the UI and verify actual video/keyboard behavior while epsilon is still running. Console AccessPrivilege interpretation remains unresolved until observed access clarifies whether any further configuration is necessary. No user password or console-setting change has been reported executed yet.
+
+## Web login verified; Java viewer launch selected
+
+Jack confirms browser login succeeded after the approved targeted account-password recovery. No secret values were shared or recorded. Account privilege/network/licence changes or controller reset were not needed for web login.
+
+The attempted console launch downloaded **viewer.jnlp**. Jack's screenshot shows macOS declining to open that download because Apple cannot verify it. This establishes a Java viewer launch and a local file-opening blocker, not a rejected HTML5 session or a proved iDRAC console-authentication failure. The file contents may contain session credentials; do not read or commit them merely to identify the plug-in.
+
+Next operator step: in **Overview → Server → Virtual Console**, select **HTML5** for Plug-in Type, apply the setting and launch again. Firmware2.50.50.50 supports HTML5. If that option is absent or launch still downloads a file, inspect the settings page before other changes. No Java installation, macOS protection override, console AccessPrivilege change, iDRAC reset or host reboot is proposed for this test.
+
+After a browser console appears, verify the live epsilon screen and keyboard input: at a Linux login prompt, type the non-secret username `scubbo` and clear it with Ctrl+U; at an already authenticated shell, run `hostname`. Do not send Ctrl+Alt+Delete or power/boot actions during this test. HTML5 setting application and actual console video/keyboard acceptance remain pending; epsilon remains in production.
