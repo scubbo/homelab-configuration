@@ -425,6 +425,23 @@ Jack's screenshot shows culex's matching ED25519 fingerprint accepted into rescu
 
 Agent recheck at October7 23:14UTC confirms destination mode0700/ownership, no existing final/partial/checksum files and approximately1.814 trillion available bytes. The full OS-source size/WWN/unmounted state already match Jack's rescue screenshot; the transfer command rechecks those automatically. Raw capture, checksum comparison and master promotion are not yet reported executed.
 
+### Laptop SSH access to the rescue environment
+
+Jack cannot paste the imaging script into the iDRAC HTML5 console. Use it to type the short rescue-access commands, then use a normal laptop SSH terminal for the transfer. [SystemRescue networking documentation](https://www.system-rescue.org/manual/Network_configuration_and_programs/) describes its running SSH daemon, root-password setup and default incoming firewall. Agent checks show rescue TCP22 currently times out, laptop has a direct LAN route from `.50` to rescue `.69`, and no final/partial image exists on culex.
+
+Type these in the **SystemRescue root console**, one command at a time:
+
+```bash
+passwd
+systemctl start sshd
+iptables -I INPUT -s 192.168.1.50 -p tcp --dport 22 -j ACCEPT
+ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256
+```
+
+Choose a temporary rescue root password locally. The firewall rule admits SSH from the verified laptop address only; root password, firewall rule and daemon state belong to the live rescue environment, not the installed Debian filesystem. Record the displayed public host-key fingerprint before first laptop login; do not print/share private keys or passwords. Execution and SSH acceptance remain pending. If the laptop address changes, recheck the route/source before altering the rule.
+
+After comparing the rescue ED25519 fingerprint, laptop login uses a separate `~/.ssh/epsilon-rescue-known_hosts` file and `HostKeyAlgorithms=ssh-ed25519` so the temporary rescue identity is not confused with epsilon's installed-OS host key. Keep the installed-OS known-host entries intact. In the authenticated rescue SSH terminal, start a uniquely named `tmux` imaging session, then run the source/destination checks and image script there. Reconnect/reattach to that session after a disconnect rather than launching another transfer. No source disk mounting, SSH agent forwarding or installed-host private-key copying is needed.
+
 ### Clone and isolation procedure
 
 1. Use the [physical recovery access and off-host destination](#recovery-access-and-image-destination) selected above. Notify consumers of the imaging outage as well as the upgrade window; the first offline image itself requires downtime. Quiesce writers and capture/verify the offline full-disk image. Current ext4 root is not an LVM snapshot source.
