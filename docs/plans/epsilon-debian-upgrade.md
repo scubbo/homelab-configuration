@@ -215,6 +215,17 @@ BASH
 
 If any required path is absent or tar reports an error, preserve the partial artifact and investigate before changing the file list. Agent transfers/verifies the completed archive on culex separately, avoiding concurrent sudo/SSH prompts. This configuration archive is not a snapshot of live PVC contents or a replacement for the forthcoming offline host image. Return-to-production must explicitly restore the CI runner (no restart policy), epsilon scheduling state and any maintenance service changes; Lidarr's pre-existing application failure is not a post-imaging regression.
 
+Jack completed the archive. Agent verified required members and nonempty token without displaying secret contents, then transferred it to `/home/scubbo/epsilon-recovery.mVvt2ir2/imaging-preflight-20261007.o2rg3a6_/host-service-recovery.tar` on culex. Local/off-host size **675,840 bytes**, mode0600, SHA256 **`1665ee9abda12065c1fdbfe4d6e04d4e4550220fbff38bb0e58b55c618e395c5`** match; a separate private `.sha256` file records the archive checksum. Config/token checkpoint is accepted, not a full physical restore proof.
+
+At October7 22:02UTC epsilon remains Ready/schedulable with42 pods, no unmanaged pods; both CSI controllers run Ready on culex. Lidarr's known crash-loop is the only unready live pod. Next Jack executes the clean node-maintenance stage from the laptop while SSH/iDRAC stay open:
+
+```bash
+kubectl cordon epsilon
+kubectl drain epsilon --ignore-daemonsets --delete-emptydir-data --timeout=20m
+```
+
+This evicts managed workloads and discards inventoried disposable emptyDir caches; node-pinned epsilon workloads can remain Pending during the outage. DaemonSets remain by design for the drain stage. Share the complete result; if a disruption budget, webhook, termination or volume blocks progress, stop and investigate it without `--force`, bypassing eviction or stopping PostgreSQL. After successful drain, verify no workload PVC consumers/epsilon VolumeAttachments or CSI pod/global/subpath mounts and iSCSI sessions remain. Host-level NFS mounts and remaining DaemonSet/container writers require their own clean shutdown checks before PostgreSQL and the OS are stopped. No cordon/drain or host stop has yet been reported executed.
+
 #### Rescue USB preparation on the Mac
 
 Jack selected preparation on his Mac. Use official [SystemRescue 13.02 amd64](https://www.system-rescue.org/Download/), ISO `systemrescue-13.02-amd64.iso`, SHA-256 `ad4d670b72859d887c7960142a9a9d36a3e50446694a035e254442f65d6e7572`, from `https://fastly-cdn.system-rescue.org/releases/13.02/systemrescue-13.02-amd64.iso`. This is a rescue environment, not a Debian/Proxmox installation image. Record download verification and USB identity before writing. A raw ISO write erases the selected USB device.
