@@ -254,6 +254,29 @@ BASH
 
 Stop on a busy/failed unmount or runner shutdown error; preserve output and identify actual consumers before continuing. Do not force/lazy-unmount or use a broad container cleanup. This stage leaves k3s and PostgreSQL active. Remaining DaemonSet/runtime cleanup and explicitly named datastore shutdown follow verification of this stage; no host reboot/power action yet.
 
+### Host NFS and runner stopped; final service shutdown pending
+
+Jack's command completed: runner `great_herschel` exited143, consistent with SIGTERM. Agent verification at October7 22:47UTC confirms cron inactive (still enabled for boot), runner exited/retained, and no NFS mounts, iSCSI sessions or device paths remain on epsilon. Seven expected DaemonSet pods remain; no workload data volumes are attached. Ollama, epsilon k3s and Docker PostgreSQL remain active. Fresh SQL/config/token recovery artifacts are already verified on culex.
+
+Service dependency inspection confirms epsilon k3s Wants/After `k3s-postgres-docker.service`, which is static and started with k3s. Docker and k3s use KillMode=process; stopping k3s does not prove all its containers/shims exit. Do not use killall or force-kill them. Once services below are stopped, normal OS reboot will terminate remaining node-local DaemonSets and unmount local filesystems; rescue disk/mount checks establish the offline source state before imaging.
+
+Jack's next epsilon terminal stage:
+
+```bash
+sudo -v
+bash <<'BASH'
+set -euo pipefail
+sudo -n systemctl stop k3s.service ollama.service
+docker exec --user postgres k3s-ha-postgres-pg-1 \
+  pg_ctl -D /var/lib/postgresql/data -m fast -w -t 120 stop
+sudo -n systemctl stop k3s-postgres-docker.service
+systemctl show k3s.service ollama.service k3s-postgres-docker.service \
+  -p Id -p ActiveState -p SubState
+BASH
+```
+
+PostgreSQL fast shutdown disconnects remaining clients, rolls back unfinished transactions and checkpoints before stopping; it does not restore earlier data. `pg_ctl -w` waits up to120 seconds and returns an error if shutdown is not confirmed; it does not escalate to SIGKILL at timeout. Capture output and stop on any failure before further shutdown actions. The compose service may remove its stopped PostgreSQL container through ExecStop; its bind-mounted data stays on the local OS disk and recorded image/config allow recreation. Host return must explicitly verify/start the PostgreSQL service before accepting k3s recovery, restart the retained CI runner and verify cron/Ollama/NFS and scheduling state. No service stop or PostgreSQL shutdown in this stage has yet been reported; no reboot command is included.
+
 #### Rescue USB preparation on the Mac
 
 Jack selected preparation on his Mac. Use official [SystemRescue 13.02 amd64](https://www.system-rescue.org/Download/), ISO `systemrescue-13.02-amd64.iso`, SHA-256 `ad4d670b72859d887c7960142a9a9d36a3e50446694a035e254442f65d6e7572`, from `https://fastly-cdn.system-rescue.org/releases/13.02/systemrescue-13.02-amd64.iso`. This is a rescue environment, not a Debian/Proxmox installation image. Record download verification and USB identity before writing. A raw ISO write erases the selected USB device.
