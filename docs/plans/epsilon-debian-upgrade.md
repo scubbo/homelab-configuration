@@ -442,6 +442,12 @@ Choose a temporary rescue root password locally. The firewall rule admits SSH fr
 
 After comparing the rescue ED25519 fingerprint, laptop login uses a separate `~/.ssh/epsilon-rescue-known_hosts` file and `HostKeyAlgorithms=ssh-ed25519` so the temporary rescue identity is not confused with epsilon's installed-OS host key. Keep the installed-OS known-host entries intact. In the authenticated rescue SSH terminal, start a uniquely named `tmux` imaging session, then run the source/destination checks and image script there. Reconnect/reattach to that session after a disconnect rather than launching another transfer. No source disk mounting, SSH agent forwarding or installed-host private-key copying is needed.
 
+### Raw image transfer started (October 7, 23:41 UTC checkpoint)
+
+Jack confirms laptop-to-rescue SSH login worked and the transfer started. Agent's destination check at `2026-10-07T23:41:23Z` observes culex's receiving `dd` process and `epsilon-os.raw.part` at **3,405,774,848 logical bytes** (approximately0.68% of the full source), mode0600, owned by the destination scubbo UID/GID1001. File modification time is current; allocated size differs because zero blocks are sparse. `epsilon-os.raw` does not exist. Destination remains about1.7TiB free.
+
+The image is still incomplete/unaccepted. Leave transfer running in the rescue tmux session, keep source filesystems unmounted and do not reboot either host. Wait for the imaging block's completion message/exact-size result before hashing the destination. A full-size file alone does not prove the stream exited successfully or that its final fsync completed. After successful transfer, source/destination hashing and final promotion remain required; isolated boot/rehearsal acceptance follows separately. If a disconnect or failure occurs, inspect the existing session/process/artifact rather than restarting or overwriting it.
+
 ### Clone and isolation procedure
 
 1. Use the [physical recovery access and off-host destination](#recovery-access-and-image-destination) selected above. Notify consumers of the imaging outage as well as the upgrade window; the first offline image itself requires downtime. Quiesce writers and capture/verify the offline full-disk image. Current ext4 root is not an LVM snapshot source.
