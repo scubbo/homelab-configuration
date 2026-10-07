@@ -226,6 +226,34 @@ kubectl drain epsilon --ignore-daemonsets --delete-emptydir-data --timeout=20m
 
 This evicts managed workloads and discards inventoried disposable emptyDir caches; node-pinned epsilon workloads can remain Pending during the outage. DaemonSets remain by design for the drain stage. Share the complete result; if a disruption budget, webhook, termination or volume blocks progress, stop and investigate it without `--force`, bypassing eviction or stopping PostgreSQL. After successful drain, verify no workload PVC consumers/epsilon VolumeAttachments or CSI pod/global/subpath mounts and iSCSI sessions remain. Host-level NFS mounts and remaining DaemonSet/container writers require their own clean shutdown checks before PostgreSQL and the OS are stopped. No cordon/drain or host stop has yet been reported executed.
 
+### Epsilon drained; host NFS and runner shutdown pending
+
+Jack reports `node/epsilon drained`. Read-only verification at October7 22:26UTC confirms epsilon remains Ready but unschedulable, with only seven DaemonSet pods and no workload PVC consumers. No epsilon VolumeAttachments, iSCSI device paths/sessions or remote kubelet mounts remain. Remaining kubelet mounts are DaemonSet tmpfs secrets/projected tokens, not remote application filesystems. Node-pinned arr/Jellyfin/Tdarr replacements are Pending without a node; this is expected during the imaging window. Culex remains Ready/schedulable with CSI controllers running; rasnu1 retains its existing cordon.
+
+Three host NFS mounts remain: `/mnt/media-nfs`, `/mnt/galactus-nfs`, and `/mnt/proxback-check.FEVlibO9`. CI runner `great_herschel` still has only its listener/helper processes; PostgreSQL, k3s, Docker and cron remain active. Next Jack stops cron and the idle retained runner, then attempts ordinary unmount of the exact host mounts. This preserves the already verified off-host artifacts and avoids backup cron accessing an absent mount. No service start policy or fstab change is made; cron and the runner must return to their recorded state after production boot.
+
+In Jack's epsilon SSH terminal, outside the NAS mount directories:
+
+```bash
+sudo -v
+bash <<'BASH'
+set -euo pipefail
+cd /
+sudo -n systemctl stop cron.service
+docker stop --time 60 great_herschel
+sudo -n umount /mnt/media-nfs
+sudo -n umount /mnt/galactus-nfs
+sudo -n umount /mnt/proxback-check.FEVlibO9
+docker inspect --format '{{.Name}} status={{.State.Status}} exit={{.State.ExitCode}}' great_herschel
+findmnt -t nfs,nfs4 -o TARGET,SOURCE || {
+  result=$?
+  test "$result" -eq 1
+}
+BASH
+```
+
+Stop on a busy/failed unmount or runner shutdown error; preserve output and identify actual consumers before continuing. Do not force/lazy-unmount or use a broad container cleanup. This stage leaves k3s and PostgreSQL active. Remaining DaemonSet/runtime cleanup and explicitly named datastore shutdown follow verification of this stage; no host reboot/power action yet.
+
 #### Rescue USB preparation on the Mac
 
 Jack selected preparation on his Mac. Use official [SystemRescue 13.02 amd64](https://www.system-rescue.org/Download/), ISO `systemrescue-13.02-amd64.iso`, SHA-256 `ad4d670b72859d887c7960142a9a9d36a3e50446694a035e254442f65d6e7572`, from `https://fastly-cdn.system-rescue.org/releases/13.02/systemrescue-13.02-amd64.iso`. This is a rescue environment, not a Debian/Proxmox installation image. Record download verification and USB identity before writing. A raw ISO write erases the selected USB device.
