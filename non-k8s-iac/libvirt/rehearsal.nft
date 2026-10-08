@@ -1,0 +1,17 @@
+table inet epsilon_rehearsal {
+  chain input {
+    type filter hook input priority -10; policy accept;
+    iifname "br-rehearsal" ip saddr 172.31.250.2 ip daddr 172.31.250.1 tcp dport 3128 counter accept
+    iifname "br-rehearsal" counter drop
+  }
+  chain forward {
+    type filter hook forward priority -10; policy accept;
+    iifname "br-rehearsal" counter drop
+    oifname "br-rehearsal" counter drop
+  }
+  chain output {
+    type filter hook output priority -10; policy accept;
+    oifname "br-rehearsal" ip saddr 172.31.250.1 ip daddr 172.31.250.2 tcp sport 3128 ct state established counter accept
+    oifname "br-rehearsal" counter drop
+  }
+}

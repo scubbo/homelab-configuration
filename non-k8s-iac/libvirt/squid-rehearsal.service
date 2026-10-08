@@ -1,0 +1,10 @@
+[Unit]
+Description=Package proxy for epsilon's isolated OS rehearsal
+ConditionPathExists=/sys/class/net/br-rehearsal
+
+[Service]
+Type=simple
+ExecStartPre=/usr/sbin/squid -k parse -f /etc/squid/rehearsal.conf
+ExecStart=/usr/sbin/squid -N -f /etc/squid/rehearsal.conf
+TimeoutStopSec=60
+Restart=no

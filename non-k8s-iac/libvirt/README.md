@@ -46,3 +46,13 @@ sudo virsh -c qemu:///system domstate epsilon-rehearsal
 ```
 
 Keep domain/working disk/firmware variables/master/verification artifacts until Jack approves cleanup. Do not point a domain at the master to save staging steps. No default libvirt network or storage-pool setup is needed for this explicitly specified local disk.
+
+## Package-access intent
+
+Jack approved Squid installation on culex and a restricted package-access path. [`package-interface.xml`](package-interface.xml) attaches only to a dedicated host bridge `br-rehearsal`; host `172.31.250.1/30`, guest `172.31.250.2/30`, guest MAC `02:00:00:02:00:01`. There is no physical bridge member, NAT, DHCP, guest DNS or default route. Console access remains through culex.
+
+[`rehearsal.nft`](rehearsal.nft) uses its own nftables table, allowing the guest to reach only host TCP3128 and dropping other host/forwarded traffic involving this bridge. Existing k3s/Podman firewall tables are retained. [`squid.conf`](squid.conf) binds only the bridge address and admits only the guest, exact Debian/vendor package hosts (including the observed Helm CDN redirect), HTTP80/HTTPS443 and GET/HEAD/CONNECT. Private resolved destinations are denied; HTTPS certificates and repository signatures remain verified by APT. Access-log URLs are not recorded because repository redirects may contain signed query strings.
+
+[`squid-rehearsal.service`](squid-rehearsal.service) runs the explicit configuration without enabling the distribution's default proxy service. [`apt-proxy.conf`](apt-proxy.conf) directs both APT transports through it. Native parse checks and real allowed/blocked guest requests precede package installation in the clone. The guest's copied SSH/cloud clients and unattended package services must be stopped/gated before attaching this interface; package service-start policy keeps production workloads from activating during rehearsal.
+
+Prepared disk/domain/NVRAM baseline is private on culex at `/home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-rehearsal-baseline-20261008`, captured with the guest shut off before package work. Its reflink disk shares host storage with the working disk/master; preserve all three names and firmware files. Network/proxy acceptance and upgrade results are recorded in the [Debian plan](../../docs/plans/epsilon-debian-upgrade.md).
