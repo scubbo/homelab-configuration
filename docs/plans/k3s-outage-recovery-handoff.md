@@ -20,6 +20,8 @@ The post-transfer verification SSH failed, but retained data was complete; match
 
 **Rehearsal ownership ended23:30UTC October8:** reviewed Bookworm then Trixie transactions completed, normal Debian13.7/kernel6.12.111 boot/proprietaryDKMS/localSSH/Docker29.9/capturedPG17.5 accepted. Guest shut off/autostartdisabled, custom Squid stopped/no3128 listener; bridge/nft/isolation/configuration retained. Private master plus prepared/Bookworm/Trixie disk-and-firmware checkpoints are on culex. [Accepted rehearsal](epsilon-debian-upgrade.md#debian-13-clone-rehearsal-accepted-october-8) records limits and source/NFS/SSH-generator findings. Physical epsilon packages/sources remain unchanged. Coordinate another window before any restart; never repurpose the copied guest as a production client or delete retained checkpoints.
 
+**Physical maintenance ownership active October8,23:46UTC:** Jack authorizes epsilon's OS update, users notified/no concurrent agents. Jack accepts pending NAS filesystem/backup-workflow findings after clarification; those checks are still tracked, not passed. Migration agent stages fresh protected SQL/roles/container metadata off-host, awaiting Jack's authenticated root tmux/console before drain or package writes. Epsilon remains production/schedulable at this checkpoint. [Physical window](epsilon-debian-upgrade.md#physical-maintenance-window-opened-october-8) records current access/artifacts. No overlapping controller/storage/host maintenance until migration acceptance releases this window.
+
 ## Verified baseline and remaining uncertainty
 
 ### What happened and what is restored

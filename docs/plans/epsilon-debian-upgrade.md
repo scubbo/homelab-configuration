@@ -1,6 +1,6 @@
 # Epsilon Debian maintenance
 
-**Status: offline image, physical production return, isolated clone boot, Bookworm patch and Trixie package/reboot/datastore rehearsal passed. Physical maintenance window/execution and hardware/application acceptance pending.** This proves routine physical-node maintenance independently of [Proxmox installation](proxmox-installation.md). Jack accepts downtime and will notify Jellyfin consumers/schedule the window. PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
+**Status: isolated Bookworm/Trixie rehearsal passed; Jack's physical maintenance window is active, fresh recovery artifacts staged, privileged execution pending.** This proves routine physical-node maintenance independently of [Proxmox installation](proxmox-installation.md). Jack accepts downtime. PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
 
 ## Evidence and remaining checks
 
@@ -644,6 +644,29 @@ Final datastore/Docker stopped and guest powered off. At **23:30:45UTC** agent p
 This passes the Debian package/EFI/reboot/local SSH/Docker/captured SQL rehearsal. Physical PERC/NIC boot, actual GPU driver operation, remote storage/application workflows, retained CI runner compatibility under Docker29 and a fresh isolated k3s-cluster bootstrap have not been exercised by this VM. The captured production k3s service was kept stopped, not started against copied identities. Physical upgrade still needs Jack's agreed downtime, console readiness, fresh datastore/service recovery artifacts and recovery-agent coordination/remaining filesystem acceptance. Its first stage is reviewed **Bookworm source-component correction/patch/reboot**, then a separately accepted Trixie stage. Proxmox is not installed.
 
 ## Notification and execution sequence
+
+### Physical maintenance window opened October 8
+
+Jack explicitly requested updating epsilon, confirms **users notified, active maintenance window and no other agents working on the node**. After a plain-English explanation that NAS application-volume integrity/backup-restore follow-ups remain outside the verified local OS image, Jack accepts proceeding while retaining those follow-ups. This is acceptance of pending checks, not evidence those checks passed. No NAS filesystem repair/rollback is included. The migration agent owns maintenance until host/application restoration is accepted; recovery agents must coordinate before any overlapping writes.
+
+Read-only preflight23:46–23:50UTC: original Debian/kernel/packages, clean package audit/no holds, zero failed units, ESP/data/NFS mounted and133GiB free root. PostgreSQL17.5 uses its recorded image/local data, ready; runner has only listener/helper processes. Cluster80 Running/79 Ready, only known Lidarr unready; all epsilon workloads controller-owned, no unmanaged pod,11 application pods/seven DaemonSets. Only expendable Jellyfin/Tdarr/device-plugin caches are observed emptyDir users. Remote filesystem last-error timestamps remain from October6; no fresh errors. Culex's rehearsal/proxy stopped, master/three checkpoints preserved; iDRAC `.33:443` reachable, actual open console confirmation remains with Jack.
+
+Fresh private artifacts:
+
+- Epsilon `/home/scubbo/epsilon-upgrade-preflight-1fmdkh0a`, directory0700/files0600.
+- Culex `/home/scubbo/epsilon-recovery.mVvt2ir2/upgrade-preflight-20261008.PstZKktO`, directory0700/files0600; transfer/checksums verified.
+- `kubernetes.sql`:83,296,248bytes, SHA256 `c51c076ed666e0ea8628b82b7e42444915a44bf79287f679ec74b98593d99db9`; consistent `pg_dump` exited0/no stderr, kine schema/data/completion markers verified. Initial validation used an incorrect literal final-marker assertion; corrected structure validation accepted existing artifact without repeating dump.
+- `postgres-globals.sql`:519bytes, SHA256 `29335ea90c4eb7aebd98586dc2a52eeff319f24a611a7f44693cf6351a7d53c3`, completed roles/global dump.
+- Private `datastore.inspect.json`, `runner.inspect.json`, `SHA256SUMS`, `preflight.json` retained; their secret contents are not printed or checked in. Fresh logical restore is not claimed.
+
+Root-owned token/TLS/service/network/APT recovery archive, physical source correction/package refresh/simulation/download, drain/stops/install/reboot remain pending. Agent's noninteractive sudo is denied; Jack authenticates a persistent root shell locally rather than sending a password or changing sudo policy:
+
+```bash
+ssh -t scubbo@epsilon.avril \
+  'tmux new-session -s epsilon-upgrade "sudo -H bash"'
+```
+
+Enter the existing sudo password locally and leave the shell at its root prompt; keep iDRAC HTML5 available. Agent checks pane identity before sending commands and maintains private command/result logs. If the session already exists, inspect/attach it instead of starting competing package work. A root shell must be established before drain so restoration/package commands are available during downtime; no workload/service stop is initiated merely to wait for access.
 
 Jack sends this after the rehearsal establishes a realistic window:
 
