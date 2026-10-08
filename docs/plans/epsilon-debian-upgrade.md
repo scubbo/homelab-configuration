@@ -1,6 +1,6 @@
 # Epsilon Debian maintenance
 
-**Status: assessment and package dry-runs completed; privileged preparation, clone rehearsal, and execution pending Jack.** This proves routine physical-node maintenance independently of [Proxmox installation](proxmox-installation.md). Jack accepts downtime and will notify Jellyfin consumers/schedule the window. PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
+**Status: offline OS image captured with matching source/destination SHA256; production return, isolated clone rehearsal and package execution pending.** This proves routine physical-node maintenance independently of [Proxmox installation](proxmox-installation.md). Jack accepts downtime and will notify Jellyfin consumers/schedule the window. PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
 
 ## Evidence and remaining checks
 
@@ -472,6 +472,31 @@ BASH
 ```
 
 Noclobber preserves any existing source checksum file. If hashing fails or the file already exists, inspect its state/error rather than replacing it. Source checksum lives in rescue RAM until copied into protected off-host storage; do not reboot first. Exact source/destination digest agreement and durable checksum records precede final-image promotion. A new transfer is not justified unless verification establishes a defect requiring it.
+
+### Offline image checksum accepted; production return pending
+
+Jack supplied the unmounted source-disk SHA256, and agent verification at **October8 06:47UTC** reads the completed destination checksum with the identical value:
+
+```text
+2a5f599e398a75be9926a35a1a7b1fed36ac43d2875217ba15632dd6856564df
+```
+
+Destination image size **499,558,383,616 bytes** exactly matches the verified OS disk. Mode0600/ownership and stable image modification time through hashing are verified. The destination hash job completed its explicit fsync/full-file read and private checksum output. Agent preserved Jack's source result in `epsilon-os.raw.source.sha256` on culex, with its source WWN path; this record transcribes the reported rescue result, not a separate agent read of the source device.
+
+Agent promoted the accepted image on culex using an exclusive hard link, synced directory metadata, verified the same inode/size and removed only the `.part` name. Final master is **`/home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-os.raw`**, mode0600. Companion private files are `epsilon-os.raw.sha256` (final basename), `epsilon-os.raw.source.sha256`, `epsilon-os.raw.part.sha256` (retained original hash evidence) and `epsilon-os.raw.verification.json`. All are mode0600 under the mode0700 recovery directory; the `.part` image name is absent. No retransmission or image-content change was needed after the verification SSH failure.
+
+This accepts the offline capture/transfer integrity, **not** an isolated boot or full restore exercise. Protect this master; rehearsal uses a separate copy/overlay. No production package, partition or filesystem change occurred during imaging. The image contains the clean stopped datastore/local OS state, not the remote application PVCs.
+
+Return epsilon to installed Debian before conducting the isolated rehearsal:
+
+1. Keep the iDRAC HTML5 console available. From the rescue root shell run `systemctl poweroff` and wait for iDRAC to show the host is off.
+2. Remove only the Lexar rescue USB after power-off; keep the OS/network/iDRAC cabling in place.
+3. Use iDRAC's **Power On** action and observe the installed Debian boot. Rescue SSH host identity/temporary root password are not used for the installed OS; reconnect with the normal `ssh scubbo@epsilon.avril` trust entry.
+4. Leave epsilon cordoned while agent checks original kernel/WWNs, `/boot/efi` and `/mnt/second-drive`, normal host NFS mounts, GPU, failed units, PostgreSQL image/version/readiness and API/culex reconnection. Starting k3s normally pulls in the recorded PostgreSQL service; inspect actual state before intervention, and never pull a different PostgreSQL image to restore it.
+5. Restore only recorded maintenance state if needed: cron/Ollama services, retained `great_herschel` container (no automatic restart), and epsilon scheduling after host/cluster checks pass. Do not start the isolated restore-check container or uncordon rasnu1. The backup-access test mount is temporary and should remain unmounted.
+6. Verify node-pinned workloads and representative persistence/media playback after Jack uncordons epsilon, then notify consumers and record restoration. Lidarr was already failing before the imaging outage; preserve its recovery-agent baseline instead of claiming all workloads recovered without checking it.
+
+Power-off/USB removal/production boot and service restoration have not yet been reported. The verified master and checksum records are durable on culex, so the completed rescue checksum file need not keep epsilon offline. Next migration stage is NIC-less isolated clone/boot/upgrade rehearsal on culex, followed by separately accepted Bookworm/Trixie and Proxmox work.
 
 ### Clone and isolation procedure
 
