@@ -39,6 +39,8 @@ Latest comprehensive checkpoint, October 6:
 - At 21:13 UTC neither epsilon nor culex recorded an ext4 error since Ombi's last remount at 17:24:48 UTC, nearly four hours earlier. Error flags/history still exist on eleven mounted CSI filesystems.
 - Jack power-cycled the UAP-AC-PRO and the Pixel regained validated Wi-Fi/Internet with its original settings. Phone diagnostic overrides/logging were restored. Jack is gradually reconnecting switches with Kasa himself.
 
+October8 production return supersedes the pod/readiness baseline:80 Running/79 Ready/zero Pending, known Lidarr authorization failure only. Jellyfin configuration write/fsync and synthetic NVENC encoding, Tdarr configuration/built-in GPU tests, healthy attachments and fresh Prometheus/Valkey persistence pass. Real post-return workflows remain unverified. Internal Authentik HTTP and public verified HTTPS readiness pass; internal `https://auth.avril` presents the self-signed Traefik default certificate and fails TLS trust. Review that access-path configuration separately. See the [full checkpoint](epsilon-debian-upgrade.md#production-return-verified-october-8) for exact evidence and log exceptions.
+
 ### Important boundaries
 
 - **ArgoCD is read-only for agents**, including no sync, refresh, patch or automatic-sync toggles. Jack performs any UI pause/resume. The first live stop was reversed by automated sync; lack of explicit selfHeal did not protect the maintenance state.
@@ -53,7 +55,7 @@ Latest comprehensive checkpoint, October 6:
 | Asset | Address/access | Relevant location/constraint |
 | --- | --- | --- |
 | epsilon | `ssh scubbo@epsilon.avril`, `.69` | Debian host, k3s server and shared Docker PostgreSQL. Interactive sudo required. Local OS disk is separate from CSI LUNs. |
-| culex | `ssh scubbo@culex.avril`, `.13` (also `.200`) | Fedora host, k3s server, restored Authentik/Valkey/Prometheus LUNs. Some sudo reads worked during incident; recheck privileges. |
+| culex | `ssh scubbo@culex.avril`, `.13` (also `.200`) | Fedora host, k3s server, restored Authentik/Valkey/Prometheus LUNs. October8 `sudo -n -l` confirms NOPASSWD access; privileged system-libvirt domain listing succeeds. |
 | galactus | TrueNAS CORE UI/Shell, `.39` | Agent SSH authentication unavailable. Jack performs ZFS inventory/snapshot commands. `high-resiliency` healthy; reported 10.3 TiB available. |
 | OPNsense | UI `.1` | ISC DHCPv4 legacy; AdGuard53/Unbound5353. Jack owns configuration changes. |
 | UAP-AC-PRO | `.100`, MAC `78:45:58:29:4b:02` | AP SSH default denied, controller/device credentials unavailable. Recovery follow-up, not a reason to factory-reset functioning Wi-Fi. |
