@@ -18,6 +18,8 @@ Imaging capture and production-return maintenance are complete. Fresh protected 
 
 The post-transfer verification SSH failed, but retained data was complete; matching source/destination hashes accepted the existing image without retransmission. Temporary rescue SSH/root credentials and `epsilon-rescue-known_hosts` are distinct from installed Debian access. The verified image master and preflight files contain secrets, must remain outside Git and must not be written by rehearsal or another agent. Once production return is accepted, coordinate the next recovery maintenance window with Jack; do not assume image capture means application-volume consistency checks or independent restore coverage are complete.
 
+Jack approved package rehearsal after isolated boot acceptance. Culex now runs a manually started package-host-allowlisted Squid proxy on a dedicated isolated bridge; clone has no DNS/default route and production host/LAN/nonpackage access is verified blocked. Prepared disk/VM firmware baseline retained privately; Bookworm packages are downloading before installation, with physical epsilon unchanged. [Access checkpoint](epsilon-debian-upgrade.md#restricted-package-access-and-prepared-baseline) records exact assets/state. Coordinate culex reboot/network/firewall/storage maintenance while rehearsal is active; never repurpose the copied guest as a production client.
+
 ## Verified baseline and remaining uncertainty
 
 ### What happened and what is restored

@@ -4,6 +4,8 @@ ConditionPathExists=/sys/class/net/br-rehearsal
 
 [Service]
 Type=simple
+User=squid
+Group=squid
 ExecStartPre=/usr/sbin/squid -k parse -f /etc/squid/rehearsal.conf
 ExecStart=/usr/sbin/squid -N -f /etc/squid/rehearsal.conf
 TimeoutStopSec=60
