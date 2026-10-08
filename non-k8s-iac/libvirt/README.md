@@ -4,7 +4,7 @@
 
 ## Retained state
 
-- Domain: `epsilon-rehearsal`, UUID `180b4863-b2da-479f-a656-6521f90c4b5f`, autostart disabled. Boot verification ended shut off; guest is running for the recorded package rehearsal.
+- Domain: `epsilon-rehearsal`, UUID `180b4863-b2da-479f-a656-6521f90c4b5f`, **shut off/autostart disabled** after accepted Debian13 package rehearsal. Custom Squid is stopped; bridge/nft configuration retained.
 - Hardware: KVM/q35,4vCPU/8GiB, non-Secure-Boot OVMF, SATA working disk, serial console and loopback-only VNC.
 - Working disk: `/var/lib/libvirt/images/epsilon-rehearsal.raw`, separate XFS reflink inode with499,558,383,616-byte logical capacity. Guest writes are copy-on-write; it is not an independent off-host backup.
 - Guest firmware variables: `/var/lib/libvirt/qemu/nvram/epsilon-rehearsal_VARS.fd`. Its registered Debian shim entry is needed for the verified repeat boot.
@@ -57,6 +57,8 @@ Jack approved Squid installation on culex and a restricted package-access path. 
 
 Prepared disk/domain/NVRAM baseline is private on culex at `/home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-rehearsal-baseline-20261008`, captured with the guest shut off before package work. Its reflink disk shares host storage with the working disk/master; preserve all three names and firmware files. Network/proxy acceptance and upgrade results are recorded in the [Debian plan](../../docs/plans/epsilon-debian-upgrade.md).
 
+Accepted patched checkpoints are `/home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-rehearsal-bookworm-20261008` and `epsilon-rehearsal-trixie-20261008`, each mode0700/files0600 with shut-off disk reflink, VM OVMF variables, domain XML and acceptance/metadata. These share storage; preserve all names and never restore one over a running guest or discard its current state without review.
+
 [`bookworm.sources`](bookworm.sources) records complete Debian component intent for patching. The captured security sources omitted non-free while admitting firmware, which made fresh proprietary NVIDIA driver dependencies unsatisfiable. Clone security entries now include matching components; no physical host source change has been made. Avoid activating duplicate Debian definitions when applying source intent.
 
 [`trixie.sources`](trixie.sources) records the Debian release-upgrade source intent after patched Bookworm boot acceptance. Docker, Jellyfin and Tailscale have suite-specific Trixie repositories; Helm's `any` repository and NVIDIA toolkit's suite-independent repository retain their existing definitions. Source replacement is explicit, with the prior files saved privately before changing the clone. `.gpg` Debian archive keyring is available on the Bookworm starting point; Trixie's canonical `.pgp` path can be adopted after the keyring package is installed. Signatures are never bypassed.
@@ -68,3 +70,5 @@ Package transactions are reviewed in the clone before interactive confirmation; 
 Bookworm acceptance requires clean package dependencies/audit, matching installed kernel/headers, proprietary NVIDIA DKMS builds, initramfs/GRUB/EFI files, normal reboot, local SSH authentication and captured-datastore restart. The VM has no GPU: module compilation can be proved here, actual physical P1000 operation remains an epsilon acceptance check. Docker/Compose/runtime compatibility is tested with the exact retained PostgreSQL image rather than a registry download. Services disabled for copied-identity isolation remain disabled after transactions.
 
 Before changing suite to Trixie, stop test PostgreSQL gracefully and verify checkpoint/exit0, power off the guest and preserve another disk/NVRAM/domain checkpoint. After the reviewed minimal/full-upgrade sequence, repeat all checks, inspect NIC naming, `/tmp` behaviour and third-party package sources, and retain each transaction/removal/configuration decision. No package-rehearsal result permits an unscheduled physical epsilon upgrade.
+
+October8 [accepted rehearsal](../../docs/plans/epsilon-debian-upgrade.md#debian-13-clone-rehearsal-accepted-october-8): Debian13.7/kernel6.12.111/proprietaryNVIDIA550.163DKMS/localSSH10.0/Docker29.9/containerd2.3.6/Compose5.6/capturedPG17.5. Package audit/dependencies/holds and final full-upgrade simulation are clean, normal EFI reboot passed, zero failed units and empty error-level boot journal. Copied clients remain gated; guest has no default IPv4/IPv6 route/DNS, IPv6 disable is persistent. Clone GRUB `systemd.ssh_auto=no` suppresses automatic VM/local SSH socket activation; newly enabled NFS block-layout helper is gated because this guest has no production NFS. These are rehearsal-only isolation adjustments, not physical-host settings.

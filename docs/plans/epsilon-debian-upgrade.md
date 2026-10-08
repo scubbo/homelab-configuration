@@ -1,6 +1,6 @@
 # Epsilon Debian maintenance
 
-**Status: offline OS image captured with matching source/destination SHA256; physical production return and isolated clone boot/datastore verification passed. Debian package-upgrade rehearsal and physical execution pending.** This proves routine physical-node maintenance independently of [Proxmox installation](proxmox-installation.md). Jack accepts downtime and will notify Jellyfin consumers/schedule the window. PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
+**Status: offline image, physical production return, isolated clone boot, Bookworm patch and Trixie package/reboot/datastore rehearsal passed. Physical maintenance window/execution and hardware/application acceptance pending.** This proves routine physical-node maintenance independently of [Proxmox installation](proxmox-installation.md). Jack accepts downtime and will notify Jellyfin consumers/schedule the window. PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
 
 ## Evidence and remaining checks
 
@@ -612,6 +612,37 @@ After restarting the clone, prior APT files were preserved at guest `/root/epsil
 
 Minimal download-only279MB completed exit0 in1min31seconds. First install attempt was interrupted during apt-listchanges before any dpkg action because a fragmented confirmation display was mistaken for a blocked input; audit/history confirmed unchanged Bookworm state and the failed typescript was retained. Second reviewed attempt proceeds through real minimal-package installation with interactive prompts and private `trixie-minimal-install-confirmed.typescript`. Release-note-described usrmerge nonempty-directory warnings appeared. Minimal/full transaction completion, Trixie reboot/DKMS/runtime acceptance remain pending. **Do not reboot the partially upgraded clone or start another APT transaction while this one is active.** Physical epsilon packages/sources remain unchanged.
 
+### Debian 13 clone rehearsal accepted October 8
+
+Minimal Trixie transaction completed **532 upgrades/0 additions/0 removals/exit0**. Clean audit/dependency checks followed; all copied production services stayed inactive. Fresh full simulation after minimal installation matched the reviewed remaining transaction: **386 upgrades/231 additions/73 removals/0 held back**. The same68 exactt64 and five other reviewed library/Python transitions remained. Download-only918MB completed exit0 in2min35seconds; interactive `apt-get --no-download full-upgrade` then completed exit0. No autoremove, forced package workaround, signature/TLS bypass or PostgreSQL image pull was used.
+
+One modified conffile prompt occurred: **`/etc/libvirt/qemu.conf`**. Agent requested and reviewed its diff; local `user="+1000"`/`group="+1000"` settings were retained with `N`, and the distributor file remains as `.dpkg-dist`. Nested libvirt stayed disabled/gated. Other diagnostic output included release-note-described usrmerge/nonempty-directory messages, obsolete SysV start/stop action warnings and transient NVIDIA alternative-link warnings during package replacement. Final package audit/dependencies and module paths pass; logs are retained rather than represented as warning-free.
+
+Pre-reboot verifies proprietary **NVIDIA550.163.01** DKMS installed for **6.1.0-31,6.1.0-53 and6.12.111+deb13-amd64**, matching installed6.12.111 kernel/headers/initramfs and existing EFI files/registered shim entry. No `nvidia-open-kernel-dkms` package was selected. Guest `udevadm test-builtin net_setup_link` keeps `enp2s0`; this does not prove physical epsilon's NIC name.
+
+Clone-only isolation required two Trixie-specific adjustments:
+
+1. **Automatic SSH generator:** package reloads reported `Failed to query local AF_VSOCK CID` because the VM has no vsock device. Installed systemd257 manual explains automatic VM/local socket activation and its `systemd.ssh_auto=` switch. Clone GRUB uses **`systemd.ssh_auto=no`**, preserving the existing serial-console arguments and preventing automatic SSH socket activation. No virtual socket device or additional access path was added. The generated `sshd-unix-local.socket` is also gated by the clone marker. A pre-reboot inspection assumed `/etc/sysctl.conf` still existed and stopped on its absence; Trixie removed it as documented, while all local `/etc/sysctl.d` fragments and `linux-sysctl-defaults` remain. Inspection continued without restoring the unused file.
+2. **NFS helper and IPv6 state:** first Trixie boot had zero failed units but error-level `nfs-blkmap.service` output for missing `/run/rpc_pipefs/nfs/blocklayout`, because this clone gates its NFS stack and has no NFS mounts. Clone marker now gates that helper too. Earlier runtime-only IPv6 disable did not survive reboot; persistent guest `/etc/sysctl.d/90-rehearsal-network.conf` disables all/default IPv6. Dedicated host rules had continued blocking IPv6 bridge traffic. A second normal EFI reboot verifies no IPv6 addresses/routes, no automatic SSH-generator error and an empty error-level boot journal.
+
+Acceptance at **23:30UTC**:
+
+| Check | Observed result |
+| --- | --- |
+| Debian/kernel/systemd | **Debian13.7 / `6.12.111+deb13-amd64` / systemd257.13**; normal EFI boots into serial shell, systemd `running`, **zero failed units**, error-level current-boot journal empty |
+| Packages/boot/storage | Clean `dpkg --audit`, `apt-get check`, no holds; final full-upgrade simulation0/0/0/0. ESP/data UUID mounts and fstab validation pass, root/data ext4 errors0, matching proprietary DKMS/kernel/headers/initramfs. Original kernels retained |
+| Isolation | Only172.31.250.2/30 package interface/loopback, no guestDNS/defaultIPv4/IPv6 route/production NFS. Production clients/SSH/NFS/iSCSI/cron/Ollama/nested-libvirt inactive; packageHTTPS200 and production proxy403 rechecked after boot |
+| SSH | OpenSSH10.0p1-deb13u4 default/test configuration parses; fresh loopback-only2222 public-key login prints clone hostname/Trixie kernel. Temporary daemon stopped; dedicated private test keys/config/log retained in guest |
+| Runtime | Docker29.9.0, containerd2.3.6, Compose5.6.0; captured production compose config parses with `config --quiet` without exposing credentials. Test reuses exact existing PostgreSQL image, no image-store migration/pull |
+| Captured datastore | PostgreSQL17.5/networknone/no ports, **6,113 kine rows/max revision281297976** unchanged. Temporary SQL write/read/rollback passes; clean shutdown checkpoint/exit0, restart/readiness without ERROR/FATAL/PANIC/WAL recovery, final clean stop confirmed |
+| Physical baseline | Production epsilon remains Debian12/originalkernel6.1.0-31, Docker27.5.1/OpenSSHdeb12u2/NVIDIA535.216.01, PostgreSQL ready and zero failed units. All three production nodes Ready; rasnu1 cordon retained |
+
+Final datastore/Docker stopped and guest powered off. At **23:30:45UTC** agent preserved accepted disk/VM OVMF variables/domain/acceptance/metadata in **`/home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-rehearsal-trixie-20261008`**, directory0700/files0600/scubbo-owned, full-size reflink inode2021719017. Host `epsilon-rehearsal.trixie-acceptance.json` and guest `/root/epsilon-rehearsal-records/trixie-acceptance.json` retain the result. Original master metadata/private ownership and both earlier checkpoints are unchanged. Each checkpoint is a shared-storage reflink, not another independent recovery medium.
+
+**Rehearsal is stopped:** domain shut off/autostart disabled, custom Squid stopped/no3128 listener. Dedicated bridge/nft table/configuration and package interface remain retained for review; default Squid remains disabled. Re-establish verified isolation before any future guest/proxy restart, particularly after culex reboot. No host/network/artifact cleanup is implied by acceptance.
+
+This passes the Debian package/EFI/reboot/local SSH/Docker/captured SQL rehearsal. Physical PERC/NIC boot, actual GPU driver operation, remote storage/application workflows, retained CI runner compatibility under Docker29 and a fresh isolated k3s-cluster bootstrap have not been exercised by this VM. The captured production k3s service was kept stopped, not started against copied identities. Physical upgrade still needs Jack's agreed downtime, console readiness, fresh datastore/service recovery artifacts and recovery-agent coordination/remaining filesystem acceptance. Its first stage is reviewed **Bookworm source-component correction/patch/reboot**, then a separately accepted Trixie stage. Proxmox is not installed.
+
 ## Notification and execution sequence
 
 Jack sends this after the rehearsal establishes a realistic window:
@@ -622,7 +653,7 @@ Record recipients/channel, notification time, planned start, rollback cutoff, an
 
 ### A. Bookworm patch window
 
-Before package writes: verify host boot image/restore, fresh datastore dump and protected roles/token/config, physical console access, and known working LAN SSH independent of Tailscale. Record running PostgreSQL image ID and ensure it can be restored without an image pull. Inventory `great_herschel`, a long-running container with no inspected mounts/ports, and any host-local workloads before draining/rebooting.
+Before package writes: verify host boot image/restore, fresh datastore dump and protected roles/token/config, physical console access, and known working LAN SSH independent of Tailscale. Record running PostgreSQL image ID and ensure it can be restored without an image pull. Inventory `great_herschel`, a long-running container with no inspected mounts/ports, and any host-local workloads before draining/rebooting. Correct the physical Bookworm security-source components to include matching `contrib/non-free/non-free-firmware`, preserving its source backup and reviewing the fresh dependency resolution. Clone package versions above are observed checkpoints; re-evaluate actual candidates at the physical window.
 
 Jack executes host/cluster maintenance commands. Application scheduling/replica changes go through GitOps. Cordon/drain epsilon after recording local/emptyDir/PV contents; GPU-pinned workloads may remain pending until the node returns, which is accepted downtime. A failed drain must be resolved rather than forced past. The physical node still remains named `epsilon` during the Debian upgrade; renaming it is not part of this window.
 

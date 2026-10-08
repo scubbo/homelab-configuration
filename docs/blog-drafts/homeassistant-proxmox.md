@@ -1,6 +1,6 @@
 # Moving Home Assistant to a VM without losing the radio
 
-**Unpublished planning draft.** Offline image capture and NIC-less VM boot/datastore checks have passed; deployment and package-upgrade rehearsal remain planned. [Host selection](../plans/proxmox-host-selection.md) chooses [Proxmox on epsilon](../plans/proxmox-installation.md).
+**Unpublished planning draft.** Offline image capture and isolated Bookworm/Trixie upgrade/reboot/datastore rehearsal have passed; physical conversion and HAOS deployment remain planned. [Host selection](../plans/proxmox-host-selection.md) chooses [Proxmox on epsilon](../plans/proxmox-installation.md).
 
 My Home Assistant installation works, but its Raspberry Pi hardware is unreliable. Migrating the application is an opportunity to establish a VM platform with configuration and recovery instructions in the homelab repository.
 
@@ -43,6 +43,8 @@ After clone-only service/network-mount/console preparation, Debian booted normal
 Package access needs its own boundary because the disk also carries production client credentials. A dedicated bridge without a default route or DNS lets the clone reach only a package-host-allowlisted Squid proxy. Bridge-scoped firewall rules block direct host and forwarded LAN access; the proxy rejects private/tailnet destinations and unlisted hosts. Real tests prove package HTTP/verified HTTPS succeeds while production API, NAS, host SSH and cloud control-plane access fails. Existing host Kubernetes/Podman firewall tables remain in place.
 
 Fresh Bookworm indexes exposed a dependency problem that the earlier dry-run did not: security sources admitted non-free firmware without the corresponding non-free NVIDIA drivers. Matching source components resolved the proprietary driver/firmware version mismatch before package installation. The prepared shut-off disk, VM firmware and domain definition are retained together, so package experiments can return to a known bootable starting point. The [package-access record](../plans/epsilon-debian-upgrade.md#restricted-package-access-and-prepared-baseline) captures the source decision and bounded recovery claims.
+
+The clone completed Bookworm12.15 and then Debian13.7 with reviewed minimal/full transactions. It booted the6.12.111 kernel, compiled proprietary NVIDIA modules, authenticated a fresh local SSH session and ran the captured PostgreSQL17.5 datastore under Docker29.9 without pulling another image. A reviewed libvirt conffile prompt preserved its local UID/GID settings. Trixie's automatic VM SSH socket generator and newly enabled NFS helper needed isolation-specific handling; the accepted reboot has zero failed units and no error-level boot logs. Prepared/Bookworm/Trixie disk-and-firmware checkpoints remain retained. Actual physical NIC/PERC/GPU operation, k3s networking and application workflows remain separate acceptance work; [the result](../plans/epsilon-debian-upgrade.md#debian-13-clone-rehearsal-accepted-october-8) records that boundary.
 
 Provision and test an empty HAOS VM first. Create a final complete backup, stop the source, move the radio and network ownership, then restore. Running two restored copies concurrently risks duplicate automations and cloud/MQTT clients even when only one has a radio.
 
