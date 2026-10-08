@@ -1,5 +1,6 @@
 <domain type="kvm">
   <name>epsilon-rehearsal</name>
+  <uuid>180b4863-b2da-479f-a656-6521f90c4b5f</uuid>
   <memory unit="MiB">8192</memory>
   <vcpu>4</vcpu>
   <os>

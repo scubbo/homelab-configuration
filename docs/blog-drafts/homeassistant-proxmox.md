@@ -1,6 +1,6 @@
 # Moving Home Assistant to a VM without losing the radio
 
-**Unpublished planning draft.** The deployment and host-upgrade rehearsal described here are planned; operational results should be added after execution. [Host selection](../plans/proxmox-host-selection.md) chooses [Proxmox on epsilon](../plans/proxmox-installation.md). An isolated SQL backup restoration has passed; that is one part of recovery proof.
+**Unpublished planning draft.** Offline image capture and NIC-less VM boot/datastore checks have passed; deployment and package-upgrade rehearsal remain planned. [Host selection](../plans/proxmox-host-selection.md) chooses [Proxmox on epsilon](../plans/proxmox-installation.md).
 
 My Home Assistant installation works, but its Raspberry Pi hardware is unreliable. Migrating the application is an opportunity to establish a VM platform with configuration and recovery instructions in the homelab repository.
 
@@ -35,6 +35,10 @@ Moving the radio can also change RF coverage. An extension cable keeps it away f
 ## Accept downtime, keep rollback simple
 
 Physical-node rehearsal starts with an offline image captured from a verified SystemRescue USB to an independent host. A changing live ext4 root is not a consistent disk-image source. Even before an OS upgrade, boot recovery requires usable console/media access and sufficient transfer/hash time; the full raw disk transfer is hundreds of gigabytes. Booting a private clone proves more than package dependency resolution alone.
+
+The full499.6GB image matched the unmounted source SHA256. Culex's XFS reflink support made a separate writable working inode without another full transfer, while preserving the private master. The NIC-less libvirt VM then exposed a recovery dependency that hashing cannot test: firmware boot entries live in the motherboard's variable store, not the raw disk. Registering the existing Debian shim in the VM's OVMF variables enabled boot; a cleared replacement motherboard may need the same step.
+
+After clone-only service/network-mount/console preparation, Debian booted normally with no failed units. The captured PostgreSQL17.5 image opened the local datastore, read its kine rows, passed a temporary SQL roundtrip and a clean restart. GPU drivers and an obsolete suspend/resume UUID needed clone hardware adjustments. None of that proves a physical disk overwrite, GPU operation under an upgraded kernel or remote-PVC recovery; it establishes a useful, bounded recovery test before package changes. The [boot rehearsal record](../plans/epsilon-debian-upgrade.md#nic-less-image-boot-and-datastore-verification-passed-october-8) keeps those claims explicit.
 
 Provision and test an empty HAOS VM first. Create a final complete backup, stop the source, move the radio and network ownership, then restore. Running two restored copies concurrently risks duplicate automations and cloud/MQTT clients even when only one has a radio.
 

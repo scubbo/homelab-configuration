@@ -1,6 +1,6 @@
 # Epsilon Debian maintenance
 
-**Status: offline OS image captured with matching source/destination SHA256; installed Debian and production scheduling restored. Isolated clone rehearsal and package execution pending.** This proves routine physical-node maintenance independently of [Proxmox installation](proxmox-installation.md). Jack accepts downtime and will notify Jellyfin consumers/schedule the window. PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
+**Status: offline OS image captured with matching source/destination SHA256; physical production return and isolated clone boot/datastore verification passed. Debian package-upgrade rehearsal and physical execution pending.** This proves routine physical-node maintenance independently of [Proxmox installation](proxmox-installation.md). Jack accepts downtime and will notify Jellyfin consumers/schedule the window. PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
 
 ## Evidence and remaining checks
 
@@ -529,6 +529,53 @@ Imaging/production-return maintenance is complete. Consumer restoration notifica
 7. A virtual rehearsal cannot prove physical NIC naming, PERC boot, GPU DKMS operation, or hardware recovery access. Record those as physical acceptance checks rather than claiming full production readiness.
 
 A clean Bookworm VM can exercise the upgrade mechanics while image/tooling is arranged, but it does not substitute for the host-package/restore rehearsal Jack requested. The paused `debian-test` guest has been deleted and is not reused as a rehearsal environment.
+
+### NIC-less image boot and datastore verification passed October 8
+
+Jack explicitly requested boot-on-culex and verification. Agent verified the accepted master metadata/checksum records and production node health, then created `/var/lib/libvirt/images/epsilon-rehearsal.raw` as a **separate XFS copy-on-write reflink inode**, using `cp --reflink=always --sparse=auto --no-clobber`. The initial incompatible `--sparse=always` attempt was rejected before creating a file. Both files retain the full499,558,383,616-byte logical capacity; writes to the rehearsal copy do not write the master. This saves staging space but is not an additional independent backup medium. Standard libvirt image labelling was retained; SELinux stayed Enforcing.
+
+Checked-in domain [epsilon-rehearsal.xml](../../non-k8s-iac/libvirt/epsilon-rehearsal.xml) passed native `virsh define --validate` and fresh live-XML isolation checks. Domain **`epsilon-rehearsal`**, UUID `180b4863-b2da-479f-a656-6521f90c4b5f`, uses KVM/q35,4vCPU/8GiB, SATA working disk, non-Secure-Boot OVMF and serial console. No NIC, host device, shared filesystem, USB redirection or guest channel is attached. VNC binds host loopback only; no libvirt network/storage daemon was started on culex and autostart is disabled.
+
+#### Firmware and first boot findings
+
+Fresh OVMF reached its EFI shell, seeing the captured ESP and Debian EFI files. The raw image contains disk files, **not the physical host's UEFI boot-variable store**. Agent registered the existing shim in this VM's separate NVRAM and launched it:
+
+```text
+bcfg boot add 0 fs0:\efi\debian\shimx64.efi debian
+fs0:\efi\debian\shimx64.efi
+```
+
+This fixes the observed missing firmware entry without modifying the master. A replacement physical motherboard/cleared firmware may likewise need a boot entry even with a complete disk restore. Filesystem aliases such as `fs0:` are observations; identify the actual ESP in that firmware before using the path.
+
+The unchanged working copy booted the captured Debian kernel and reported clean root filesystem. It also started its copied PostgreSQL systemd dependency locally: logs establish **`database system was shut down at 2026-10-07 22:50:47 UTC`** and readiness at19:43:25UTC. No external network path existed. Agent requested ACPI shutdown, which powered off the VM; cloned compose shutdown left this working datastore requiring automatic recovery on its next start. Later logs show redo not required/end-of-recovery checkpoint/ready. This recovery arose during rehearsal, not from the accepted offline image. It is a reason to explicitly verify PostgreSQL shutdown checkpoints before host power actions, rather than accept host-off alone as database shutdown proof.
+
+First boot also exposes an unavailable suspend/resume UUID from `/etc/initramfs-tools/conf.d/resume`, causing an approximately30-second initramfs wait, and NVIDIA module/persistence/CDI failures because the VM has no GPU. These are clone hardware/isolation findings, not image-corruption evidence. A prior restore-test container with the same captured image was retained and remained stopped.
+
+#### Console and clone-only preparation
+
+Agent used GRUB's existing captured kernel/initrd with one-boot `console=ttyS0,115200n8 init=/bin/bash` to reach the isolated guest shell. There was no password reset or guest SSH/network connection. On the working copy only:
+
+- Preserved original fstab/hostname/hosts/GRUB/module/resume files under guest `/root/epsilon-rehearsal-records` (mode0700); set hostname/loopback identity `epsilon-rehearsal`.
+- Commented the two production NFS fstab entries; retained root/ESP/data UUID mounts. No production CSI LUN was attached.
+- Disabled k3s/Tailscale/cron/Ollama/Docker/containerd boot activation and added clone-marker conditions preventing k3s/datastore/iSCSI/NFS services from starting. All captured Docker restart policies were verified `no`, with no auto-started container on the prepared boot.
+- Configured a serial root autologin for this **NIC-less clone**, with host-local VNC/privileged serial access only. It is not a production login policy. The guest retains production secrets/identities, so network attachment still requires a reviewed isolation/access plan; do not treat a changed hostname as identity removal.
+- Disabled nested libvirt activation and hardware-only NVIDIA units using the clone marker; removed the NVIDIA module load from this clone's boot list. Set clone resume to `none`, rebuilt only its captured-kernel initramfs and updated GRUB with serial-console arguments. Package versions stayed unchanged. `update-grub` reported its expected os-prober-disabled warning; no other OS discovery is needed for this single-disk guest.
+
+Preparation tooling encountered a fragmented serial result and an interactive pager; remaining output was read and the pager exited before proceeding. These were console-orchestration issues, not guest failures. The prepared clone subsequently rebooted through its registered EFI entry into normal systemd with **no `init=/bin/bash` override**, giving a local serial login without intervention.
+
+#### Accepted checks and retained state (19:55UTC)
+
+- Debian **12.5**, kernel **`6.1.0-31-amd64`**; normal reboot passed, systemd reports `running`, **zero failed units**. Root/ESP/data mounts and original UUIDs match; privileged fstab validation has no errors/warnings. Package audit/holds are empty; local ext4 root/data error counts remain zero. No sampled current kernel I/O/ext4/NVIDIA/resume-timeout errors.
+- Guest has only loopback before Docker test start, **no NIC/default route/NFS mounts**, and production k3s/datastore/Tailscale/cron/Ollama/iSCSI/nested-libvirt services inactive. Live domain XML independently confirms no guest network interface or host sharing.
+- Started Docker locally only for the verification, reusing captured PostgreSQL image **`sha256:445ed93b882fd8274de6c88ed5c6efea0743e112d232d87a8bc0b9b8817e8316`** with `--pull=never`, `--network none`, no published ports/restart policy and1GiB memory cap. Test container `epsilon-rehearsal-postgres` uses **the cloned** `/home/scubbo/k3s-ha-postgres-data`.
+- PostgreSQL17.5 accepts connections and reads **6,113 kine rows/max revision281297976**. A transactional temporary-table write/read returns its payload and rolls back; no production kine records were changed.
+- Verified explicit clean database shutdown checkpoint/exit0, restart/readiness without WAL recovery or ERROR/FATAL/PANIC, then the same checks after normal guest OS reboot. A `docker exec pg_ctl ... stop` call returned1 because its parent container exited while the exec session was waiting; actual database logs/container exit proved clean completion. Subsequent `docker stop` with grace and log/exit verification passed. Final database shutdown was clean; Docker/containerd were stopped before guest poweroff.
+- At **19:55:40UTC** host confirms guest **shut off**, autostart disabled, no VNC listener. Original master inode1191202993/size/mtime1791421454983170698/mode0600/scubbo ownership remain unchanged; working inode3884020681 is distinct. This metadata check does not repeat the earlier complete hash.
+- Physical epsilon remains on its original kernel with healthy PostgreSQL/zero failed units; all three production nodes remain Ready and rasnu1's existing cordon remains.
+
+Private host artifacts under `/home/scubbo/epsilon-recovery.mVvt2ir2` include `epsilon-rehearsal.xml`, `epsilon-rehearsal.live.xml`, `epsilon-rehearsal.acceptance.json` and console screenshots, mode0600 under mode0700. Guest acceptance JSON and configuration backups remain inside the working disk. Retain working disk, domain and OVMF variable file `/var/lib/libvirt/qemu/nvram/epsilon-rehearsal_VARS.fd` for the next rehearsal; do not discard them without Jack's review.
+
+This passes **VM boot and captured local datastore recovery**, not physical disk-overwrite restoration, remote PVC/media recovery or the Debian upgrade. Next agree restricted package-download access for the clone, preserve a repeatable prepared baseline, then rehearse Bookworm patching/Trixie. No physical host package changes or clone network attachment were performed.
 
 ## Notification and execution sequence
 
