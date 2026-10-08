@@ -4,7 +4,7 @@
 
 ## Retained state
 
-- Domain: `epsilon-rehearsal`, UUID `180b4863-b2da-479f-a656-6521f90c4b5f`, shut off/autostart disabled after acceptance.
+- Domain: `epsilon-rehearsal`, UUID `180b4863-b2da-479f-a656-6521f90c4b5f`, autostart disabled. Boot verification ended shut off; guest is running for the recorded package rehearsal.
 - Hardware: KVM/q35,4vCPU/8GiB, non-Secure-Boot OVMF, SATA working disk, serial console and loopback-only VNC.
 - Working disk: `/var/lib/libvirt/images/epsilon-rehearsal.raw`, separate XFS reflink inode with499,558,383,616-byte logical capacity. Guest writes are copy-on-write; it is not an independent off-host backup.
 - Guest firmware variables: `/var/lib/libvirt/qemu/nvram/epsilon-rehearsal_VARS.fd`. Its registered Debian shim entry is needed for the verified repeat boot.
@@ -12,7 +12,7 @@
 - Private host acceptance/live XML/screenshots: `/home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-rehearsal*`, files0600 under directory0700.
 - Guest configuration backups/acceptance: `/root/epsilon-rehearsal-records`. The prepared working disk differs from the captured master by the documented service/mount/console/hostname/boot adjustments.
 
-The guest has **no NIC/shared folders/passthrough devices**. Its production k3s/Tailscale/cron/Ollama/datastore services are disabled or gated by `/etc/epsilon-rehearsal`; production NFS mounts are commented. Captured credentials and identities remain inside the disk. Restricted package access and login/identity preparation need review before any network attachment. The root serial autologin is confined to this host-controlled NIC-less rehearsal.
+The checked-in base domain has **no NIC/shared folders/passthrough devices**; the approved package interface is an explicit additional device described below. Production k3s/Tailscale/cron/Ollama/datastore services are disabled or gated by `/etc/epsilon-rehearsal`; production NFS mounts are commented. Captured credentials and identities remain inside the disk. The root serial autologin is confined to this host-controlled rehearsal; package networking admits only outbound proxy access, with SSH stopped/gated and direct host/forwarding access blocked.
 
 ## Local operation on culex
 
@@ -24,7 +24,7 @@ sudo virsh -c qemu:///system domiflist epsilon-rehearsal
 sudo virsh -c qemu:///system domblklist epsilon-rehearsal
 ```
 
-Expected: autostart disabled, no interface rows, disk source exactly `/var/lib/libvirt/images/epsilon-rehearsal.raw`. Rehearsal ownership must be coordinated with Jack before starting shared-host maintenance.
+Expected: autostart disabled, disk source exactly `/var/lib/libvirt/images/epsilon-rehearsal.raw`; base boot verification has no interface, while package rehearsal has only `br-rehearsal`/MAC02:00:00:02:00:01. Rehearsal ownership must be coordinated with Jack before starting shared-host maintenance. For the package interface, its verified bridge/firewall/proxy path must be available before guest start.
 
 ```bash
 sudo virsh -c qemu:///system start epsilon-rehearsal
@@ -60,3 +60,11 @@ Prepared disk/domain/NVRAM baseline is private on culex at `/home/scubbo/epsilon
 [`bookworm.sources`](bookworm.sources) records complete Debian component intent for patching. The captured security sources omitted non-free while admitting firmware, which made fresh proprietary NVIDIA driver dependencies unsatisfiable. Clone security entries now include matching components; no physical host source change has been made. Avoid activating duplicate Debian definitions when applying source intent.
 
 [`trixie.sources`](trixie.sources) records the Debian release-upgrade source intent after patched Bookworm boot acceptance. Docker, Jellyfin and Tailscale have suite-specific Trixie repositories; Helm's `any` repository and NVIDIA toolkit's suite-independent repository retain their existing definitions. Source replacement is explicit, with the prior files saved privately before changing the clone. `.gpg` Debian archive keyring is available on the Bookworm starting point; Trixie's canonical `.pgp` path can be adopted after the keyring package is installed. Signatures are never bypassed.
+
+## Package rehearsal acceptance
+
+Package transactions are reviewed in the clone before interactive confirmation; logs/typescripts under guest `/root/epsilon-rehearsal-records` are private. Download-only preparation completes before installation. No blind autoremove, unattended configuration replacement or PostgreSQL image pull is part of this procedure.
+
+Bookworm acceptance requires clean package dependencies/audit, matching installed kernel/headers, proprietary NVIDIA DKMS builds, initramfs/GRUB/EFI files, normal reboot, local SSH authentication and captured-datastore restart. The VM has no GPU: module compilation can be proved here, actual physical P1000 operation remains an epsilon acceptance check. Docker/Compose/runtime compatibility is tested with the exact retained PostgreSQL image rather than a registry download. Services disabled for copied-identity isolation remain disabled after transactions.
+
+Before changing suite to Trixie, stop test PostgreSQL gracefully and verify checkpoint/exit0, power off the guest and preserve another disk/NVRAM/domain checkpoint. After the reviewed minimal/full-upgrade sequence, repeat all checks, inspect NIC naming, `/tmp` behaviour and third-party package sources, and retain each transaction/removal/configuration decision. No package-rehearsal result permits an unscheduled physical epsilon upgrade.
