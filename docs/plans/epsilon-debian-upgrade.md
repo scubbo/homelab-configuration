@@ -448,6 +448,31 @@ Jack confirms laptop-to-rescue SSH login worked and the transfer started. Agent'
 
 The image is still incomplete/unaccepted. Leave transfer running in the rescue tmux session, keep source filesystems unmounted and do not reboot either host. Wait for the imaging block's completion message/exact-size result before hashing the destination. A full-size file alone does not prove the stream exited successfully or that its final fsync completed. After successful transfer, source/destination hashing and final promotion remain required; isolated boot/rehearsal acceptance follows separately. If a disconnect or failure occurs, inspect the existing session/process/artifact rather than restarting or overwriting it.
 
+### Full-sized image retained after verification SSH failure
+
+Jack reports `499558383616 bytes copied, 5065.38 s, 98.6 MB/s`, followed by the informational non-post-quantum SSH warning, a password prompt and `ssh_dispatch_run_fatal: Broken pipe`. The separate password prompt after the copy suggests failure in the post-transfer verification connection; the connection failure's precise cause is not established. Do not infer damaged data or restart the transfer from that message alone.
+
+Agent check at **October8 01:29:54 UTC** confirms the partial is a regular file of exactly499,558,383,616 logical bytes, allocated498,885,206,016 bytes, mode0600/scubbo-owned; final/checksum paths absent. No receiving dd/hash processes or own-user descriptors referencing the image remain. Culex has approximately1.2TiB free after capture. This establishes a full-sized closed destination, not checksum acceptance.
+
+Agent launched a destination fsync/SHA256 read, verifying file identity/size/mtime remain stable throughout. Its exclusive mode0600 output is `/home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-os.raw.part.sha256`; completion/digest remain pending. Jack hashes the original source separately in rescue while all its partitions remain unmounted:
+
+```bash
+bash <<'BASH'
+set -euo pipefail
+set -C
+umask 077
+DISK=/dev/disk/by-id/wwn-0x614187703cb534002c36dde2320197ab
+test -b "$DISK"
+test "$(blockdev --getsize64 "$DISK")" = 499558383616
+test -z "$(lsblk -nr -o MOUNTPOINTS "$DISK" | tr -d '[:space:]')"
+date -u
+sha256sum "$DISK" > /root/epsilon-os.source.sha256
+cat /root/epsilon-os.source.sha256
+BASH
+```
+
+Noclobber preserves any existing source checksum file. If hashing fails or the file already exists, inspect its state/error rather than replacing it. Source checksum lives in rescue RAM until copied into protected off-host storage; do not reboot first. Exact source/destination digest agreement and durable checksum records precede final-image promotion. A new transfer is not justified unless verification establishes a defect requiring it.
+
 ### Clone and isolation procedure
 
 1. Use the [physical recovery access and off-host destination](#recovery-access-and-image-destination) selected above. Notify consumers of the imaging outage as well as the upgrade window; the first offline image itself requires downtime. Quiesce writers and capture/verify the offline full-disk image. Current ext4 root is not an LVM snapshot source.
