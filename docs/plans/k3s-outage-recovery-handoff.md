@@ -1,6 +1,6 @@
 # k3s outage recovery handoff
 
-**Status: physical Bookworm patch/reboot/core service checks passed; Jack closed the maintenance window and paused further upgrade work.** Updated October9,2026. Physical Trixie not started; backup/restore coverage, offline filesystem/workflow acceptance remain follow-ups. Rclone stays offline for Jack; Lidarr retains its known authorization failure. This is the execution plan for the agent receiving Jack's recovery handoff for the [HAOS/Proxmox migration](homeassistant-vm-migration.md).
+**Status: physical Bookworm accepted; Jack reopened a notified maintenance window for physical Trixie.** Updated October9,2026. Trixie sources/downloads reviewed, drain/install next. Backup/restore coverage, offline filesystem/workflow acceptance remain follow-ups; rclone stays offline for Jack and Lidarr retains its known failure. This is the execution plan for the agent receiving Jack's recovery handoff for the [HAOS/Proxmox migration](homeassistant-vm-migration.md).
 
 ## Start here
 
@@ -27,6 +27,8 @@ October9 00:06UTC Jack confirms iDRAC/login/root tmux; token/config/APT/GPT/EFI 
 Physical Bookworm packages installed/preboot accepted October9:epsilon cordoned/drained, all remote volumes released, post-drain SQL verified off-host and production PostgreSQL shutdown checkpoint00:27:23UTC verified. Local DaemonSet runtime tasks and Docker/GPU consumers stopped with the recorded helper-specific exit exceptions. Shared API/datastore unavailable during planned outage; SSH/iDRAC available.307 upgrades/3 adds/0 removals exit0; preboot kernel/DKMS/EFI/fstab/runtime/image/SSH pass. Reboot/physical acceptance pending; no Trixie transaction or NAS repair started. [Current checkpoint](epsilon-debian-upgrade.md#physical-bookworm-installed-reboot-pending-october-9). Migration owns maintenance; no overlapping writes.
 
 October9 Bookworm reboot/core service checks pass:12.15/kernel6.1.0-53/GPU535.309/normal mounts/PG17.5/API/both nodes/24attachments restored, epsilonuncordoned/CIlistening,80 Running79ReadyknownLidarronly. **Jack subsequently closes the expired window and pauses upgrade work; migration maintenance ownership is released.** Closing01:26UTC check confirms intended services/mounts/scheduling and normal automatic APT timers restored; physical Trixie has not started. Agree a fresh window before any resumed host/cluster maintenance. **Rclone remains offline for Jack's manual recovery:** usertimerdisabled/inactive/service stopped, agents must not start/re-enable/resync it. [Paused checkpoint](epsilon-debian-upgrade.md#maintenance-window-closed-upgrade-paused).
+
+**Migration maintenance ownership resumed October9 after03:33UTC:** Jack confirms notified window/no other host/storage maintenance. Fresh SQL/roles/token/config/user-unit recovery copies and isolated SQLrestore pass; privilegedBookworm acceptance complete. Physical Trixie sources/signatures/simulations/download-only reviewed and completed; packages not installed yet, normal drain/quiescence next. Epsilon serves while downloading. [Active checkpoint](epsilon-debian-upgrade.md#physical-trixie-window-reopened-october-9). No overlapping recovery writes; rclone remains Jack-owned/offline.
 
 ## Verified baseline and remaining uncertainty
 

@@ -1,6 +1,6 @@
 # Epsilon Debian maintenance
 
-**Status: paused at Jack's request; maintenance window closed. Physical epsilon is serving on Debian12.15/kernel6.1.0-53 after Bookworm patch/reboot/core checks. Physical Trixie has not started and requires another agreed window.** PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
+**Status: Jack reopened the maintenance window; physical Trixie sources/simulations/downloads accepted, drain and installation next. Bookworm privileged acceptance passed.** PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
 
 ## Evidence and remaining checks
 
@@ -713,6 +713,20 @@ Jack says the upgrade window expired and explicitly requests holding further wor
 **The maintenance window and migration-agent maintenance ownership are closed. No physical Trixie source switch, transaction or reboot has started.** Do not resume from a root shell or prepared script merely because access becomes available; agree another notified window with Jack first. Preserve the master, rehearsal checkpoints, SQL/configuration backups, stopped restore tests, installed runtime preference and maintenance records. No host/cluster cleanup or further live changes were performed while closing the window.
 
 Resume with fresh baseline/console/privileged-access checks, remaining privileged Bookworm journal/fstab acceptance, current datastore/service recovery artifacts and a new source/package simulation against the rehearsed runtime constraints. Production datastore writes since the preserved checkpoints make casually restoring an earlier full image inappropriate. NAS integrity/workflow findings remain Jack's accepted follow-ups for the elapsed window; discuss the next window's acceptance with him. Rclone recovery/re-enable stays **Jack-owned and explicitly deferred**.
+
+#### Physical Trixie window reopened October 9
+
+Jack explicitly requests proceeding and confirms **window active/users notified/no concurrent host or storage maintenance**. Fresh03:33UTC baseline:Bookworm12.15/kernel6.1.0-53/core services/datastore ready/zero failed system units,79 Ready of80 Running/known Lidarr only, original18 managed epsilon pods. Rclone timer disabled/service stopped; retained CI runner idle. Fresh root tmux was initially awaiting sudo authentication: agent root-check text was rejected as a password, no maintenance command ran. Process-tree inspection subsequently confirmed authenticated root bash before any further pane input. Jack reports console/session open; iDRAC443 remains reachable.
+
+Fresh protected recovery staging **epsilon `/home/scubbo/epsilon-trixie-preflight-znbs99qb` → culex `/home/scubbo/epsilon-recovery.mVvt2ir2/trixie-preflight-20261009.pBk60ObF`**, directories0700/files0600:
+
+- `kubernetes.sql`80,519,149bytes/SHA256 `ff395a4a02539ca13c6d7b81d2c38fe586ee2d19c532afdb85fea7f982d3aa50`; `pg_dump` exit0/no stderr/schema/data/completion verified, transfer hash matches. Roles/globals519bytes/hash `29335ea90c4eb7aebd98586dc2a52eeff319f24a611a7f44693cf6351a7d53c3`.
+- Fresh isolated restore **`epsilon-trixie-restore-20261009`**, dedicated private Docker volume/networknone/noports/512MiB/exactPG17.5image; restore exit0/no stderr, **4,965 kine rows/max revision281529023** verified. Test cleanly stopped/retained; no production bind mount.
+- `host-service-recovery.tar`5,816,320bytes/hash `0e562809bfcff8d1c80b25261560a053f5b5f16231373dce01e19fbab8958e27`:current/etc/config/token/TLS/credentials/compose plus user systemd units, required members/hash/private copies verified. GPT/EFI/runtime/source records retained outside Git.
+
+Remaining privileged Bookworm core acceptance script passed:clean fstab/audit/dependencies/GPU/module/host services/mounts/datastore/both clients/no boot storage errors, rclone stays disabled/no process. Automatic APT timers stopped for this window. Explicit Debian/Docker/Jellyfin/Tailscale source switch is now on physical epsilon; Helm/NVIDIA-toolkit independent sources and runtime preference retained. Prior APT source tree saved locally/off-host before replacement. Signed refresh has no warning/error entries; **minimal532/0/0/386heldback, full918/231/73/0** exactly match the rehearsal, with68exactt64 replacements/five reviewed Python/library changes and proprietaryNVIDIA550.163.01/kernel6.12.111. Runtime preference selects Docker29.9.0/containerd2.3.6.
+
+Both interactive download-only transactions completed exit0,279MB minimal plus918MB remaining full archives. **Physical package installation has not begun.** Epsilon remains serving/schedulable while downloading; next normal drain/remote-volume release/clean datastore stop/local runtime quiescence, retaining another post-drain SQL checkpoint before reviewed minimal/full installation. Migration agent owns this active window. Rclone restart/resync remains prohibited by Jack's instruction.
 
 Jack sends this after the rehearsal establishes a realistic window:
 
