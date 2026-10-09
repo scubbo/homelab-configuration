@@ -1,0 +1,48 @@
+# Epsilon bridge and VM-storage preparation
+
+Related: [Proxmox installation](../docs/plans/proxmox-installation.md), [kernel/management acceptance](2026-10-09-epsilon-proxmox-nvidia.md), [router/NAS preparation](../docs/plans/proxmox-network-storage-preparation.md), [probe acceptance](../docs/plans/proxmox-network-probe.md), and [asset catalogue](../docs/asset-catalogue.md).
+
+## Scope and execution inputs
+
+Jack requests continuing after successful Proxmox UI login. On October9 he confirms the10:40PDT reboot was intentional, a notified bridge maintenance window is active, no concurrent maintenance is underway, and supplies authenticated root tmux access. Initial pane was ordinaryzsh; no commands were sent until `sudo -i` completed and effectiveUID0bash/process tree was verified. Jack selects **OPNsense192.168.1.1 hostDNS/Tailscaleaccept-dns=false**.
+
+Epsilon remainseno1DHCP192.168.1.69/MAC14:18:77:28:11:0c, manager9.2.21/kernel7.0.14-23/P1000driver580.178.04. vmbr0/dedicatedVMstorage/probe/productionguests are absent. Selected storageWWN `0x614187703cb534002c7d389b1499c8ab` resolves to current `/dev/sdb`,999,653,638,144bytes, no partitions/filesystem/mounts/holders. Preserve OSWWN `0x614187703cb534002c36dde2320197ab` and all remoteiSCSILUNs.
+
+**Static bridge blocked on authoritative router exclusion.** RecordedISC pools `.10–.219`/`.230–.254` excludeguestblock `.220–.229`, but includephysicalepsilon`.69`. Jack believed its assignedaddressmapping was sufficient; clarified [OPNsense reservation semantics](https://docs.opnsense.org/manual/dhcp.html#reservations): ISC mappings inside a dynamic pool can be allocated to another client while the mapped client is offline. This is separately documented from the acceptedguestblock; don't silently change/delete leases or repeat the already-correctedoverlap. Await currentLANpool/mapping details and a reviewed`.69`exclusion before staticassignment. ProbeMAC02:00:00:01:00:c7/.221mapping unverified; DNS network-probe.avril currently resolves`.221`, which alone does not prove that reservation.
+
+## Host NFS boot failure investigation
+
+At18:12UTC twofailedunits arehostmounts `/mnt/galactus-nfs` and `/mnt/media-nfs`; no root/localstoragekernelerrors. CurrentKubernetesNFS/24VolumeAttachments work and80podsRunning/78Ready/0Pending; separateunreadyworkload diagnosis needed. Reboot10:40PDT supersedes earlierinstallationclosingstate, not an agent reboot.
+
+DHCPACK`.69`/networking+network-online at10:40:26; hostmounts begin10:40:27 and timeout10:41:57. Tailscale starts10:40:20 and rewritesresolver10:40:21 to100.100.100.100/IPv6. Its actualsplitDNS forwards`avril.` to100.80.219.48, whiledefaultqueriesforward`.1`. Earlylogs show SERVFAIL andresolverconfigurationfight afterDHCPwritesDNS; iSCSIexplicitly logs `Cannot resolve host galactus.avril ... Temporary failure in name resolution`, and laterpodNFS retriesfail whilethatnameis unresolved. DNS/tailnetstartupdependencypreventsLANNASbootstrap even thoughDHCPandNASIP are usable. Currentdirect `.1` galactus/InternetDNS succeed; exportdiscoveryfromNAS`.39`works.
+
+The agreedhostDNS policy makesLAN/Internetresolutionindependent of thetailnet: checked-inresolv.conf nameserver`.1`/searchavril, tailscaleaccept-dnsfalse. Direct `.1` resolution of epsilon.coin-pangolin.ts.net returnsNXDOMAIN; host-originatingMagicDNSnamesneed a deliberatefuturepolicy ifrequired. DirecttailnetIP transport/remotetailnetclients are independent ofhostDNSacceptance. Preserve currentresolver/Tailscalepreference beforechange, prove ordinaryNAS/Internetqueries, then retryonlythefailedhostmounts. No productionPVCremount/datastoreimagepull/rclonestart/resync.
+
+## Tasks
+
+- [x] Apply/test approved hostDNS policy and restore failedhostNFS mounts.
+- [ ] Review PERC controller/logical-to-physical mapping and health before VM-storage allocation.
+- [ ] Confirm `.69` exclusion and probe`.221`mapping withJack; preserveknownISCpool/leaseconfiguration.
+- [ ] Prepare staticvmbr0/k3sroute/DNS recovery configuration, fresh protectedbackups and controlledcutover.
+- [ ] Allocate verifiedlocalfilesystem and registervm-local withmountpointchecking afterreview.
+- [ ] Stage verifiedDebianinstaller/probe199, then complete network/storage/backup acceptance.
+
+Allrawmasters/rehearsalcheckpoints/privatearchives/stoppedrestoretests remainretained. No bridgeaddressmigration, partitionformat, guestallocation or ArgoCDwrite has occurred.
+
+## DNS and host-mount acceptance
+
+Private stagingepsilon `/home/scubbo/epsilon-network-preflight-cmyza_lg` contains priorresolver/privateTailscalepreferences/scripts/JSON/logs. Verifiedtarget`.1` queries beforechange, then `tailscale set --accept-dns=false` and checked-inroot0644resolv.conf. NormalNAS/epsilon/HA/Internetresolution andverifiedDebianHTTPS200pass. Existinghostmountpointsverifiedunmounted/empty/exactexpectedexports, onlytheirunitsreset/start:bothhostNFSrestored/0failedsystemunits. KubernetesNASattachmentsunchanged; rcloneoff. Bootpersistence remains to be tested during agreedbridge/rebootstage.
+
+DirecttailnetSSHtesttimesout: workstationroute100.64.29.124 goesviaLANgateway/en0 andlocalTailscaleCLIcannotconnecttolocalservice. EpsilonTailscaleRunning/Online andallowsactualtailscale0ingress; seesMacpeerOffline. Establishes absentworkstationtailnetpath, not a hostDNS-inducedtransportfailure. Remoteactive-tailnetclient test remainspending; do not claim end-to-endtailnetacceptance. HostMagicDNSis intentionally not supplied by selected`.1`.
+
+Debian13.7netinst stagedonline792,723,456bytes/SHA256 `a7ef94ac2fb9a7fec454552abd629b7cc9d5155c886165a45649f5ce6167e355`, matchesofficialcurrentversionfilename/checksum; no guestcreated/boot. Read-onlyRACADMworkswithoutstartingHAPIservice: PERC H730firmware25.3.0.0016/statusrollupOk/cachebatteryReady, virtualVD0`VD1`465.25GB andVD1`VD2`931GB bothOnline/RAID0/noBadBlocks/redundancy0. Physicalbay1/2SSDOnline/noFailurePredicted; smartctlidentifiesSamsung870EVO500GBserialS6PXNM0TB51771J and1TBserialS75BNS0W333724M, zero realloc/uncorrectable/CRCattributes. ControllerdoesnotsupportfullSATSMARTreturn, soPASSEDisbasedonattributecheck, notfullSMARTselftest. This is **single-driveRAID0/no redundancy**, not mirroredstorage; exactVDmemberquery/durability/backupacceptance stillneededbeforeformatting. UnrelatedVaultunreadyafterits17:52restart; operatorunseal/recovery follow-up remains outside this bridge stage, nosecretrequests/unsealcommands.
+
+## DHCP change paused for validation
+
+Jack verifiesactualprimary`.10–.219`, additional`.230–.254`, epsilonfixedmapping`.69`, anotherpoolUIavailable. He raises concern that the priorpoolchange causedmulti-dayrecovery andasksforevidenceofsafety. **Pausepool/bridgecutover; no routerwrite hasoccurred.** Previousincidenthasdecisiveoperator-suppliedISCparserlog `lease192.168.1.251isdeclaredtwice`, equivalent`.252/.253/.254`, then `Configurationfileerrorsencountered--exiting`; this provesDHCPconfigrejectionbutdoesnotindividuallyexplainallsubsequentapplicationdamage. Avoid absolutezero-riskclaims.
+
+Read [OPNsense25.7ISCgenerator](https://raw.githubusercontent.com/opnsense/core/stable/25.7/src/etc/inc/plugins.inc.d/dhcpd.inc) and [ISCUIhandler](https://raw.githubusercontent.com/opnsense/core/stable/25.7/src/www/services_dhcp.php). Thatversioncallsreconfigureafter**Save**, stopsdaemonbeforewritinggeneratedconfig, anddoesnotrunanexplicit`dhcpd -t`preflightinthatpath. Installedrouterversionunverified; donotassumeaSave-onlystagingstepisnon-disruptive. Beforeanotherlivechange, identifyinstalledversion/savebehaviour, preserveprivateworkingconfig+leaseDBandoperatorrestorepath, testanexactcandidatecopywith**router'sownISCbinary**whilelivedaemonruns. Independentlyreviewallrangeoverlaps/only`.69`removed/unchangedsettings+leasehandling, thenagreeprotectedmaintenance/applicationstoragequiescenceandboundedrestore ifDHCPdoesnotcomeup. Verifydaemonandrealordinary-clientACKratherthanleasepagerowsalone. CurrentworkingrangesmuststayuntilJackreviewspreflightproof/rollback andexplicitlyapprovesapply; selectingstaticaddressinsideexistingdynamicpooldoesnotresolveconflict.
+
+Independent address-set calculation confirmsold235/new234dynamicaddresses, only`.69`removed, no pairwiseoverlap and`.220–.229`stilloutside. This provesrange-arithmeticonly, notactualgeneratedconfig/parser/daemonstart/leases. [ISCdhcpdmanual](https://kb.isc.org/docs/isc-dhcp-44-manual-pages-dhcpd) defines`-t`asconfigurationtestwithnonetworkoperations;`-T`testsleaseswithtemporaryoutputwithoutmodifyingcurrentleasefile. Testprivatecopieswithinstalledbinary/version/chroot/includecontext identifiedfirst. OPNsense25.7alsoinvokes [static-leasecleanup](https://raw.githubusercontent.com/opnsense/core/stable/25.7/src/opnsense/scripts/dhcp/cleanup_leases4.php) duringreconfigure; changingfailoverconfigurationhasseparateleaseDBdeletionlogicinUIhandler. Keepfailoverandotheroptionsunchanged, preserveleaseDBprivately andverifyinstalledbehaviour. Syntaxacceptance is a gate, notzero-riskorend-to-endproof.
+
+Network-stagepriorresolver/preferences/PERC/mount/script/acceptancerecords are copied/hashverified toprivateculex `/home/scubbo/epsilon-recovery.mVvt2ir2/network-preflight-20261009.vU2O84xo`. ISOretainedonepsilononly; no deletionorprivatepreferencecontentinGit. Routerexactversion/config/candidate/leasebackup/validation notyetobtained. Existingworkingrouterpoolsremainunchanged andstaticbridge remainsblocked.

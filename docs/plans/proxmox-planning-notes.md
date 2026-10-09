@@ -46,6 +46,10 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Complete Proxmox management transaction and verification reboot; record deployed version/access/recovery and release installation ownership.
 - [x] Jack verifies interactive Proxmox UI login; expected no-subscription notice explained.
 - [ ] Verify named-administration access; agree static bridge/router/resolver policy and dedicated VM storage/probe execution.
+- [ ] Execute bridge/storage/probe preparation in Jack's notified next-stage window; resolve router`.69` exclusion before staticassignment.
+- [ ] Resolve intentionalreboot's hostNFS DNSbootstrap failures with selectedOPNsenseDNS/Tailscaleownership andverifyhostmountrecovery.
+- [x] Apply approved OPNsense hostDNS/TailscaleacceptDNSfalse and restore both failedhostNFS mounts without productionCSI changes.
+- [ ] Obtain installedrouterversion/privateexactDHCPcandidateparserandleasevalidation/rollbackproof before Jack's livepoolchange decision.
 - [x] Reproduce default Proxmox-kernel/NVIDIA incompatibility before physical interruption; review proprietary580 support and artifact provenance.
 - [x] Rehearse the verified NVIDIA580 upstream installer/DKMS and Proxmox-kernel boot in the isolated clone; review warnings and physical driver maintenance with Jack.
 - [x] Complete bounded clone Proxmox-kernel boot, upstream-installer/DKMS, fallback-kernel build, local SSH and captured-datastore checks; preserve shut-off checkpoint and diagnostics.
@@ -89,6 +93,10 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Verify epsilon iDRAC or physical boot-console access before its rescue-imaging outage.
 
 ## Operator UI acceptance
+
+NextstageOctober9:Jack"keepgoing" afterUIlogin; intentional10:40PDTreboot/windowactive/noothermaintenance/rootauthenticatedconfirmed. Physicalbaseline2failedhostNFSmounts/24healthyattachments80Running78Ready; selectedspareWWNsame999653638144/emptylayout. ActualTailscalesplitDNSavril→100.80.219.48 earlySERVFAIL/iscsidhostresolutionfail/NFStimeoutsrootcausetailnetDNSbootstrap. JackselectsOPNsense.1+acceptDNSfalse, direct.1NASInternetpass/hostMagicDNStsNXDOMAINknown. Router69stillinside recordedISC10–219mapping not reliableexclusion; Jackthoughtmappingenough, clarifyofficialsemantics/awaitactualpoolmapping beforestaticbridge. No disk/bridge/clusterwrites. [Stage](../../agentic-investigations/2026-10-09-epsilon-bridge-storage.md).
+
+DNS/mountfollowup:rootUID0verifiedafterinitialzsh/notauthenticated; privateepsilon-network-preflight-cmyza_lg priorresolver/TSprefs captured→approvedacceptDNSfalse/.1resolvernormalLANInternetTLS200pass, exactfailedhostmountsunmountedempty→start2NFSunits/restored0failed/rcloneoff/CSIunchanged. DirectTSIPtimeoutrootcauseMaclocalTSnotrunning/routeviaLAN/en0/hostselfOnlineMacOffline, remoteTSverificationpendingnotclaimed. VerifiedDebianinstaller792723456Bhasha7ef... readyonline. PERC H730statusOk/batteryReady/2VDOnlineRAID0noBadblocks/redundancy0; Samsung870EVO500/1TB physicalSMARTattributesclean/fullSMARTstatusunsupported. JackconfirmsISC10–219/230–254/.69mapping thenraisespastoutagesafety→PAUSErouterbridgewrites/noactualchange. Prioroperatorparserduplicatelease+exitproofreferenced/notallappdamageexplained. Read25.7UI/generator:SaveimmediateDHCPstop/regenerate/start/noexplicitpreflight; installedrouterversionunknown. Needownbinaryexactcandidate`-t`privatebackupconfigleases/operatorrollback/rangeproof/protectedNASwriters/clientACK beforeapplydecision. RecordVaultunready17:52restartedoperatorunsealfollowup, nosecretscommands. [Paused validation](../../agentic-investigations/2026-10-09-epsilon-bridge-storage.md#dhcp-change-paused-for-validation).
 
 October9 operator follow-up: Jack confirms successful Proxmox web login and reports the no-valid-subscription popup. This matches the selected no-subscription deployment; the notice does not restrict VM operation. Signed repository updates remain available; enterprise source is disabled. No credentials, password-setting outcome, named-admin permission test or subscription purchase is recorded.
 
