@@ -1,6 +1,6 @@
 # Epsilon Debian maintenance
 
-**Status: physical Trixie package transactions, SSH recovery and preboot checks passed; normal reboot and production acceptance next.** PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
+**Status: physical Debian13.7/kernel6.12.111 boot and production core/GPU/persistence checks passed. Final privileged APT/fstab acceptance and source-file permission correction await a recreated root shell.** PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
 
 ## Evidence and remaining checks
 
@@ -758,6 +758,22 @@ Independent privileged preboot checks pass:
 - Rclone timer remains disabled/inactive, bisync process0. No agent resync/re-enable or cloud/local file operation. All production services remain stopped, node cordoned and remote volumes released.
 
 Package diagnostics retained include80 nonempty-directory usrmerge messages, expected os-prober and transient NVIDIA alternative-link warnings; final audit/module/configuration checks pass rather than treating those logs as warning-free. Full-install389,578-byte typescript/preboot scripts/logs/results are preserved mode0600 off-host in this window's protected culex staging. **Next normal reboot into6.12.111, verify actual physical boot/SSH/NIC/storage/GPU/datastore/API/culex before scheduling/runner/workload restoration.** No Proxmox installation has started.
+
+#### Physical Debian 13 boot and restored service checks
+
+Normal reboot returns fresh trusted SSH at **04:17:51UTC**, **Debian13.7 / `6.12.111+deb13-amd64`**. Physical `eno1`/MAC/.69/default route unchanged, fresh LAN and direct tailnet SSH both pass. P1000 responds with driver550.163.01. k3s, PostgreSQL, Docker, cron, Ollama, SSH, Tailscale and NVIDIA persistence are active; zero failed system units. ESP/data/normal host NFS mounts restored, root/data ext4 error counts0, no temporary policy-rc.d or runtime maintenance marker remains. Normal APT timers are active/waiting again. Rclone timerdisabled/inactive, serviceinactive/no process, retained for Jack's manual recovery.
+
+PostgreSQL17.5 uses the exact recorded image and recognizes **03:53:41 clean shutdown**; readiness/SQL/advancing kine revisions and both server clients pass. Two startup absent-`key_value` table-count errors match prior startup behaviour, with no sampled ERROR/FATAL/PANIC in subsequent3minutes; no recovery/restore/image pull needed. Culex k3s active/fresh heartbeat, API readyz passes. Agent uncordoned epsilon only and explicitly restarted retained `great_herschel`:GitHubconnected/listening, no testCIjob, baseline already-configured startup message retained.
+
+At **04:20UTC**, all24 VolumeAttachments attached/error-free, **80 Running/79 Ready/zero Pending** (known Lidarr failure only). Twelve checked service endpoints return200, including Jellyfin internal/public health and arr/Ombi/Immich/Authentik/Tdarr/Prometheus. Jellyfin applicationUID1000/configcreate-write-fsync-read-delete and synthetic H.264 NVENC encode pass; Tdarr3configpaths/fsyncreadback and internal-node/H.264/HEVC NVENC tests pass. No filesystem last-error timestamps advance beyond recorded October6 history. Prometheus52freshsamples/maxage30seconds; Valkey868successfulRDBsaves/statusok. Actual user playback/media jobs/login/import and NAS offline integrity remain separately tracked acceptance.
+
+Boot-error evidence is explained without declaring the journal pristine:
+
+- Dell ACPI/IPMI handler and one early PAM access-denial messages are also present on the prior Bookworm boot; subsequent authenticated SSH succeeds. No ACPI/PAM configuration change was made.
+- Trixie `nfs-blkmap.service` is active/successful but logs one startup missing `/run/rpc_pipefs/nfs/blocklayout`. Observed mounts have **`pnfs=not configured`**; normal NFS4.2 paths/readiness pass. The helper handles pNFS block layouts, and [upstream code](https://raw.githubusercontent.com/linux-nfs/nfs-utils/master/utils/blkmapd/device-discovery.c) logs the absent pipe and waits for its creation rather than exiting. This is not evidence of a failed NAS mount or filesystem write. No production NFS-helper disable/restart/remount was introduced to conceal the message; review its unnecessary activation as a separate operational follow-up.
+- `/etc/apt/sources.list.d/debian.sources` was created mode0600 under the private staging umask, causing an unprivileged APT permission warning. It contains only public repository/keyring definitions and should be mode0644 like active APT sources. The final root acceptance script corrects this and rechecks APT dependencies/holds/fstab/current boot storage logs/normal services/runtime versions/rcloneoff. Root tmux ended at reboot and must be authenticated again before that fix/check can run; no permission change has yet been applied.
+
+Private guest-host record `physical-core-acceptance.json` is saved in current epsilon staging; privileged `accept-trixie-host.sh` is prepared but not executed. Production services are restored while waiting; **the OS upgrade has booted successfully, but do not claim the final privileged acceptance is complete.** Preserve the current SQL/config/log/checkpoint artifacts and exact runtime constraints; Proxmox installation remains a separate reviewed stage.
 
 Jack sends this after the rehearsal establishes a realistic window:
 

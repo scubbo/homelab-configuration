@@ -1,6 +1,6 @@
 # k3s outage recovery handoff
 
-**Status: physical Trixie transactions, SSH recovery and preboot checks passed; reboot/production acceptance next.** Updated October9,2026. Epsilon cordoned/drained/datastore cleanly stopped. Do not run overlapping maintenance. Backup/restore coverage, offline filesystem/workflow acceptance remain follow-ups; rclone stays offline for Jack and Lidarr retains its known failure. This is the execution plan for the agent receiving Jack's recovery handoff for the [HAOS/Proxmox migration](homeassistant-vm-migration.md).
+**Status: physical Debian13 boot/core/GPU/persistence recovery passed; final privileged APT/fstab acceptance and source-permission correction pending.** Updated October9,2026. Epsilon schedulable/services restored; migration still owns the window until final acceptance. Backup/restore coverage, offline filesystem/workflow acceptance remain follow-ups; rclone stays offline for Jack and Lidarr retains its known failure. This is the execution plan for the agent receiving Jack's recovery handoff for the [HAOS/Proxmox migration](homeassistant-vm-migration.md).
 
 ## Start here
 
@@ -37,6 +37,8 @@ At04:06UTC Jack confirms the existing SSH/tmux transport remains live and full u
 At04:08UTC Jack supplies full transaction success markers/exit0/root prompt. New SSH still resets; read-only daemon/configuration diagnostics can now run in that root shell. Await diagnostics/access/preboot checks before reboot; no new APT transaction is required and maintenance ownership remains with the migration agent.
 
 Jack's SSH config check/journal `-R not supported here` identify unrestarted9.2listener/replaced10binary incompatibility. Jackrestart validatedSSH restores fresh access04:11:53UTC. Agent verifies resultfile0 plus physicalDKMS/kernelheaders/PERCNICdrivers/EFI/eno1sameMAC/normalautoload/fstab/runtime/image/SSH; policy archived/rcloneoffline/Dockerrestopped/no datapull. Full result/prebootrecords preserved off-host. [Preboot acceptance](epsilon-debian-upgrade.md#physical-trixie-preboot-acceptance-and-ssh-recovery). Reboot/production restoration remain next; migration owns window.
+
+Physical Trixie boot04:17:51UTC succeeds:Debian13.7/kernel6.12.111/GPU550.163/LANandtailnetSSH/PG17.5sameimagecleanstartup/hostmounts/API/bothservers. Epsilon uncordoned/CIrunning;80Running79ReadyknownLidarronly/24healthyattachments/HTTP/configfsync/GPUtests/persistence pass, rcloneoff. Final sourcepermission644 fix/privileged APT-fstab-journal acceptance awaits root tmux recreation. One pNFS-blocklayout helper startup message occurs despite active service; mounts reportpnfsnotconfigured and upstream waits for absent pipe, no storage failure or helper disable justified. [Restored checks](epsilon-debian-upgrade.md#physical-debian-13-boot-and-restored-service-checks). No overlapping live changes before migration releases window.
 
 ## Verified baseline and remaining uncertainty
 
