@@ -1,6 +1,6 @@
 # Epsilon Debian maintenance
 
-**Status: physical Bookworm patch, reboot and core service/GPU/persistence checks passed; privileged acceptance and Trixie execution await Jack's recreated root tmux shell.** This proves routine physical-node maintenance independently of [Proxmox installation](proxmox-installation.md). Jack accepts downtime. PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
+**Status: paused at Jack's request; maintenance window closed. Physical epsilon is serving on Debian12.15/kernel6.1.0-53 after Bookworm patch/reboot/core checks. Physical Trixie has not started and requires another agreed window.** PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
 
 ## Evidence and remaining checks
 
@@ -705,6 +705,14 @@ Private `bookworm-physical-acceptance.json` is preserved locally/off-host in the
 **Obsidian/Dropbox rclone remains offline by Jack's instruction.** User-service journal inspection found repeated missing prior Path1/Path2 listings; prior boots, including pre-imaging October7, contain the same errors. This predates Bookworm patching and does not indicate a damaged OS restore. User timer `rclone-bisync-obsidian.timer` (normally every5minutes) was disabled/stopped at **00:49UTC** and `rclone-bisync-obsidian.service` stopped;00:50 verification shows timerdisabled/inactive, serviceinactive/MainPID0 and no rclone process. Stop verification initially mistook retained failed state for a running service and requested MainPID for a timer; actual process/service checks establish it is offline. Journal evidence is preserved. **Do not start/re-enable/resync it during host recovery or after the Trixie reboot. Jack will recover it manually later**, tracked in [TODO](../../TODO.md) and the recovery handoff. No Dropbox/local vault files, credentials or sync listings were modified. Private `rclone-followup.json` records the instruction.
 
 Other sampled boot-error messages are Dell ACPI/IPMI handler errors and one transient PAM login denial during initial startup; their causes/baselines remain to be reviewed before claiming the entire boot journal clean. They do not negate successful subsequent LAN login, healthy system services or GPU acceptance. Trixie must not silently reset or conceal those observations.
+
+#### Maintenance window closed; upgrade paused
+
+Jack says the upgrade window expired and explicitly requests holding further work. Closing read-only check at **October9 01:26UTC** confirms physical epsilon remains Debian12.15/kernel6.1.0-53, schedulable/Ready, k3s/datastore/Docker/cron/Ollama/SSH/Tailscale active, PostgreSQL accepting connections, normal ESP/data/NFS mounts present and zero failed system units. Retained CI runner is running; automatic APT timers have returned to their normal active/waiting state after reboot. Rclone timer remains **disabled/inactive** and its service stopped as Jack requested. No temporary package-start policy or `/run/epsilon-upgrade` gate remains. Rasnu1 retains its existing cordon.
+
+**The maintenance window and migration-agent maintenance ownership are closed. No physical Trixie source switch, transaction or reboot has started.** Do not resume from a root shell or prepared script merely because access becomes available; agree another notified window with Jack first. Preserve the master, rehearsal checkpoints, SQL/configuration backups, stopped restore tests, installed runtime preference and maintenance records. No host/cluster cleanup or further live changes were performed while closing the window.
+
+Resume with fresh baseline/console/privileged-access checks, remaining privileged Bookworm journal/fstab acceptance, current datastore/service recovery artifacts and a new source/package simulation against the rehearsed runtime constraints. Production datastore writes since the preserved checkpoints make casually restoring an earlier full image inappropriate. NAS integrity/workflow findings remain Jack's accepted follow-ups for the elapsed window; discuss the next window's acceptance with him. Rclone recovery/re-enable stays **Jack-owned and explicitly deferred**.
 
 Jack sends this after the rehearsal establishes a realistic window:
 
