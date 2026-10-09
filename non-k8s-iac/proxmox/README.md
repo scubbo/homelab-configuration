@@ -16,6 +16,8 @@ Native [`qm.conf`](https://pve.proxmox.com/pve-docs/qm.conf.5.html) manifests re
 
 ### Host configuration draft
 
+[`host/nvidia-persistenced.service`](host/nvidia-persistenced.service) preserves epsilon's existing persistence unit and `nvpd` identity for the approved upstream580 driver conversion. [`host/nvidia.conf`](host/nvidia.conf) preserves `nvidia-drm` autoload at `/etc/modules-load.d/nvidia.conf`; [`host/nvidia-driver.conf`](host/nvidia-driver.conf) keeps nouveau blacklisted at `/etc/modprobe.d/nvidia-driver.conf`. The upstream installer/DKMS artifact is manually maintained; [compatibility evidence](../../agentic-investigations/2026-10-09-epsilon-proxmox-nvidia.md) records Jack's warning acceptance, checksums and rehearsal. These files require reviewed host installation, not ArgoCD deployment.
+
 - [`host/interfaces`](host/interfaces): proposed static `.69` LAN bridge on `eno1`, preserving the interfaces.d include. Merge only after inspecting execution-time host configuration and reserving `.69`; its deployment changes live management networking.
 - [`host/hosts.fragment`](host/hosts.fragment): host name resolution independent of Kubernetes; merge with existing localhost/IPv6 entries, not replace the entire file.
 - [`host/fstab.fragment.in`](host/fstab.fragment.in): `/mnt/proxmox` ext4 mount with filesystem UUID still unresolved pending allocation. Jack's privileged disk probes reported no recognized signatures; the filesystem has not been created. This is not a disk-format command.
