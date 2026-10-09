@@ -668,6 +668,14 @@ ssh -t scubbo@epsilon.avril \
 
 Enter the existing sudo password locally and leave the shell at its root prompt; keep iDRAC HTML5 available. Agent checks pane identity before sending commands and maintains private command/result logs. If the session already exists, inspect/attach it instead of starting competing package work. A root shell must be established before drain so restoration/package commands are available during downtime; no workload/service stop is initiated merely to wait for access.
 
+#### Privileged preparation and accepted runtime constraint
+
+Jack confirms logged-in iDRAC Debian console and authenticated `epsilon-upgrade` root tmux. At October9 00:06UTC pane root identity/command check passed. Agent created fresh **`host-service-recovery.tar`**,5,785,600bytes/SHA256 `ea4d09ed340017b6d91507a661d3ef7a4f0eb8e2dd8ecbf6e7cbbf41547d3617`, containing `/etc` (including APT/network/service config), required token/TLS/credential paths and datastore service files. Private local/off-host copies and required-member/hash checks pass; fresh GPT/EFI/current-source copies retained alongside. No secret/archive contents printed. Privileged fstab validation passes.
+
+Physical Bookworm security binary/source lines now include matching `contrib/non-free`; original source is preserved. Automatic APT timers stopped for maintenance. Signed refresh/simulation exits0 with307 upgrades/3 additions/0 removals/0 held back, no warning/errors. Fresh Docker repository candidates have advanced to Docker29.9.0/containerd2.4.1 beyond the Bookworm rehearsal. **Jack explicitly selects the rehearsed versions**, recorded in [runtime preference intent](../../non-k8s-iac/debian/epsilon/runtime.pref), installed at `/etc/apt/preferences.d/epsilon-runtime`: BookwormDocker29.8.2/containerd2.3.6 and TrixieDocker29.9.0/containerd2.3.6, Compose5.6.0/Buildx0.38.0. Fresh pinned simulation still307/3/0/0 and selects the accepted runtime versions. This is a retained APT constraint, not a temporary unnoticed hold; revise it through reviewed maintenance when runtime updates are rehearsed.
+
+Interactive download-only full-upgrade runs in the authenticated tmux with a private typescript/result marker. Host workloads remain running while718MB downloads; repository stalls/retries are observed. No drain/package install begins before successful download completion. CI runner and volume release are rechecked at shutdown time; no assumption that an earlier idle check lasts throughout the download.
+
 Jack sends this after the rehearsal establishes a realistic window:
 
 > Jellyfin will be unavailable on **[date] [start–end] [timezone]** while I update its physical host. Streaming/playback may disconnect, and other homelab services may pause. I’ll send an update when service is restored; if rollback is needed, the window may extend to **[deadline]**.

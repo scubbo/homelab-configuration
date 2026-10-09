@@ -22,6 +22,8 @@ The post-transfer verification SSH failed, but retained data was complete; match
 
 **Physical maintenance ownership active October8,23:46UTC:** Jack authorizes epsilon's OS update, users notified/no concurrent agents. Jack accepts pending NAS filesystem/backup-workflow findings after clarification; those checks are still tracked, not passed. Migration agent stages fresh protected SQL/roles/container metadata off-host, awaiting Jack's authenticated root tmux/console before drain or package writes. Epsilon remains production/schedulable at this checkpoint. [Physical window](epsilon-debian-upgrade.md#physical-maintenance-window-opened-october-8) records current access/artifacts. No overlapping controller/storage/host maintenance until migration acceptance releases this window.
 
+October9 00:06UTC Jack confirms iDRAC/login/root tmux; token/config/APT/GPT/EFI backup now verified off-host. Physical Bookworm security components corrected; automatic APT timers stopped. Jack selects exact rehearsed Docker/containerd versions despite newer vendor candidates, retained in versioned runtime preference. Download-only package preparation runs while epsilon remains serving/schedulable; drain/clean datastore stop/install/reboot/acceptance follow successful download. [Privileged checkpoint](epsilon-debian-upgrade.md#privileged-preparation-and-accepted-runtime-constraint).
+
 ## Verified baseline and remaining uncertainty
 
 ### What happened and what is restored
