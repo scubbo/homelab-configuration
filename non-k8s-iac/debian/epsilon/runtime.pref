@@ -1,0 +1,23 @@
+Package: docker-ce docker-ce-cli docker-ce-rootless-extras
+Pin: version 5:29.8.2-1~debian.12~bookworm
+Pin-Priority: 1001
+
+Package: docker-ce docker-ce-cli docker-ce-rootless-extras
+Pin: version 5:29.9.0-1~debian.13~trixie
+Pin-Priority: 1001
+
+Package: containerd.io
+Pin: version 2.3.6-1~debian.12~bookworm
+Pin-Priority: 1001
+
+Package: containerd.io
+Pin: version 2.3.6-1~debian.13~trixie
+Pin-Priority: 1001
+
+Package: docker-compose-plugin
+Pin: version 5.6.0-1~debian.*
+Pin-Priority: 1001
+
+Package: docker-buildx-plugin
+Pin: version 0.38.0-1~debian.*
+Pin-Priority: 1001
