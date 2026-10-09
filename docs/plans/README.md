@@ -6,6 +6,8 @@ Active plans describe proposed work, dependencies, execution steps, and acceptan
 
 Jack selected Proxmox on epsilon's upgraded Debian installation. Practice physical-host maintenance first; keep physical k3s/pods while preparing distinct general-purpose and GPU guests. The SQL datastore's HA design is investigated independently of the accepted-downtime upgrade.
 
+Physical epsilon now boots Debian13.7/kernel6.12.111 with restored core/GPU/persistence checks; [final privileged Debian acceptance](epsilon-debian-upgrade.md#physical-debian-13-boot-and-restored-service-checks) remains pending. Proxmox/guests/HAOS are not deployed. Jack's Obsidian/Dropbox rclone recovery stays manually deferred and offline.
+
 1. [Host-selection decision](proxmox-host-selection.md).
 2. [Epsilon Debian upgrade: assessment, rehearsal, and execution](epsilon-debian-upgrade.md).
 3. [k3s PostgreSQL HA investigation](k3s-postgres-ha.md).
