@@ -24,6 +24,8 @@ The post-transfer verification SSH failed, but retained data was complete; match
 
 October9 00:06UTC Jack confirms iDRAC/login/root tmux; token/config/APT/GPT/EFI backup now verified off-host. Physical Bookworm security components corrected; automatic APT timers stopped. Jack selects exact rehearsed Docker/containerd versions despite newer vendor candidates, retained in versioned runtime preference. Download-only package preparation runs while epsilon remains serving/schedulable; drain/clean datastore stop/install/reboot/acceptance follow successful download. [Privileged checkpoint](epsilon-debian-upgrade.md#privileged-preparation-and-accepted-runtime-constraint).
 
+Physical Bookworm packages installed/preboot accepted October9:epsilon cordoned/drained, all remote volumes released, post-drain SQL verified off-host and production PostgreSQL shutdown checkpoint00:27:23UTC verified. Local DaemonSet runtime tasks and Docker/GPU consumers stopped with the recorded helper-specific exit exceptions. Shared API/datastore unavailable during planned outage; SSH/iDRAC available.307 upgrades/3 adds/0 removals exit0; preboot kernel/DKMS/EFI/fstab/runtime/image/SSH pass. Reboot/physical acceptance pending; no Trixie transaction or NAS repair started. [Current checkpoint](epsilon-debian-upgrade.md#physical-bookworm-installed-reboot-pending-october-9). Migration owns maintenance; no overlapping writes.
+
 ## Verified baseline and remaining uncertainty
 
 ### What happened and what is restored
