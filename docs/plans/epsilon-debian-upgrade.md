@@ -1,6 +1,6 @@
 # Epsilon Debian maintenance
 
-**Status: physical Trixie full upgrade progressing through proprietary NVIDIA DKMS builds in Jack's existing tmux session. New SSH connections reset before banner; console diagnosis needed, transaction completion/preboot acceptance pending. Do not interrupt or reboot.** PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
+**Status: physical Trixie package transactions, SSH recovery and preboot checks passed; normal reboot and production acceptance next.** PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
 
 ## Evidence and remaining checks
 
@@ -739,6 +739,25 @@ At **04:03UTC** direct laptop and culex TCP22 connections both receive EOF; both
 Jack's iDRAC console provides recovery access. Next read-only diagnostic checks: `sudo /usr/sbin/sshd -t` and recent `journalctl -u ssh` to establish whether the upgraded daemon/configuration is valid and why its existing parent rejects new sessions. A service restart is a separate minimal fix after those observations, not a presumed answer. Once normal SSH works, inspect/answer the retained conffile prompt, wait for existing transaction completion and perform reviewed DKMS/kernel/header/EFI/NIC/SSH checks before normal reboot. Shared API/datastore remain intentionally stopped and epsilon cordoned during this unresolved upgrade.
 
 **04:06UTC operator correction:** Jack's existing tmux/SSH session is live and shows NVIDIA550.163.01 built/signed/installed for6.1.0-31, now building for6.1.0-53. Full transaction has progressed beyond the conffile prompt; the agent's last prompt observation is stale, not evidence of a stopped upgrade. Who answered the prompt/which option has not been recorded. No transaction retry or reboot is justified. Fresh laptop/culex TCP22 probes both still receive EOF before banner; new laptop SSH reports key-exchange connection reset. Existing accepted SSH transport/remote tmux survival can coexist with failure to establish new SSH transports. Diagnose new-session access in a separate iDRAC shell, leaving the running build untouched. Await actual full transaction result and inspect conffile outcome/preboot checks before restarting production or rebooting.
+
+**04:08UTC full transaction result supplied by Jack:** output ends `PHYSICAL_TRIXIE_FULL_PASS` / **`PHYSICAL_FULL_INSTALL_EXIT=0`** / authenticated root prompt. needrestart lists stopped/deferred services and outdated session binaries, consistent with retained maintenance state and an unrebooted host; these lists do not themselves prove fresh daemon access or preboot readiness. No retry of APT is needed. Agent's fresh laptop TCP22 still receives EOF/new SSH resets before banner. Jack can now run `/usr/sbin/sshd -t` and `journalctl -u ssh -n 30 --no-pager` in the existing root tmux without interrupting a package transaction. Agent awaits actual daemon/configuration diagnostics before choosing a restart, then verifies physical packages/DKMS/EFI/NIC/mounts/temporary-policy removal and rclone-off state before reboot. Full exit is operator-reported; result file/typescript and qemu.conf decision remain to be inspected after access returns.
+
+#### Physical Trixie preboot acceptance and SSH recovery
+
+Jack supplies **`SSHD_CONFIG_OK`** and journal errors **`-R not supported here`** for new connections. This establishes an old running OpenSSH listener re-executing the replaced `sshd` with its internal `-R` option. OpenSSH9.2's re-exec path launches `sshd`;10.0 uses `sshd-session` and rejects `-R` in `sshd`. Package-start policy had intentionally deferred daemon restart while replacing binaries. Existing sessions stayed alive; this is not a network/password/host-key problem. Source references: [OpenSSH9.2](https://raw.githubusercontent.com/openssh/openssh-portable/V_9_2_P1/sshd.c), [OpenSSH10.0](https://raw.githubusercontent.com/openssh/openssh-portable/V_10_0_P1/sshd.c).
+
+After configuration validation, Jack runs `systemctl restart ssh.service` in his authenticated shell. **04:11:53UTC** fresh trusted LAN SSH succeeds, service active/new start timestamp and full-install result file0 confirmed. No configuration/trust relaxation was needed. Read-only conffile inspection initially lacked permission; the root tmux inspection establishes maintainer `/etc/libvirt/qemu.conf` active directives empty and `.dpkg-old` retained. The local UID/GID settings were not retained as in rehearsal; no defined physical guest depends on them, and the original configuration remains in both archive and `.dpkg-old`. Do not claim agent chose the prompt answer.
+
+Independent privileged preboot checks pass:
+
+- Clean package audit/dependencies/no holds; full/minimal transaction results0 and no unresolved package-failure markers. Installed Docker29.9.0/containerd2.3.6/Compose5.6.0 match accepted constraints.
+- Proprietary NVIDIA550.163.01 modules installed for6.1.0-31,6.1.0-53 and6.12.111; matching headers/kernel/initramfs present. New initramfs includes `megaraid_sas`, `tg3`, `sd_mod`, `ext4`. Physical NVIDIA autoload remains `nvidia-drm`, not the GPU-less clone mask.
+- `udevadm test-builtin net_setup_link` preserves **eno1**, actual MAC14:18:77:28:11:0c. EFI Boot0006/order still references expected Debian shim/ESP; fstab validation passes with zero failed system units. Existing kernels retained.
+- Brief manual Docker start verifies exact local PG17.5 image, no auto-started workloads and quiet Compose parse; daemon/socket/containerd then stopped again. No image pull/datastore start.
+- Canonical Debian archive `.pgp` keyring adopted after package installation; local sysctl fragments preserved. Temporary policy-rc.d archived privately before reboot; runtime-only maintenance gates clear at reboot.
+- Rclone timer remains disabled/inactive, bisync process0. No agent resync/re-enable or cloud/local file operation. All production services remain stopped, node cordoned and remote volumes released.
+
+Package diagnostics retained include80 nonempty-directory usrmerge messages, expected os-prober and transient NVIDIA alternative-link warnings; final audit/module/configuration checks pass rather than treating those logs as warning-free. Full-install389,578-byte typescript/preboot scripts/logs/results are preserved mode0600 off-host in this window's protected culex staging. **Next normal reboot into6.12.111, verify actual physical boot/SSH/NIC/storage/GPU/datastore/API/culex before scheduling/runner/workload restoration.** No Proxmox installation has started.
 
 Jack sends this after the rehearsal establishes a realistic window:
 
