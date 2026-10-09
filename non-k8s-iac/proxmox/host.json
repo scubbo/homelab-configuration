@@ -1,5 +1,5 @@
 {
-  "status": "planned",
+  "status": "kernel installed; management installation active; guests planned",
   "physical_host": "epsilon",
   "hypervisor": {
     "hostname": "epsilon",
@@ -32,9 +32,29 @@
       "suite": "trixie",
       "key_url": "https://enterprise.proxmox.com/debian/proxmox-archive-keyring-trixie.gpg",
       "key_sha256": "136673be77aba35dcce385b28737689ad64fd785a797e57897589aed08db6e45",
-      "reviewed_package_versions": null
+      "reviewed_package_versions": {
+        "proxmox-default-kernel": "2.1.0",
+        "proxmox-kernel-7.0.14-23-pve-signed": "7.0.14-23",
+        "proxmox-headers-7.0.14-23-pve": "7.0.14-23",
+        "pve-firmware": "3.18-7",
+        "proxmox-ve": "9.2.0",
+        "pve-manager": "9.2.21",
+        "pve-qemu-kvm": "11.0.3-4",
+        "ifupdown2": "3.3.0-1+pmx12",
+        "apparmor": "4.1.1-pmx1"
+      }
     },
-    "installed_version": null
+    "installed_version": null,
+    "running_kernel": "7.0.14-23-pve",
+    "gpu_driver": {
+      "version": "580.178.04",
+      "module_type": "proprietary",
+      "installation_method": "NVIDIA upstream installer with DKMS",
+      "url": "https://download.nvidia.com/XFree86/Linux-x86_64/580.178.04/NVIDIA-Linux-x86_64-580.178.04.run",
+      "sha256": "5975a86ee45bffcb626f51ae33d1169b108186a2ea47ad651e72f13fa4b6d6f9",
+      "fallback_kernel": "6.12.111+deb13-amd64",
+      "update_policy": "manually reviewed artifact and DKMS/boot/GPU acceptance"
+    }
   },
   "guests": {
     "100": {
