@@ -14,7 +14,11 @@
     "filesystem": "ext4",
     "vm_storage": "vm-local",
     "vm_storage_path": "/mnt/proxmox",
-    "vm_storage_uuid": null,
+    "vm_storage_uuid": "443ddd4e-511c-4726-b481-8af641099740",
+    "vm_storage_partition_uuid": "7ACB3EE1-6ECC-4A39-8E01-85B229192448",
+    "vm_storage_gpt_uuid": "F3D6D65F-1BEC-4201-A7F8-B1F4A3CDCCFC",
+    "vm_storage_raid": "single physical bay2 SSD/RAID0; no redundancy",
+    "vm_storage_acceptance": "mounted ext4 write/fsync/read/delete; unmounted directory storage inactive; remounted active; verified Debian ISO uploaded",
     "storage_candidate_wwn": "0x614187703cb534002c7d389b1499c8ab",
     "storage_signature_check": "Jack ran privileged wipefs --no-act and blkid -p; no signatures reported",
     "reserved_memory_mib": 8192,
@@ -110,7 +114,7 @@
       "name": "network-probe",
       "manifest": "vms/199-network-probe.conf.in",
       "ipv4": "192.168.1.221",
-      "address_validation": "Jack confirmed ISC pool exclusion; probe static mapping/lease verification pending",
+      "address_validation": "Jack confirms pool exclusion and MAC02:00:00:01:00:c7 mapping to .221/hostname network-probe on October9; guest lease acceptance pending",
       "address_assignment": "temporary OPNsense DHCP reservation",
       "os": "Debian 13 amd64",
       "purpose": "network and storage acceptance before production guests"
@@ -136,12 +140,14 @@
   "router": {
     "dhcp_backend": "ISC DHCPv4 [legacy]",
     "current_dynamic_pools": [
-      {"start": "192.168.1.10", "end": "192.168.1.219"},
+      {"start": "192.168.1.10", "end": "192.168.1.68"},
+      {"start": "192.168.1.70", "end": "192.168.1.219"},
       {"start": "192.168.1.230", "end": "192.168.1.254"}
     ],
     "project_range_conflict_check": "Jack reports no existing assignments in 192.168.1.220-229",
     "project_range_exclusion_status": "Jack corrected overlapping pools on 2026-10-05; 192.168.1.220-229 outside dynamic pools",
-    "dhcp_service_validation": "duplicate-range startup failure confirmed in server log; culex fresh 192.168.1.13 lease observed at 2026-10-06T00:00:11Z after correction; host/NAS/HA network access restored"
+    "dhcp_service_validation": "Jack confirms three nonoverlapping pools and .69/probe mappings on October9; epsilon DHCPACK observed 2026-10-09T20:19:53Z; exact router config/parser preflight not supplied",
+    "management_address_exclusion": "192.168.1.69 outside all three reported dynamic pools; fixed epsilon mapping retained"
   },
   "backup": {
     "proxmox_storage_id": "vm-backups",

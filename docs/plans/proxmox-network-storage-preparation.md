@@ -1,10 +1,12 @@
 # Proxmox network and NAS preparation
 
-**Status: DHCP overlap corrected and client renewal verified; NAS file access accepted; probe mapping and storage-incident recovery pending.** This work can be done remotely while [offline imaging/rehearsal](epsilon-debian-upgrade.md) waits for physical access. The [catalogue](../asset-catalogue.md#intended-address-allocations-not-yet-reserved-in-opnsense) and [host intent](../../non-k8s-iac/proxmox/host.json) distinguish implemented configuration from untested guests/backups.
+**Status: Jack confirms October9 `.69` exclusion/probe mapping, epsilon DHCP renewal observed; NAS access accepted and dedicatedlocalVMstorage allocated. Staticbridge/probelease/VMbackup acceptance active.** The [catalogue](../asset-catalogue.md#intended-address-allocations-not-yet-reserved-in-opnsense) and [host intent](../../non-k8s-iac/proxmox/host.json) distinguish implemented configuration from untested guests/backups.
 
 ## 1. OPNsense address block
 
 Jack confirmed **ISC DHCPv4 [legacy]**, no existing assignments in `.220–.229`, and applied split dynamic pools **`192.168.1.10–192.168.1.219` and `192.168.1.230–192.168.1.254`**. The project block is now outside the dynamic pools. Use **Services → ISC DHCPv4 → LAN**, its lease/static-mapping records, and the known manually assigned device list for remaining mapping checks. A ping/ARP probe supplements those records but cannot rule out an offline statically configured device.
+
+October9Jackreportsapplyingandconfirming **`.10–.68`, `.70–.219`, `.230–.254`**, removingonlyepsilon`.69`fromdynamicalocation/retainingitsmapping. Probe`.221`MAC02:00:00:01:00:c7/hostnamenetwork-probe confirmed. EpsilonrealDHCPACK20:19:53UTCobserved; guestleasepending. Exactrouterconfig/parserpreflight/leasebackupnotprovided, notclaimedpassed. [Executionapproval](../../agentic-investigations/2026-10-09-epsilon-bridge-storage.md#router-change-reported-bridgestorage-execution-approved) supersedespreviouspausedproposal.
 
 On October 5, Jack found the effective lower pool still ended `.254`, overlapping the additional `.230–.254` pool. ISC refused startup at 15:14 PDT with `lease ... is declared twice` and `Configuration file errors encountered -- exiting`; clients subsequently lost leases. Jack corrected the endpoint to `.219`. Culex acquired a fresh `.13` lease at 17:00:11 PDT, and router/server/NAS/HA access returned. The [incident evidence](../../agentic-investigations/2026-10-05-epsilon-culex-unreachable.md#home-lan-investigation-and-confirmed-dhcp-cause) supersedes the earlier unverified pool-application report. Storage/application aftermath remains open.
 
