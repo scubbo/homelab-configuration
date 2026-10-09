@@ -6,7 +6,7 @@ Active plans describe proposed work, dependencies, execution steps, and acceptan
 
 Jack selected Proxmox on epsilon's upgraded Debian installation. Practice physical-host maintenance first; keep physical k3s/pods while preparing distinct general-purpose and GPU guests. The SQL datastore's HA design is investigated independently of the accepted-downtime upgrade.
 
-Physical epsilon's Debian13 upgrade and [Proxmoxmanagement/kernel7.0.14/NVIDIA580 reboot acceptance](../../agentic-investigations/2026-10-09-epsilon-proxmox-nvidia.md#management-installation-and-reboot-acceptance) are complete; installation maintenance ownership released. Guest bridge/dedicatedstorage/probe/productionguests/HAOS need the next reviewed stage. Proxmox's verifiedmanagementURL is `https://192.168.1.69:8006`; Jack's UIlogin/namedadminaccess check is pending. Obsidian/Dropbox rclone recovery stays manually deferred and offline.
+Physical epsilon's Debian13 upgrade and [Proxmoxmanagement/kernel7.0.14/NVIDIA580 reboot acceptance](../../agentic-investigations/2026-10-09-epsilon-proxmox-nvidia.md#management-installation-and-reboot-acceptance) are complete; installation maintenance ownership released. Guest bridge/dedicatedstorage/probe/productionguests/HAOS need the next reviewed stage. Proxmox's verifiedmanagementURL is `https://192.168.1.69:8006`; Jack confirms UIlogin, namedadminaccess remains pending. Obsidian/Dropbox rclone recovery stays manually deferred and offline.
 
 1. [Host-selection decision](proxmox-host-selection.md).
 2. [Epsilon Debian upgrade: assessment, rehearsal, and execution](epsilon-debian-upgrade.md).

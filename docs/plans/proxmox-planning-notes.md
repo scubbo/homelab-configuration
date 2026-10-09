@@ -44,7 +44,8 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Physical Proxmox7.0.14/NVIDIA580 boot accepted with preserved persistence/fallback and restored datastore/GPU/CSI; AppArmor profile-scoped upstream ABI fix approved/tested.
 - [x] Install/verify Proxmox management stack and record its deployed state.
 - [x] Complete Proxmox management transaction and verification reboot; record deployed version/access/recovery and release installation ownership.
-- [ ] Jack verifies Proxmox UI login/named-administration access; agree static bridge/router/resolver policy and dedicated VM storage/probe execution.
+- [x] Jack verifies interactive Proxmox UI login; expected no-subscription notice explained.
+- [ ] Verify named-administration access; agree static bridge/router/resolver policy and dedicated VM storage/probe execution.
 - [x] Reproduce default Proxmox-kernel/NVIDIA incompatibility before physical interruption; review proprietary580 support and artifact provenance.
 - [x] Rehearse the verified NVIDIA580 upstream installer/DKMS and Proxmox-kernel boot in the isolated clone; review warnings and physical driver maintenance with Jack.
 - [x] Complete bounded clone Proxmox-kernel boot, upstream-installer/DKMS, fallback-kernel build, local SSH and captured-datastore checks; preserve shut-off checkpoint and diagnostics.
@@ -86,6 +87,10 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [ ] Jack manually recovers epsilon Obsidian/Dropbox rclone bisync; leave timer disabled/service stopped until his explicit instruction.
 - [x] Persist a receiving-agent recovery plan and coordinate its maintenance boundary with epsilon imaging.
 - [x] Verify epsilon iDRAC or physical boot-console access before its rescue-imaging outage.
+
+## Operator UI acceptance
+
+October9 operator follow-up: Jack confirms successful Proxmox web login and reports the no-valid-subscription popup. This matches the selected no-subscription deployment; the notice does not restrict VM operation. Signed repository updates remain available; enterprise source is disabled. No credentials, password-setting outcome, named-admin permission test or subscription purchase is recorded.
 
 ## Findings (2026-10-04, read-only)
 

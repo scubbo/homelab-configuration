@@ -92,7 +92,7 @@ Verify the running Proxmox kernel, actual GPU transcode, PostgreSQL, k3s/CSI, DN
 
 Use `https://192.168.1.69:8006` from administrative LAN/VPN, verify the initial certificate using the console, and configure Jack's named administration/SSH-key access. Recovery credentials remain in the password manager and work without Kubernetes/Vault/SSO. Keep SSH/TCP 8006 within administrative access; do not publish a management ingress.
 
-October9 acceptance verifies the web endpoint from host and workstation using the SSH-exported **public** ProxmoxCA and IP SAN. Initial leafSHA256 fingerprint is `48:EF:24:1E:D0:68:79:D8:FB:51:B2:42:FF:7F:B7:0A:AA:A9:70:5C:B0:E9:83:18:1F:BA:27:33:00:1A:74:52`, expiryOctober7,2028. SANs include `.69`, epsilon and the tailnetFQDN; **epsilon.avril is absent**, so use the verifiedIPURL until deliberate certificate/resolver configuration. InteractiveUIlogin/namedadmin permissions remain Jack's next operator check. PublicCA verification does not establish account access.
+October9 acceptance verifies the web endpoint from host and workstation using the SSH-exported **public** ProxmoxCA and IP SAN. Initial leafSHA256 fingerprint is `48:EF:24:1E:D0:68:79:D8:FB:51:B2:42:FF:7F:B7:0A:AA:A9:70:5C:B0:E9:83:18:1F:BA:27:33:00:1A:74:52`, expiryOctober7,2028. SANs include `.69`, epsilon and the tailnetFQDN; **epsilon.avril is absent**, so use the verifiedIPURL until deliberate certificate/resolver configuration. Jack confirms successful interactiveUIlogin. The expected no-subscription notice does not block operation; signed no-subscription repository updates are configured, enterprise source disabled. Namedadmin permissions remain an operator check.
 
 ### LAN bridge and DNS ownership
 
