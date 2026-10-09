@@ -1,6 +1,6 @@
 # Proxmox on epsilon
 
-**Status: physical Debian13.7/kernel6.12.111 boot and core/GPU/persistence recovery passed. Final Debian privileged acceptance/source-permission fix pending; Proxmox not installed.** Jack selected package installation on epsilon's upgraded Debian filesystem, with a general-purpose k3s server guest, a GPU k3s worker guest, and HAOS. Physical and guest k3s nodes coexist during migration. Keep their names/IPs distinct; the physical node currently remains `epsilon`, not a renamed Kubernetes node.
+**Status: physical Debian13.7/kernel6.12.111 upgrade and privileged/core/GPU/persistence acceptance completed. Proxmox not installed; its package/kernel/network stage needs a separate reviewed maintenance window.** Jack selected package installation on epsilon's upgraded Debian filesystem, with a general-purpose k3s server guest, a GPU k3s worker guest, and HAOS. Physical and guest k3s nodes coexist during migration. Keep their names/IPs distinct; the physical node currently remains `epsilon`, not a renamed Kubernetes node.
 
 Sequence: [Debian maintenance and rehearsal](epsilon-debian-upgrade.md) → Proxmox package/kernel/network installation → [network probe](#3-network-probe-and-acceptance) → [production Kubernetes guests](#4-production-kubernetes-guests) → [HAOS cutover](homeassistant-vm-migration.md). [PostgreSQL HA](k3s-postgres-ha.md) is a parallel investigation whose deployment/placement needs a separate decision.
 

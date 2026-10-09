@@ -1,6 +1,6 @@
 # Epsilon Debian maintenance
 
-**Status: physical Debian13.7/kernel6.12.111 boot and production core/GPU/persistence checks passed. Final privileged APT/fstab acceptance and source-file permission correction await a recreated root shell.** PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
+**Status: physical Debian13.7/kernel6.12.111 upgrade and privileged/core/GPU/persistence acceptance completed October9. Services restored; upgrade maintenance ownership released. Proxmox is the next separately reviewed stage.** PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
 
 ## Evidence and remaining checks
 
@@ -774,6 +774,18 @@ Boot-error evidence is explained without declaring the journal pristine:
 - `/etc/apt/sources.list.d/debian.sources` was created mode0600 under the private staging umask, causing an unprivileged APT permission warning. It contains only public repository/keyring definitions and should be mode0644 like active APT sources. The final root acceptance script corrects this and rechecks APT dependencies/holds/fstab/current boot storage logs/normal services/runtime versions/rcloneoff. Root tmux ended at reboot and must be authenticated again before that fix/check can run; no permission change has yet been applied.
 
 Private guest-host record `physical-core-acceptance.json` is saved in current epsilon staging; privileged `accept-trixie-host.sh` is prepared but not executed. Production services are restored while waiting; **the OS upgrade has booted successfully, but do not claim the final privileged acceptance is complete.** Preserve the current SQL/config/log/checkpoint artifacts and exact runtime constraints; Proxmox installation remains a separate reviewed stage.
+
+#### Physical Debian 13 final acceptance completed
+
+Jack recreated/authenticated the root tmux shell. Process-tree verification at04:28UTC established effective-root bash before pane input. Agent ran the prepared acceptance script, **exit0 / `PHYSICAL_TRIXIE_HOST_ACCEPTANCE_PASS`**, and corrected public `/etc/apt/sources.list.d/debian.sources` from0600 to **root-owned0644**. Unprivileged APT no longer emits the permission warning; no package/source contents or versions were changed by this final correction.
+
+Final privileged checks confirm Debian13.7/kernel6.12.111, clean dpkg audit/APT dependencies/no holds, exact accepted runtime and driver versions, active intended services, normal root/ESP/data/NFS mounts, clean privileged fstab validation, expected physical NIC identity, P1000/module550.163.01 and no kernel storage-error markers. Rclone timerdisabled/inactive/serviceprocess0, temporary policy/maintenance marker absent, zero failed system units. The pNFS helper remains active with its recorded missing-pipe startup message, not silently disabled; mounts report no configured pNFS block layouts. Known ACPI/PAM/startup-database diagnostics and unrelated application/NAS follow-ups remain documented above.
+
+Closing checks at **October9 04:29:39UTC** establish all three nodes Ready, epsilon schedulable/rasnu1 cordon retained, **80 Running/79 Ready/zero Pending with known Lidarr only**, APIready, production PG/CI containers running/exact datastore image and no sampled database ERROR/FATAL/PANIC in5minutes or fresh filesystem-error timestamps. GPU/configuration/service/persistence checks from the restored-stage acceptance remain valid; no further reboot was required for the permission fix.
+
+Private **`physical-final-acceptance.json`**, `accept-trixie-host.log` (3,403bytes) and `accept-trixie-host.exit`0 are preserved locally and on culex under the window's protected `trixie-preflight-20261009.pBk60ObF` directory, files0600. Keep all earlier masters/reflink checkpoints/SQL/configuration copies/restore-test containers and volumes until Jack explicitly reviews cleanup; production datastore writes have advanced beyond the offline master.
+
+**The physical Debian upgrade is complete and migration-agent upgrade maintenance ownership is released.** Fresh console/recovery/artifact/notification checks are required for the next maintenance stage; this completion does not authorize Proxmox installation, a new drain/reboot or recovery-agent repair. Jack's rclone remains intentionally offline for manual recovery. Actual user playback/media jobs/import/SSO, Lidarr authorization, NAS offline integrity/backup coverage and host pNFS-helper/ACPI follow-ups remain separately tracked. The completed Debian procedure stays available here as the operational execution record; archive lifecycle follows Jack's implementation review.
 
 Jack sends this after the rehearsal establishes a realistic window:
 
