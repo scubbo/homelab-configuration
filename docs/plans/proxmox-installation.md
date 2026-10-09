@@ -1,6 +1,6 @@
 # Proxmox on epsilon
 
-**Status: physical Debian13.7/kernel6.12.111 upgrade and privileged/core/GPU/persistence acceptance completed. Proxmox not installed; its package/kernel/network stage needs a separate reviewed maintenance window.** Jack selected package installation on epsilon's upgraded Debian filesystem, with a general-purpose k3s server guest, a GPU k3s worker guest, and HAOS. Physical and guest k3s nodes coexist during migration. Keep their names/IPs distinct; the physical node currently remains `epsilon`, not a renamed Kubernetes node.
+**Status: Jack authorizes Proxmox installation/reboot in the continuing notified window; kernel/NVIDIA compatibility rehearsal active. Debian13 acceptance complete, Proxmox not installed.** Jack selected package installation on epsilon's upgraded Debian filesystem, with a general-purpose k3s server guest, a GPU k3s worker guest, and HAOS. Physical and guest k3s nodes coexist during migration. Keep their names/IPs distinct; the physical node currently remains `epsilon`, not a renamed Kubernetes node.
 
 Sequence: [Debian maintenance and rehearsal](epsilon-debian-upgrade.md) → Proxmox package/kernel/network installation → [network probe](#3-network-probe-and-acceptance) → [production Kubernetes guests](#4-production-kubernetes-guests) → [HAOS cutover](homeassistant-vm-migration.md). [PostgreSQL HA](k3s-postgres-ha.md) is a parallel investigation whose deployment/placement needs a separate decision.
 
@@ -25,7 +25,7 @@ Guest/API address candidates are allocated in the [asset catalogue](../asset-cat
 
 ### Recoverable package conversion
 
-Accept [Debian upgrade](epsilon-debian-upgrade.md#physical-acceptance-and-rollback) first, including ESP, partition-label, NIC naming, GPU, datastore, backup/token, and consumer notification checks. Retain a tested bootable Debian-13 host image and protected service configuration before Proxmox conversion. Confirm physical/iDRAC rescue access, LAN SSH independent of Tailscale, and free-space estimates. Root privileges are provided through Jack's interactive session, not password material in Git/chat.
+Accept [Debian upgrade](epsilon-debian-upgrade.md#physical-acceptance-and-rollback) first, including ESP, partition-label, NIC naming, GPU, datastore, backup/token, and consumer notification checks. Retain a tested host image and protected current service configuration before Proxmox conversion. Jack explicitly selected the verified physical Debian12 master plus fresh Debian13 SQL/configuration artifacts and accepted Debian13 rehearsal checkpoints, rather than another multi-hour physical capture. That choice does not make the raw master a current Debian13/database snapshot; rollback requires restoring current datastore state separately. Confirm physical/iDRAC rescue access, LAN SSH independent of Tailscale, and free-space estimates. Root privileges are provided through Jack's interactive session, not password material in Git/chat.
 
 The [SQL restore exercise](k3s-postgres-ha.md#observed-state) proves a backup artifact; physical and k3s recovery still need practice. Preserve the existing PostgreSQL image ID/configuration and independent off-host dumps/roles/token. Proxmox install must not accidentally pull a different PostgreSQL major from mutable `postgres`. Preserve host services and files, including Docker workloads, NFS/iSCSI mounts, Obsidian data, and node tuning.
 
@@ -64,6 +64,8 @@ sha256sum /root/proxmox-archive-keyring.gpg
 
 Expected: `136673be77aba35dcce385b28737689ad64fd785a797e57897589aed08db6e45`. Stop on mismatch. Install the verified key at `/usr/share/keyrings/proxmox-archive-keyring.gpg`, and copy the reviewed source file into `/etc/apt/sources.list.d/pve-install-repo.sources`. Then:
 
+October9 installed-host probe finds HTTPS hostname mismatch on `download.proxmox.com`; the checked-in repository uses the official guide's **HTTP** transport with the HTTPS-fetched/hash-verified keyring and APT signature verification. No certificate-validation bypass or unsigned-repository option is used.
+
 ```bash
 apt-get update -o APT::Update::Error-Mode=any
 apt-cache policy proxmox-default-kernel proxmox-ve
@@ -71,6 +73,8 @@ apt-get --simulate install proxmox-default-kernel proxmox-ve
 ```
 
 Review QEMU/libvirt removals, mail/time/network service changes, and host Docker/driver dependencies. Notify consumers and rehearse host maintenance using the [Debian process](epsilon-debian-upgrade.md#notification-and-execution-sequence). Preserve physical k3s/PostgreSQL/GPU access through this kernel change until guests are ready.
+
+The [October9 compatibility investigation](../../agentic-investigations/2026-10-09-epsilon-proxmox-nvidia.md) records default7.0.14 headers failing with Debian550.163, upstream580.178.04 compilation with unresolved warnings, strict NVIDIA-repository signature failure, and the checksum-verified upstream installer. Jack selects isolated installer/DKMS/kernel-boot rehearsal before physical conversion. Proxmox repository/key and the `.69` hosts entry are installed; kernel/management packages and bridge remain pending.
 
 Install/boot the Proxmox kernel before management packages as upstream documents. Install **matching Proxmox kernel headers** for the exact selected kernel and verify NVIDIA DKMS builds for it; headers for the Debian kernel are insufficient. The P1000 requires a compatible proprietary driver. Reboot only after inspecting compiler/initramfs/EFI output and recovery access:
 
@@ -109,7 +113,7 @@ iface vmbr0 inet static
 
 Preserve required interfaces/includes for actual host services. The host address belongs only on the bridge, never simultaneously on `eno1`; guests have their own MACs/IPs. Test bridge changes with console recovery and verify Docker ports/firewall, Flannel, NAS, and Tailscale routing. Keep desired sysctls in `/etc/sysctl.d/`.
 
-The [checked-in bridge file](../../non-k8s-iac/proxmox/host/interfaces) and [host-resolution fragment](../../non-k8s-iac/proxmox/host/hosts.fragment) are prepared for review, not installed. Remote inspection on 2026-10-05 confirmed current `eno1` DHCP and empty interfaces.d; recheck before merging. Current resolver already uses `.1` and `avril`, while the future Proxmox/Tailscale ownership policy still needs acceptance.
+The [checked-in bridge file](../../non-k8s-iac/proxmox/host/interfaces) is prepared for review, not installed. The [host-resolution fragment](../../non-k8s-iac/proxmox/host/hosts.fragment) is installed October9 with prior file preserved privately; epsilon and its FQDN resolve to `.69` locally. Remote inspection on 2026-10-05 confirmed current `eno1` DHCP and empty interfaces.d; recheck before merging. Current resolver already uses `.1` and `avril`, while the future Proxmox/Tailscale ownership policy still needs acceptance.
 
 Document one resolver owner: Proxmox expects GUI-controlled `/etc/resolv.conf`; Tailscale must not continuously overwrite it. Explicitly configure Proxmox DNS `.1` and select `tailscale set --accept-dns=false` if that is the agreed host DNS policy, while verifying existing tailnet resolution/remote access. Guest HAOS uses `.1`; kubelet pod resolver settings must also avoid inheriting an inappropriate tailnet search domain ([investigation](../../agentic-investigations/2026-07-12-gluetun-vpn-throughput-collapse.md#side-quest-2026-08-16-tailscale-search-domain-breaks-dns-in-fresh-musl-pods)). Record the selected policy before changing live resolver configuration.
 
@@ -200,6 +204,6 @@ Restore an archive under an unused VMID with auto-start disabled and production 
 
 ## Rollback and delivery
 
-At each phase stop guest writers/duplicate identities before restoring host or datastore state. Package/kernel/network conversion rollback uses the tested Debian-13 image and protected service configuration, not blind package downgrades. A physical k3s return uses its own original name/address/token while guests retain distinct identities; move workloads/API routing deliberately. GPU rollback first stops guest 102 and rebinds the verified device to the physical driver before starting physical consumers. Do not revert a database image after live writes without preserving the current valid datastore.
+At each phase stop guest writers/duplicate identities before restoring host or datastore state. Package/kernel/network conversion rollback uses the tested physical Debian12 master, accepted rehearsal checkpoints and protected current service/datastore configuration selected by Jack, not blind package downgrades. A physical k3s return uses its own original name/address/token while guests retain distinct identities; move workloads/API routing deliberately. GPU rollback first stops guest 102 and rebinds the verified device to the physical driver before starting physical consumers. Do not revert a database image after live writes without preserving the current valid datastore.
 
 After accepted deployment, update the catalogue with actual hypervisor/guest addresses, volume IDs, API endpoint, PCI/USB mapping, backup destinations and test outcomes. Transfer routine maintenance/recovery instructions to operational docs and [archive delivered plans](delivered/README.md). [HAOS migration](homeassistant-vm-migration.md) retains the Pi until Jack accepts its rollback/retirement conditions.
