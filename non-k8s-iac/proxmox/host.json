@@ -1,5 +1,5 @@
 {
-  "status": "kernel installed; management installation active; guests planned",
+  "status": "management installed; bridge and storage pending; guests planned",
   "physical_host": "epsilon",
   "hypervisor": {
     "hostname": "epsilon",
@@ -44,7 +44,10 @@
         "apparmor": "4.1.1-pmx1"
       }
     },
-    "installed_version": null,
+    "installed_version": "pve-manager/9.2.21/4f6e0ac86f9e8c7f",
+    "management_url": "https://192.168.1.69:8006",
+    "network_stage": "eno1 DHCP; vmbr0 not deployed",
+    "resolver_owner": "Tailscale; Proxmox DNS transition pending",
     "running_kernel": "7.0.14-23-pve",
     "gpu_driver": {
       "version": "580.178.04",

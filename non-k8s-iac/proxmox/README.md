@@ -1,6 +1,6 @@
 # Proxmox VM configuration
 
-**Status: planned, not provisioned.** Jack selected package installation on epsilon after [rehearsed Debian maintenance](../../docs/plans/epsilon-debian-upgrade.md). The [host decision](../../docs/plans/proxmox-host-selection.md) stages a general-purpose k3s server, GPU worker, and HAOS while physical k3s remains available until cutover.
+**Status: physical Proxmoxmanagement/kernel installed and reboot accepted; bridge/dedicated storage/guests not provisioned.** Jack selected package installation on epsilon after [rehearsed Debian maintenance](../../docs/plans/epsilon-debian-upgrade.md). The [host decision](../../docs/plans/proxmox-host-selection.md) stages a general-purpose k3s server, GPU worker, and HAOS while physical k3s remains available until cutover.
 
 - [Installation, storage, and staged Kubernetes migration](../../docs/plans/proxmox-installation.md).
 - [Network probe acceptance](../../docs/plans/proxmox-network-probe.md).
@@ -16,9 +16,15 @@ Native [`qm.conf`](https://pve.proxmox.com/pve-docs/qm.conf.5.html) manifests re
 
 ### Host configuration draft
 
+[`host/interfaces.dhcp`](host/interfaces.dhcp) records the installed ifupdown2 DHCP stage on physical epsilon: `eno1` carries `.69`, while unused LAN ports are manual. [`host/interfaces`](host/interfaces) is the separate static `vmbr0` intent for guest networking, pending router/resolver acceptance. [`pve-enterprise.sources`](pve-enterprise.sources) disables the package-provided enterprise source for the selected no-subscription repository.
+
 [`host/nvidia-persistenced.service`](host/nvidia-persistenced.service) preserves epsilon's existing persistence unit and `nvpd` identity for the approved upstream580 driver conversion. [`host/nvidia.conf`](host/nvidia.conf) preserves `nvidia-drm` autoload at `/etc/modules-load.d/nvidia.conf`; [`host/nvidia-driver.conf`](host/nvidia-driver.conf) keeps nouveau blacklisted at `/etc/modprobe.d/nvidia-driver.conf`. The upstream installer/DKMS artifact is manually maintained; [compatibility evidence](../../agentic-investigations/2026-10-09-epsilon-proxmox-nvidia.md) records Jack's warning acceptance, checksums and rehearsal. These files require reviewed host installation, not ArgoCD deployment.
 
 [`host/cri-containerd.apparmor.d`](host/cri-containerd.apparmor.d) is the containerd2.0.5 default profile rendered for the rootful k3s runtime, with the [upstream ABI3.0 declaration](https://github.com/containerd/containerd/pull/12864) approved by Jack. Install at `/etc/apparmor.d/cri-containerd.apparmor.d` and load through AppArmor before k3s; containerd retains an already-loaded default profile. Proc/sys/mount/signal/ptrace restrictions remain enforced. The [investigation](../../agentic-investigations/2026-10-09-epsilon-proxmox-nvidia.md) records the failing socket reproduction, profile provenance and runtime checks. Review the static CRI profile alongside k3s/containerd updates. Physical libvirt has no guests and is stopped/disabled for Proxmox's reviewed package replacement; its protected configuration remains retained.
+
+[`host/docker-ordering.conf`](host/docker-ordering.conf) installs as `/etc/systemd/system/docker.service.d/proxmox-ordering.conf`. Proxmox's `pve-firewall.service` selects the host iptables backend in ExecStartPre; Docker must start after that initialization to keep its network chains on one backend. This orders the already-enabled services without enabling an additional firewall or changing rules.
+
+[`host/dhclient.apparmor.patch`](host/dhclient.apparmor.patch) records Jack's approved profile-scoped ABI3.0 declaration for `/etc/apparmor.d/usr.sbin.dhclient`. The packaged rules/comments remain intact; after a dry-run/backup apply it with `patch --directory=/etc/apparmor.d --strip=0 --input=<absolute-patch-path>`, then reload that profile. Check its confined Unix datagram socket and protected sysrq write-open denial. Review the declaration when AppArmor packages update; the patch does not restart DHCP or change its lease/address.
 
 - [`host/interfaces`](host/interfaces): proposed static `.69` LAN bridge on `eno1`, preserving the interfaces.d include. Merge only after inspecting execution-time host configuration and reserving `.69`; its deployment changes live management networking.
 - [`host/hosts.fragment`](host/hosts.fragment): host name resolution independent of Kubernetes; merge with existing localhost/IPv6 entries, not replace the entire file.

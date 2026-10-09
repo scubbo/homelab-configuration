@@ -1,0 +1,7 @@
+--- usr.sbin.dhclient
++++ usr.sbin.dhclient
+@@ -1,2 +1,4 @@
+ # vim:syntax=apparmor
++abi <abi/3.0>,
++
+ #include <tunables/global>
