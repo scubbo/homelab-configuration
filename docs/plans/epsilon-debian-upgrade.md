@@ -1,6 +1,6 @@
 # Epsilon Debian maintenance
 
-**Status: physical Trixie minimal upgrade passed; full upgrade paused at qemu.conf prompt with new SSH connections resetting. Jack's iDRAC console is needed for SSH diagnosis before continuing. Do not reboot.** PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
+**Status: physical Trixie full upgrade progressing through proprietary NVIDIA DKMS builds in Jack's existing tmux session. New SSH connections reset before banner; console diagnosis needed, transaction completion/preboot acceptance pending. Do not interrupt or reboot.** PostgreSQL availability is investigated in the [HA workstream](k3s-postgres-ha.md); a completed HA deployment is a separate decision.
 
 ## Evidence and remaining checks
 
@@ -737,6 +737,8 @@ Physical minimal transaction **532 upgrades/0 additions/removals/exit0** passed 
 At **04:03UTC** direct laptop and culex TCP22 connections both receive EOF; both SSH clients report `kex_exchange_identification: read: Connection reset by peer`. Dedicated iDRAC `.33:443` remains reachable. This reproduces an installed-SSH problem across two LAN clients during package/library replacement, not a workstation-only route failure. Precise cause remains unestablished until console logs/configuration checks; do not infer a successful full upgrade or boot. The persistent authenticated root tmux should retain its prompt; inspect actual console/process state before retrying any transaction. **Do not reboot, force package configuration, run another APT process, or stop the tmux session.**
 
 Jack's iDRAC console provides recovery access. Next read-only diagnostic checks: `sudo /usr/sbin/sshd -t` and recent `journalctl -u ssh` to establish whether the upgraded daemon/configuration is valid and why its existing parent rejects new sessions. A service restart is a separate minimal fix after those observations, not a presumed answer. Once normal SSH works, inspect/answer the retained conffile prompt, wait for existing transaction completion and perform reviewed DKMS/kernel/header/EFI/NIC/SSH checks before normal reboot. Shared API/datastore remain intentionally stopped and epsilon cordoned during this unresolved upgrade.
+
+**04:06UTC operator correction:** Jack's existing tmux/SSH session is live and shows NVIDIA550.163.01 built/signed/installed for6.1.0-31, now building for6.1.0-53. Full transaction has progressed beyond the conffile prompt; the agent's last prompt observation is stale, not evidence of a stopped upgrade. Who answered the prompt/which option has not been recorded. No transaction retry or reboot is justified. Fresh laptop/culex TCP22 probes both still receive EOF before banner; new laptop SSH reports key-exchange connection reset. Existing accepted SSH transport/remote tmux survival can coexist with failure to establish new SSH transports. Diagnose new-session access in a separate iDRAC shell, leaving the running build untouched. Await actual full transaction result and inspect conffile outcome/preboot checks before restarting production or rebooting.
 
 Jack sends this after the rehearsal establishes a realistic window:
 

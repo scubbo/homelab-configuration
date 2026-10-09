@@ -1,6 +1,6 @@
 # k3s outage recovery handoff
 
-**Status: physical Trixie full upgrade paused at conffile prompt; new SSH connections reset, console diagnosis needed.** Updated October9,2026. Epsilon cordoned/drained/datastore cleanly stopped; minimal upgrade passed, full completion/reboot unestablished. No overlapping maintenance. Backup/restore coverage, offline filesystem/workflow acceptance remain follow-ups; rclone stays offline for Jack and Lidarr retains its known failure. This is the execution plan for the agent receiving Jack's recovery handoff for the [HAOS/Proxmox migration](homeassistant-vm-migration.md).
+**Status: physical Trixie full upgrade progressing through DKMS in Jack's existing tmux; new SSH connections reset and need separate console diagnosis.** Updated October9,2026. Epsilon cordoned/drained/datastore cleanly stopped; minimal upgrade passed, full completion/preboot/reboot acceptance unestablished. Do not interrupt or run overlapping maintenance. Backup/restore coverage, offline filesystem/workflow acceptance remain follow-ups; rclone stays offline for Jack and Lidarr retains its known failure. This is the execution plan for the agent receiving Jack's recovery handoff for the [HAOS/Proxmox migration](homeassistant-vm-migration.md).
 
 ## Start here
 
@@ -31,6 +31,8 @@ October9 Bookworm reboot/core service checks pass:12.15/kernel6.1.0-53/GPU535.30
 **Migration maintenance ownership resumed October9 after03:33UTC:** Jack confirms notified window/no other host/storage maintenance. Fresh SQL/roles/token/config/user-unit recovery copies and isolated SQLrestore pass; privilegedBookworm acceptance complete. Physical Trixie sources/signatures/simulations/download-only reviewed and completed; packages not installed yet, normal drain/quiescence next. Epsilon serves while downloading. [Active checkpoint](epsilon-debian-upgrade.md#physical-trixie-window-reopened-october-9). No overlapping recovery writes; rclone remains Jack-owned/offline.
 
 At04:03UTC physical Trixie minimal passed, full transaction remains at `/etc/libvirt/qemu.conf` prompt. New SSH connections reset from both laptop/culex before banner; iDRAC remains available for Jack's daemon/config/log checks. Full completion is not established; **do not reboot/run another APT or interfere with root tmux**. Epsilon remains cordoned/drained, all remote volumes released, post-drain SQL off-hostverified and PostgreSQL cleanly stopped03:53:41UTC. [Current blocker](epsilon-debian-upgrade.md#physical-trixie-installation-paused-ssh-diagnosis-required). Migration owns the unresolved window; rclone remains offline.
+
+At04:06UTC Jack confirms the existing SSH/tmux transport remains live and full upgrade has progressed beyond that prompt through NVIDIA550.163.01 DKMS builds. Fresh new-connection probes still fail before banner from laptop/culex; that does not imply the existing session or running build stopped. Leave build running and collect new-session SSH diagnosis in a separate iDRAC shell. Full exit/preboot/conffile decision remain to be recorded.
 
 ## Verified baseline and remaining uncertainty
 
