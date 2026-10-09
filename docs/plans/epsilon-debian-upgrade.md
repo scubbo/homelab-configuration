@@ -676,6 +676,8 @@ Physical Bookworm security binary/source lines now include matching `contrib/non
 
 Interactive download-only full-upgrade runs in the authenticated tmux with a private typescript/result marker. Host workloads remain running while718MB downloads; repository stalls/retries are observed. No drain/package install begins before successful download completion. CI runner and volume release are rechecked at shutdown time; no assumption that an earlier idle check lasts throughout the download.
 
+Agent independently restored this window's fresh83,296,248-byte SQL into network-none/no-port **`epsilon-upgrade-restore-20261008`**, private dedicated Docker volume of the same name,512MiB memory cap and exact existing PostgreSQL17.5 image. Restore exited0/no stderr; **5,789 kine rows/max revision281431608** and server17.5 verified. Test cleanly stopped exit0 and retained; no production bind data was mounted. Private restore log/JSON copied off-host alongside the preflight; generated test environment file stays private on epsilon. This proves the fresh SQL artifact, not a rollback of production or a restore of NAS application data.
+
 Jack sends this after the rehearsal establishes a realistic window:
 
 > Jellyfin will be unavailable on **[date] [start–end] [timezone]** while I update its physical host. Streaming/playback may disconnect, and other homelab services may pause. I’ll send an update when service is restored; if rollback is needed, the window may extend to **[deadline]**.
