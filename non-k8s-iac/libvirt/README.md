@@ -4,7 +4,7 @@
 
 ## Retained state
 
-- Domain: `epsilon-rehearsal`, UUID `180b4863-b2da-479f-a656-6521f90c4b5f`, **shut off/autostart disabled** after accepted Debian13 package rehearsal. Custom Squid is stopped; bridge/nft configuration retained.
+- Domain: `epsilon-rehearsal`, UUID `180b4863-b2da-479f-a656-6521f90c4b5f`, **shut off/autostart disabled** after October9 Proxmox-kernel/upstream-NVIDIA rehearsal. NIC removed; read-only preparation ISO attached. Custom Squid is stopped; bridge/nft configuration retained.
 - Hardware: KVM/q35,4vCPU/8GiB, non-Secure-Boot OVMF, SATA working disk, serial console and loopback-only VNC.
 - Working disk: `/var/lib/libvirt/images/epsilon-rehearsal.raw`, separate XFS reflink inode with499,558,383,616-byte logical capacity. Guest writes are copy-on-write; it is not an independent off-host backup.
 - Guest firmware variables: `/var/lib/libvirt/qemu/nvram/epsilon-rehearsal_VARS.fd`. Its registered Debian shim entry is needed for the verified repeat boot.
@@ -58,6 +58,8 @@ Jack approved Squid installation on culex and a restricted package-access path. 
 Prepared disk/domain/NVRAM baseline is private on culex at `/home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-rehearsal-baseline-20261008`, captured with the guest shut off before package work. Its reflink disk shares host storage with the working disk/master; preserve all three names and firmware files. Network/proxy acceptance and upgrade results are recorded in the [Debian plan](../../docs/plans/epsilon-debian-upgrade.md).
 
 Accepted patched checkpoints are `/home/scubbo/epsilon-recovery.mVvt2ir2/epsilon-rehearsal-bookworm-20261008` and `epsilon-rehearsal-trixie-20261008`, each mode0700/files0600 with shut-off disk reflink, VM OVMF variables, domain XML and acceptance/metadata. These share storage; preserve all names and never restore one over a running guest or discard its current state without review.
+
+October9 checkpoints `epsilon-rehearsal-proxmox-preparation-20261009` and `epsilon-rehearsal-proxmox-20261009` preserve the state before and after the [kernel/driver rehearsal](../../agentic-investigations/2026-10-09-epsilon-proxmox-nvidia.md#rehearsal-results-october9). Working guest runs7.0.14-23-pve with upstream580.178.04 DKMS for that kernel and Debian6.12 fallback. Compiler warnings remain unresolved; GPU-free boot/localSSH/capturedSQL checks do not establish physical P1000 operation. NIC-less package preparation uses a read-only ISO at `/var/lib/libvirt/images/epsilon-proxmox-rehearsal-media-20261009/preparation.iso`; its QEMU-owned private directory permits QEMU traversal. The active package-interface configuration is preserved outside the guest's interfaces.d include because that NIC is absent.
 
 [`bookworm.sources`](bookworm.sources) records complete Debian component intent for patching. The captured security sources omitted non-free while admitting firmware, which made fresh proprietary NVIDIA driver dependencies unsatisfiable. Clone security entries now include matching components; no physical host source change has been made. Avoid activating duplicate Debian definitions when applying source intent.
 
