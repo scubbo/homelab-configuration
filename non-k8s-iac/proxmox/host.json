@@ -1,5 +1,5 @@
 {
-  "status": "platform/probe verified; empty HAOS100 boot/reboot/shutdown verified; HA cutover pending; Kubernetes guests deferred",
+  "status": "HAOS100 restored/radio+remote+guest-restart+NAS-isolated-restore verified on temporary76;134transfer/devicefollowups/backupjobs pending; Kubernetes guests deferred",
   "physical_host": "epsilon",
   "hypervisor": {
     "hostname": "epsilon",
@@ -68,9 +68,11 @@
       "name": "homeassistant",
       "manifest": "vms/100-homeassistant.conf.in",
       "deployed_manifest": "vms/100-homeassistant.conf",
-      "state": "empty HAOS18.3/amd64 VM cleanly stopped; onboot0/no USB; production Pi retains134",
+      "state": "HAOS18.3/Core2026.9.3amd64 runningtemporaryDHCP76/onboot1/HubZUSB; dashboards/originalZHAnetwork/mainsdevice/mobiledataTailscale/guest-reboot verified;134transferpending; Pi physicallyoff/storageretained",
       "staging_ipv4": "192.168.1.76",
-      "staging_address_assignment": "ordinary temporary DHCP; same address after guest reboot; not reserved",
+      "staging_address_assignment": "ordinary temporary DHCP; same address after guest reboot/stop-mode backup; not reserved",
+      "ssh_host_ed25519_fingerprint": "SHA256:QSh3lI++BYlSp9G/vATPQosdWFAGkv2s+Rxr57LfLPA",
+      "remote_access": "homeassistant.coin-pangolin.ts.net/100.99.206.29 sameTailscaleidentity/authenticated/Online/LANtailnetHTTP200/Jackphone-mobiledata-loginverified",
       "ipv4": "192.168.1.134",
       "address_assignment": "OPNsense DHCP reservation",
       "dns_name": "homeassistant.avril",
@@ -89,8 +91,10 @@
         "captured_firmware": "5.4.1.0 build 962",
         "captured_channel": 15,
         "captured_network_backup_utc": "2026-10-09T16:23:44.749430Z",
-        "usb_host_selector": null,
-        "guest_serial_path": null
+        "usb_host_selector": "10c4:8a2a",
+        "host_usb_identity_validation": "single matching device on epsilon/physical path2-1.4/serial716000F1; Jack confirms Pi off and dongle moved; attachedexclusivelyVM100",
+        "guest_serial_path": "/dev/serial/by-id/usb-Silicon_Labs_HubZ_Smart_Home_Controller_716000F1-if01-port0",
+        "acceptance": "nativeZHArepairrestoredoriginalchannel15/PAN7485/IEEE/network+TCkeysmatchsource privately;6devicesretained/Jackmainscontrolpassesafterguest-reboot; battery/automation/distantdevicepending"
       },
       "source": {
         "installation": "HAOS18.3/RaspberryPi3-64/aarch64",
@@ -111,8 +115,17 @@
           "encrypted": false,
           "off_host_copy": "/home/scubbo/epsilon-recovery.mVvt2ir2/haos-source-20261010.dhenn_hr/f4389be0.tar on culex",
           "coverage": "all installed apps/share/ssl/media/HA config/recorder/zigbee DB; both captured SQLite integrity checks pass",
-          "restore_status": "not restored; fresh final backup and agreed cutover required"
+          "restore_status": "fullrestorejobecd88b252d9648e69ec8f88fcbec490a done100/errorsnone/exit0; Core2026.9.3amd64/all3appsstarted/dashboards/radio/mainsdevice/remote/guest-reboot pass;134transfer/battery/automationpending"
         }
+      },
+      "native_recovery_backup": {
+        "slug": "69373e1c",
+        "created_utc": "2026-10-10T03:45:03.195882Z",
+        "bytes": 85555200,
+        "sha256": "c9479df2dbd5752391d761812b289960313424a3886792d68ab1708957315b95",
+        "encrypted": false,
+        "off_host_copy": "/home/scubbo/epsilon-recovery.mVvt2ir2/haos-vm-recovery-20261010.b3zpwbkx/69373e1c.tar on culex",
+        "coverage": "fullHA/allapps/recorder/repairedZHA/authenticatedTailscale; hashverified/fsync/private copies"
       }
     },
     "101": {
@@ -177,6 +190,9 @@
   },
   "router": {
     "dhcp_backend": "ISC DHCPv4 [legacy]",
+    "version_reported": "OPNsense26.1.5-amd64/FreeBSD14.3-RELEASE-p9/OpenSSL3.0.19",
+    "backup_status": "Jack confirms full configuration export saved locally; privategeneratedDHCP/leasecopies under/root/ha-dhcp-check.6qp5gi; currentand134exclusion/MAC64candidateownISC4.4.3-P1parserpass",
+    "ha_address_transfer_status": "Jack defers liveDHCP change until Jellyfin users idle; VM100remains temporaryDHCP76/Pi physicallyoff;134mappingstillPiMAC",
     "current_dynamic_pools": [
       {"start": "192.168.1.10", "end": "192.168.1.68"},
       {"start": "192.168.1.70", "end": "192.168.1.219"},
@@ -193,7 +209,7 @@
     "nas_ipv4": "192.168.1.39",
     "nas_platform": "TrueNAS CORE",
     "planned_nas_export": "/mnt/high-resiliency/proxmox-backups",
-    "export_status": "registered vm-backups; mapped-root write/fsync/read/delete and probe199 stop-mode backup→NIC-less198 boot/cleanstop verified",
+    "export_status": "registered vm-backups; mapped-root fileIO/probe199→isolated198/HAOS100→isolated197 archiveboot+data+cleanstop verified",
     "nas_export": "/mnt/high-resiliency/proxmox-backups",
     "nas_user": "proxback",
     "nas_uid": 1001,
@@ -217,14 +233,14 @@
     "schedule_status": "planned; no production VM or native HA backup schedule deployed",
     "notification_delivery": "default mail-to-root failed/no recipient/local-only MTA; Jack defers delivery configuration until before production schedules",
     "last_restore_exercise": {
-      "checked_utc": "2026-10-10T00:05:24Z",
-      "source_vmid": 199,
-      "restore_vmid": 198,
-      "restored_manifest": "vms/198-probe-restore.conf",
-      "archive": "vm-backups:backup/vzdump-qemu-199-2026_10_09-14_51_53.vma.zst",
-      "archive_bytes": 882000610,
-      "archive_sha256": "6b5e70c52eddd21c8366dcff8f5de89508ad72170060ca4e62b2b4afd87af7f7",
-      "result": "hash rechecked; restore onboot0/noNIC before firstboot; EFI/guestagent/OS/installmarker/SSHhostkey verified; clean guestagent shutdown retained",
+      "checked_utc": "2026-10-10T04:00:20Z",
+      "source_vmid": 100,
+      "restore_vmid": 197,
+      "restored_manifest": "vms/197-haos-restore.conf",
+      "archive": "vm-backups:backup/vzdump-qemu-100-2026_10_09-20_52_45.vma.zst",
+      "archive_bytes": 3640705565,
+      "archive_sha256": "d47aba67020c4dc4e5aed5d6b95d5398d7c213d5f8df348d964a269a90364528",
+      "result": "hashrechecked/restoreonboot0/noNICUSBPCIbeforefirstboot/EFIHAOSboot+agent/originalZHAentry+channel15snapshot+6devices/bothcapturedSQLintegrityok/cleanstopretained",
       "pruning": "disabled during exercise; archive and both VMs retained"
     }
   }

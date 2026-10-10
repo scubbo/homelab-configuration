@@ -1,6 +1,6 @@
 # Home Assistant: Raspberry Pi to HAOS VM
 
-**Status: empty VM100 boot/reboot/shutdown verified; full source backup captured and checked; cutover pending.** Target: Proxmox guest 100 on physical epsilon, with the **same physical Zigbee dongle** passed through to Home Assistant OS. Debian maintenance, Proxmox bridge/storage and bounded probe backup/restore checks are complete; [remaining probe paths](proxmox-network-probe.md#observed-probe-results) stay tracked. Jack prioritizes HAOS and defers Kubernetes guest migration while Jellyfin is in use. VM100 is stopped/onboot0/noUSB, temporary DHCP `.76`; Pi still owns `.134`. Source backup, `.134` exclusion, radio/network ownership and an agreed HA outage precede restoration. The Pi remains the rollback appliance until migration and recovery checks pass.
+**Status: HA runs in VM100 on temporary DHCP `.76`; original Zigbee network, remote login, guest restart and isolated NAS restore verified. `.134` transfer is deferred until Jellyfin users are idle.** The same physical HubZ coordinator belongs exclusively to VM100, with automatic VM startup enabled. Pi powered off/storage retained. Battery-device/automation/distant-room checks, backup schedules/notifications and host-reboot acceptance remain open. Kubernetes guest migration is deferred. Retain source/off-host artifacts until Jack accepts migration and recovery.
 
 The [host-selection decision](proxmox-host-selection.md) and [manifests](../../non-k8s-iac/proxmox/README.md) select epsilon with separate general-purpose k3s, GPU-worker, and HAOS guests. Related: [planning notes](proxmox-planning-notes.md), [current asset catalogue](../asset-catalogue.md), and [active plans](README.md).
 
@@ -21,15 +21,23 @@ The source address is declared in [`charts/external-dns/homeassistant-dns-endpoi
 
 ## Observed preparation
 
-[Execution evidence](../../agentic-investigations/2026-10-10-haos-vm-staging.md) records source HAOS18.3/Core2026.9.3/Pi3-64,10.6GiBused, ZHA/HubZHUSBZB-1/serial716000F1/USB10c4:8a2a/interfaceif01. ExistingSSHkeyworkswith`root@homeassistant.avril -p25`; rootisinsideTerminal&SSHapp. JackconfirmsPiDHCP134/MACB8:27:EB:AB:B6:DDmappingandTailscaleremoteuse. AppsFileeditor/TerminalSSH/Tailscalestateincludedinfreshfullbackup`f4389be0`,85,719,040bytes/hash`41752178c2ced3876f0aa860620dfbf4a7920c10f3f0670a4bc0c616d8381cce`; archiveisunencrypted/secret-bearing/private, nocurrentrestoreclaim. CapturedrecorderandZigbeeSQLintegritychecks pass; privateZHA16:23UTCnetworkbackup retained.
+[Execution evidence](../../agentic-investigations/2026-10-10-haos-vm-staging.md) records source HAOS18.3/Core2026.9.3/Pi3-64,10.6GiBused, ZHA/HubZHUSBZB-1/serial716000F1/USB10c4:8a2a/interfaceif01. SourceSSHused`root@homeassistant.avril -p25`; rootisinsideTerminal&SSHapp. PiDHCP134/MACB8:27:EB:AB:B6:DDmappingandTailscaleremoteuseconfirmed. Fullbackup`f4389be0`,85,719,040bytes/hash`41752178c2ced3876f0aa860620dfbf4a7920c10f3f0670a4bc0c616d8381cce`, restoredsuccessfullyintoVM100withallthreeapps. Sourcecapturedrecorder/ZigbeeSQLintegritychecks andprivateZHA16:23UTCnetworkbackup retained. Archiveunencrypted/secret-bearing/outsideGit.
 
 Empty [deployed VM100](../../non-k8s-iac/proxmox/vms/100-homeassistant.conf) isHAOS18.3/amd64/2vCPU/4GiBfixed/64GiBdisk. FirstbootautomaticallyinstalledCore2026.10.0/Supervisor2026.09.3; normalfullbackuprestoreselectsbackupCoreversion2026.9.3, so no sourceupgradeisneeded. Agent/DHCP76/gatewayDNS`.1`/verifiedInternetHTTPS/onboardinguntouched/guest-rebootnewbootID/sameMACaddress/cleanstopverified,PiandJFHTTP200afterward. Bootjournalretainstimezone-eventsource/no-audiocodec/PulseAudio/BlueZ/Pythonwarningdiagnostics, notclaimederror-free.
 
-Beforecutover:confirmactualTailscaleclientURL, realdevicebaseline/physicalradioRFplacement, Pi-onlyintegrations(`raspberry_pi`,`rpi_power`)andcustomcomponentx86behaviour, freshfinalbackup. Router`.134`liesinside`.70–.219`; reviewedexclusionwouldsplitthatpoolinto`.70–.133`/`.135–.219`andretain`.10–.68`/`.230–.254`. Confirmexactrouterversion/privateconfig+leases/candidateparser/rollbackandprotectNASclientsduringDHCPwrite; OPNsenseISCSavecanreconfigureimmediately. Jackperformsreviewedrouterchange; noagentrouterwritehasoccurred.
+Beforefinaladdressacceptance:finishbattery-device/automation/distantRFchecks andresolvePi-onlyintegrations(`raspberry_pi`,`rpi_power`)throughoperatorreview. Router`.134`liesinside`.70–.219`; parser-testedcandidate splitsitinto`.70–.133`/`.135–.219`, retains`.10–.68`/`.230–.254`/pooloptions andmaps134toMAC64. Refreshcurrentprivateconfig/leases/candidatecomparisonandrollbackbeforeactualwrite; OPNsenseISCSavecanreconfigureimmediately. JackdefersrouterchangeuntilJellyfinusersidle; noagentrouterwrite.
 
-**Source remote access requires operator recovery:** JackusesPiTailscalename/IP, peer`homeassistant.coin-pangolin.ts.net`/100.99.206.29currentlyOffline. Sourcelogshowsnodekeyexpired→NeedsLogin; appstarteddoesnotestablishconnectivity. JackreauthenticateslocallythenverifiescurrentremoteURL; finalcutoverbackupcapturesworkingnodestate. Do notstartrestoredTailscaleidentitywhilePiisactive. Currentfullbackup/capturednetworkkeysarehashverified/fsyncedonculex`haos-source-20261010.dhenn_hr`; stagingimages/config/evidenceonculex`haos-stage-20261010.d2y4wvgm`. Theseprovebackupcaptureandemptyboot, notproductionHArestore.
+**Remote access:** JackreauthenticatesrestoredTailscaleapp; same`homeassistant.coin-pangolin.ts.net`/100.99.206.29Online/LANtailnetHTTP200/phone-mobiledata-loginverified, survivesVMrestart. Pi remainsofftoavoidruncopiedidentitytwice. Sourcebackup/capturednetworkkeysaretainedonculex`haos-source-20261010.dhenn_hr`, repaired/authenticatednativebackup`69373e1c`onculex`haos-vm-recovery-20261010.b3zpwbkx`. SourceTailscalewasexpired/NeedsLogin; recoveryhappenedontheVM.
 
-**Source hardware health:** Piunplannedboot01:30:31UTC/servicesautomaticallyrecover01:33; repeatedkernelundervoltagebeforeandafterconfirmsunstablepowerdelivery, exactresetcauseunproved. [Incident evidence](../../agentic-investigations/2026-10-10-haos-vm-staging.md#pi-service-outage-and-automatic-recovery) recordspriorbackupintact/noagentreboot/noVMaddresscollision. Jackinspectspoweradapter/cable; agreehowtostabilizesourceandrollbackappliancebeforecutover, without assumingbootrecoverymeanshardwarehealthy.
+**Source hardware health:** Piunplannedboot01:30:31UTC/servicesautomaticallyrecover01:33; persistentundervoltageconfirmsunstablepowerdelivery/exactresetcauseunproved. Jackreportscablereplacementfailedtorestoreoperationandapprovesmigrationusing18:01PDTbackup. PiSDretained/off; hardwarepowerstabilityisnotacceptedforrollback. [Incident evidence](../../agentic-investigations/2026-10-10-haos-vm-staging.md#pi-service-outage-and-automatic-recovery) preserveslogsandsourcebackup.
+
+### Active cutover
+
+Jackauthorizesusing01:01UTCbackupf4389be0becausePiunreliableaftercablereplacement; confirmsPiphysicallyoff/SDretained/dongleonepsilon. SeparateemptyEFI+OScheckpointretainedonepsilonandhashverified/fsyncedtoculex`haos-empty-checkpoint-20261010.zg1fp3_y`. Verifiedwholedevice10c4:8a2a/serial716000F1attached100/guestif01present; nohostGPU/Kuberneteshandoff. PrivaterestoreISOcopiedbackupread-onlytoguest/guestfullhashverified/ISOejected/retained. Fullrestorejobecd88b252d9648e69ec8f88fcbec490a completesexit0/done100/errorsnone; Core2026.9.3amd64/all3appsstarted/Supervisorhealthy. Jacklogs in at76anddashboardsappear.
+
+ZHAonboardingautodiscoveryformedadifferentnetworkafterassistantattachedcoordinatortooearly. Jack'sapprovednativeRestoreoldsettingsrepairrestoresoriginalchannel15/PAN7485/IEEE/network+TCkeys; privatecomparisontocapturedsourcepasses/sixdevicesretained/mainsphysicalcontrolworkswithoutre-pairing. Guestrestartfreshlogsnomismatch/sameif01/Jackcontrol+remotechecks pass. Pi-onlyrpi_powerunsupportedonx86 remains tracked. Router26.1.5export/privategeneratedconfig+leasesat`/root/ha-dhcp-check.6qp5gi`/ownISC4.4.3-P1currentandcandidateparserpass, livechange deferred. VM100onboot1; no sharedhostrebootduringJellyfinuse.
+
+Nativefullbackup`69373e1c`(03:45UTC),85,555,200bytes/hash`c9479df2dbd5752391d761812b289960313424a3886792d68ab1708957315b95`, repairedradio+authenticatedTailscale/fullapps+DB/privateoffhost. Stop-modeNASarchive`vzdump-qemu-100-2026_10_09-20_52_45.vma.zst`,3,640,705,565bytes/hash`d47aba67020c4dc4e5aed5d6b95d5398d7c213d5f8df348d964a269a90364528`, pruningdisabled. Restoredintoisolated [VM197](../../non-k8s-iac/proxmox/vms/197-haos-restore.conf), NIC+USBremoved/onboot0beforefirstboot; EFI/HAOS/agent/originalZHAentry+network+sixdevices/capturedrecorder+ZigbeeSQLintegritypass. Cleanlystopped/retained197, production100runs. Scheduledbackupjobs/notificationdeliverystillpending, noarchivecleanup.
 
 ## 1. Identify the source and dependencies
 
@@ -124,7 +132,9 @@ If an execution-time decision requires a different guest IP, edit the HA guest a
 
 ### Physically move and pass through Zigbee
 
-1. Unplug the **existing** Zigbee dongle from the powered-off Pi and plug it into physical epsilon. Use a USB extension cable, preferably from a USB 2 port/hub, to position the radio away from the metal chassis, USB 3 devices, and Wi-Fi interference. A distant server/rack can materially change RF coverage: preserve a useful radio location and later test distant devices, not just nearby ones.
+The production radio must not be attached to an empty/onboarding Home Assistant instance. ZHA's USB discovery can automatically form a network during onboarding, replacing the coordinator's saved network even before account creation. Restore the full application backup with no `usb0`, then stop Home Assistant Core (`ha core stop`) before assigning the USB device. Keep the VM running with Core stopped during USB hotplug; this avoids a guest boot automatically starting Core before the serial check. Attach only with restored ZHA configuration/database present; start Core after its by-id interface is verified. The Pi stays off throughout. [Executed radio recovery](../../agentic-investigations/2026-10-10-haos-vm-staging.md#radio-and-remote-recovery-verified-on-temporary-address) records the native repair and retained source network backup.
+
+1. Unplug the **existing** Zigbee dongle from the powered-off Pi and plug it into physical epsilon. Keep it unassigned while the VM is empty/onboarding. Use a USB extension cable, preferably from a USB 2 port/hub, to position the radio away from the metal chassis, USB 3 devices, and Wi-Fi interference. A distant server/rack can materially change RF coverage: preserve a useful radio location and later test distant devices, not just nearby ones.
 2. In the Proxmox shell, identify the device and its serial number:
 
    ```bash
@@ -136,20 +146,19 @@ If an execution-time decision requires a different guest IP, edit the HA guest a
 
    If a host serial node exists, `udevadm info --query=property --name=/dev/ttyUSB0` (substitute the observed node) shows `ID_SERIAL` and physical path. Record model/serial and host selector in `host.json`. Device bus/address numbers such as `Bus 001 Device 004` can change on reconnect and are not stable selectors.
 3. If exactly **one** device on this host has that vendor/product ID, use `host=<vendor-id>:<product-id>`. Otherwise select a labelled physical port, `host=<bus>-<port>[.<port>]`, using the Proxmox **Add → USB Device → Use USB Port** UI or verified topology. `qm` cannot select a USB dongle directly by `/dev/serial/by-id`; that path is used **inside the guest**. A port selector requires keeping the dongle in that port; a vendor/product selector is ambiguous if another identical device is added later.
-4. With guest 100 stopped, add the verified selector (replace the placeholder):
+4. After the application backup is restored and Core is stopped in the running VM, hotplug the verified selector (replace the placeholder). Verify the serial interface before starting Core:
 
    ```bash
    qm set 100 --usb0 'host=<verified-usb-selector>'
    qm config 100
-   qm start 100
    ```
 
    The dongle belongs only to guest 100; do not attach it to the Kubernetes guests or open it with a host Zigbee service. Ordinary USB device passthrough needs neither an entire PCI USB-controller assignment nor nested virtualization.
-5. Verify `.134` in the guest console/OPNsense lease. In the HAOS console, run `hardware info` / `network info` at `ha >` (or `ha hardware info` / `ha network info` in an HA terminal). For a host-shell check, type `login` at the HAOS console and inspect `/dev/serial/by-id/`. The dongle's expected serial identity must appear **in HAOS**, not merely in Proxmox's `lsusb`. Record the full guest path and complete `@ZIGBEE_USB_HOST@` in the manifest.
+5. Verify `.134` (or the temporary lease while router transfer is deferred) in the guest console/OPNsense lease. Run `hardware info` / `network info` at `ha >` (or `ha hardware info` / `ha network info` in an HA terminal). For a host-shell check, type `login` at the HAOS console and inspect `/dev/serial/by-id/`. The dongle's expected serial identity must appear **in HAOS**, not merely in Proxmox's `lsusb`. Record the full guest path and selector in the manifest, then start restored Core (`ha core start`).
 
 ## 4. Restore and verify the application
 
-1. Open `http://192.168.1.134:8123` and choose **Upload backup** at the welcome screen. Upload the final backup, supply its encryption key if required, and select all required directories and apps/add-ons. Use the source-specific restore steps for any external services. Allow restore to finish (large installations can take around 45 minutes); do not refresh or power-cycle while HA is reinstalling apps.
+1. With the Pi off and `usb0` absent, open `http://<verified-VM-address>:8123` and choose **Upload backup** at the welcome screen. Use `.134` if its transfer is accepted, otherwise the recorded temporary DHCP address. Upload the accepted complete backup, supply its encryption key if required, and select all required directories and apps/add-ons. Use the source-specific steps for external services. Allow restore to finish; do not power-cycle while HA is reinstalling apps. Perform the [USB handoff](#physically-move-and-pass-through-zigbee) after restoration, with Core stopped, before enabling device acceptance.
 2. Log in using the **source** HA credentials. A restored direct-HA TLS configuration may now require `https://...:8123`; preserve certificate hostname validation. Restore/reconnect network storage and external recorder/MQTT services. Confirm users, dashboards, integrations, entities, history, scenes, and automations survived.
 3. Inspect Core, Supervisor, app, and radio-owner logs. Expected temporary disconnects during restoration should clear; recurring serial-port, timeout, MQTT auth, architecture, or database errors are not a successful migration.
 
@@ -164,17 +173,22 @@ The same coordinator plus its restored application state should preserve pairing
 ### Acceptance checklist
 
 - [ ] Guest 100 owns `.134`, has working DNS/gateway/time, and the Pi is powered off.
+- [x] Pi physicallyoff/SDretained; guest76/GWDNS1/HAOSCore18.3/2026.9.3amd64/Supervisorhealthy/allappsstarted.
 - [ ] `dig @192.168.1.1 homeassistant.avril A +short` returns `.134`; the workstation's normal `dig homeassistant.avril A +short` agrees. Check any AAAA answer too.
 - [ ] LAN browser login works by `homeassistant.avril` using the verified scheme/port. After restore, `curl --fail --max-time 15 http://homeassistant.avril:8123/` (or the verified HTTPS URL) succeeds; browser WebSocket updates work.
 - [ ] The actual existing remote access path works from outside the LAN (phone on mobile data or a remote Tailscale client), including DNS, login, live updates, and callbacks. A LAN test alone does not prove this.
+- [x] JackconfirmsphoneWi-Fioff/mobiledata/Tailscalelogin; samepeername/IPOnline/HTTP200/postguestrestartremotecheckpasses. Individualintegrationcallbackacceptanceremainstracked.
 - [ ] Restored app/recorder/MQTT state is healthy; entity/device counts match the baseline except documented pre-existing unavailability.
-- [ ] The radio is visible in Proxmox **and** HAOS; its model/serial/coordinator identity matches, and its owning process has no continuing serial or initialization errors.
+- [x] Radio visiblehost+guest/serialif01/sameIEEE/channel15/PAN+keysrestoredprivatelyverified/nofreshmismatchpostrestart; sixZHAdevices retained.
 - [ ] Toggle a representative mains-powered Zigbee light/plug and verify **physical action and reported state**, then test a distant room device. Check a group action if used.
+- [x] JackconfirmsexistingmainsZigbeedevicephysicallyresponds/postrestartcontrolworks; distantRF/group/batteryevent/automationstillpending.
 - [ ] Wake a battery sensor/remote, trigger a real event, and verify a fresh timestamp/state in HA. Sleeping devices may need their ordinary wake action; avoid factory resets/re-pairing.
 - [ ] Trigger a Zigbee-driven automation end to end and verify its intended physical result. Check RF coverage at the coordinator's server location; allow routes to settle and inspect persistent failures.
 - [ ] Shut down/start guest 100 and repeat serial identity and device checks. Verify the mapping survives a dongle disconnect/reconnect with the radio service stopped first.
 - [ ] Set `qm set 100 --onboot 1`; in a scheduled host reboot window verify both VM auto-start and Zigbee reconnection. If USB enumeration races prevent startup, investigate logs/topology and fix the cause before completion.
+- [x] Onboot1withJackapproval/guest-onlyreboot+stopbackupresumptionpass; hostcoldboottestdeferreduntilreviewedmaintenancewindow.
 - [ ] Complete and commit the [VM manifest's](../../non-k8s-iac/proxmox/vms/100-homeassistant.conf.in) actual volume IDs/selector and [`host.json`](../../non-k8s-iac/proxmox/host.json)'s observed non-secret inputs. Add the active HAOS/hypervisor and Pi rollback status to the [asset catalogue](../asset-catalogue.md).
+- [x] [Deployedmanifest](../../non-k8s-iac/proxmox/vms/100-homeassistant.conf)/hostintent/catalogue includeactualvolumes/USB/autostart andretained [isolatedrestore197](../../non-k8s-iac/proxmox/vms/197-haos-restore.conf); final134addressacceptancepending.
 
 ## 5. Recovery and retirement
 

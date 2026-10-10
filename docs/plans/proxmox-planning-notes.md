@@ -4,6 +4,30 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 
 ## Task tracking
 
+- [x] Jack authorizes HA cutover using verified18:01PDT full backup after Pi power/cable replacement did not restore reliable service.
+- [x] Jack confirms Pi physically powered off/storage retained and existing HubZ dongle connected to epsilon.
+- [x] Jack confirms OPNsense full configuration export saved locally and currentthreepoolboundsunchanged.
+- [x] EmptyguestEFI+OScopies captured/hashchecked beforeUSBattachment; guestseesexactserialif01, approvedfullbackupcopied/hashverified/registered.
+- [x] Submit single fullrestoref4389be0insideVM100/QEMUguestPID2356; monitorexistingrequest/jobwithoutrepeatingrestore.
+- [x] Preserve empty HAOS checkpoint, stage verified full backup and attach the identified coordinator exclusively to VM100.
+- [x] Fullrestoref4389be0completed/exit0/jobdone100/errorsnone/Core2026.9.3amd64/all3appsstarted; Jacklogs in and dashboardsappear.
+- [x] Investigate ZHA inconsistent-network-settings repair; saved/original network restored through native repair approved by Jack.
+- [x] Jack approves native ZHA repair restoring saved/original channel15 network to same coordinator; UI execution/device checks pending.
+- [x] Routerprivatecandidate134exclusion/MAC64/preservedpooloptions/nonoverlap andownISCparserpass; liveapplypending.
+- [x] Jack chooses deferring134 DHCP transfer until Jellyfin users are idle; continue device/Tailscale acceptance on temporary76.
+- [x] Finish original Zigbee network repair; Jack confirms existing mains device works, captured repaired channel/PAN/IEEE/network+TCkeys match source privately.
+- [x] Jack reauthenticates restored Tailscale; same peer Online/HTTP200, phone/mobile-data login works.
+- [ ] Verify battery-device event, Zigbee-driven automation and distant-room control after repair/restart with Jack.
+- [x] Capture full native HA backup of repaired/authenticated state, test VM restart and capture retained NAS VM archive.
+- [x] Capture repaired/authenticatednativebackup69373e1c/fulljobdone/errorsnone/hashprivateoffhost; VMrestartSSH/LANtailnet/ZHAstable andJackpostrestartphysicaldevice+remotepass.
+- [x] Jack approves automaticstartupVM100andretainedstop-modeNASbackup; capture/verification active.
+- [x] VM100onboot1/stop-modeNASarchive3.64GB/fullhashverified/no pruning/HAresumed/Supervisorhealthy/JF200.
+- [x] Restore currentHAOSNASarchiveunderunused197/noNICUSB/onboot0 beforefirstboot; EFI/HAOS/agent/originalZHAentry+network+6devices/bothcapturedSQLintegritypass; cleanstopretained.
+- [x] Preserve final cutover configuration/diagnostics off-host and verify manifests/documentation for Jack's review commit.
+- [ ] Reauthenticate restored Tailscale app locally and verify phone/mobile-data access to HA before final address transfer.
+- [ ] Review OPNsense26.1.5 configuration/lease recovery and134 exclusion/reservation transfer before live DHCP edits.
+- [ ] Restore HAOS100 from accepted source backup and verify application/ZHA/real device/remote access with Jack.
+
 - [ ] Investigate Pi LAN service outage reported after HAOS staging; establish cause and recover source access before cutover.
 - [x] Verify Pi service recovery/new boot and capture previous/current logs; persistent undervoltage proved, no agent reboot/restart.
 - [ ] Jack inspects Pi PSU/cable/connector; confirm power-delivery remediation or agreed migration/rollback boundary. Exact reset trigger remains unproved.
@@ -13,7 +37,7 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Verify pinned HAOS artifact and available resources; provision empty VM100 with temporary DHCP/onboot0.
 - [x] Verify empty HAOS boot/onboarding/DNS/Internet/reboot/clean shutdown and preserve configuration/evidence off-host.
 - [x] Capture full source backup with Jack's approval; verify app/database coverage, SQLite integrity and private off-Pi/off-host matching copies.
-- [ ] Jack reauthenticates source Tailscale app after expired-node-key/NeedsLogin; establish actual remote-access baseline before cutover.
+- [x] Tailscale recovered on restored VM with Jack's local reauthentication after source failure; source stayed off, phone/mobile-data login verified.
 - [ ] Confirm physical HubZ coordinator location/extension cable and representative device/automation baseline.
 - [x] Verify HAOS staging documentation/configuration and prepare the commit for Jack's review.
 - [ ] Agree HA cutover window, `.134` exclusion/reservation transfer, radio relocation and application/device acceptance with Jack.
@@ -116,6 +140,8 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Verify epsilon iDRAC or physical boot-console access before its rescue-imaging outage.
 
 ## Operator UI acceptance
+
+HAcutovercheckpoint04:00UTC: production100running/onboot1/DHCP76/HubZif01/originalchannel15/PAN+IEEE+keymatchverifiedprivately, Jackmainscontrol/postguestrestart/mobiledataTailscaleloginpass/same100.99.206.29Online. Pi off/SDretained/sourceunreliable; battery/automation/distantRF/USBreconnect/hostcoldboottestopen. Nativebackup69373e1c03:45UTC85555200B/hashc9479...privateoffhost; NASstop100archive3640705565B/hashd47aba...→isolated197noNICUSBbeforeboot/EFI+HAOS+agent+originalZHA6devices/bothcapturedSQLintegrity/cleanstopretained. Notificationsfailed/no productionjobs;134candidateonlyremove134/preservepooloptions/MAC64/routerparserpass, JackdefersapplyuntilJellyfinidle. Finalprivateconfig98files172096768Btoculexhaos-cutover-20261010.n5zeg321 and42clientfiles85673370Btohaos-cutover-client-evidence-20261010.ly6g1bc6hashmodes/fsync. Fiveunittests/260linksanchors/9Bashblocks/JSON/exact100+197manifest/diffchecks pass. NoagentrouterArgoCDwrites/hostreboot/k3sguestmigration/rcloneenable. [Checkpoint](../../agentic-investigations/2026-10-10-haos-vm-staging.md#cutover-checkpoint-and-deferred-acceptance).
 
 Pioutage01:29UTC:Jacknooperatorchanges/DNS134/pingcorrectMACfromMac+epsilon+culex; SSHHAobserverfail/start,100confirmedstopped/noaddresscollision. Actualunplannedboot01:30:31.995981/newbootb0368a7d; SSHobserverreturns01:31:48/HA20001:33:17+4boundedchecks01:34:01–17, noagentPiwrite/restart/powercycle. Priorbounded2000kernelentries994lowvoltagewarnings22:31→01:21/currentbootcontinueswarnings; confirmsphysicalpower-deliveryfault, exactresettriggernotproved/nofinalcleanshutdown/panic/OOMkill/storageerrorrecord. Currentstartupkswapd/SLUBallocationwarnings/~1GiBRAM, recorderuncleanshutdownsessioncleanup; noforcedrepair/DBrestore. Priorfullbackup/capturedSQLintegrityretainedoffhost. PhysicalPSU/cablerating/inspectionrequestedJack. [Outage record](../../agentic-investigations/2026-10-10-haos-vm-staging.md#pi-service-outage-and-automatic-recovery).
 
