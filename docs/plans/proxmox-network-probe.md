@@ -1,6 +1,6 @@
 # Proxmox network probe
 
-**Status: acceptance plan; probe not provisioned.** Run after the [epsilon Proxmox host/bridge conversion](proxmox-installation.md#2-proxmox-package-kernel-and-bridge-installation), before production [Kubernetes guests](proxmox-installation.md#4-production-kubernetes-guests) or [HAOS](homeassistant-vm-migration.md). VM 199 has a [checked-in manifest](../../non-k8s-iac/proxmox/vms/199-network-probe.conf.in): minimal Debian 13, 1 vCPU, 1 GiB, 16 GiB disk, VirtIO on `vmbr0`, no auto-start/production tokens.
+**Status: probe199 installed; LAN/DNS/Internet/mDNS/NFS/guest-reboot and off-host archive/isolatedrestore verified. Off-site client, disposable iSCSI-LUN and notification delivery remain pending.** Before production [Kubernetes guests](proxmox-installation.md#4-production-kubernetes-guests) or [HAOS](homeassistant-vm-migration.md), review these results and remaining acceptance inputs with Jack. VM199's [deployed manifest](../../non-k8s-iac/proxmox/vms/199-network-probe.conf) records Debian13.7/kernel6.12.107,1vCPU/1GiB/16GiB/VirtIOvmbr0/onboot0; no production tokens or passthrough.
 
 ## Evidence to capture
 
@@ -39,3 +39,25 @@ Multicast packet visibility alone is weaker than successful discovery. LAN ping 
 Repeat relevant checks on production guests after provisioning. A minimal probe proves the virtual network path, but not k3s's overlay/runtime, GPU passthrough, or HAOS's radio/control logic. Their [separate acceptance](proxmox-installation.md#4-production-kubernetes-guests) and [Zigbee checks](homeassistant-vm-migration.md#acceptance-checklist) still apply.
 
 Record remaining untested paths explicitly. Promote the production rollout only when required paths pass and any exceptions are discussed with Jack. Update the [catalogue](../asset-catalogue.md) if a durable probe/monitoring asset is retained. Test-instance cleanup is an operator-reviewed action, not automatic deletion of evidence.
+
+## Observed probe results
+
+Execution spans October9 evening through October10 00:05UTC (October9 locally). [Investigation](../../agentic-investigations/2026-10-09-epsilon-bridge-storage.md#probe-network-and-recovery-results) records private evidence, diagnostics and test limitations.
+
+| Check | Observed result |
+| --- | --- |
+| DHCP/identity | `.221/24` offered by `.1`, leased7200seconds, MAC02:00:00:01:00:c7/ens18, gateway/DNS`.1`; same address after guest-agent reboot and stop-mode backup. Router mapping confirmed by Jack. |
+| SSH/guest agent | Existing publickey login passes; hostkey exported through trustedProxmoxguestagent and pinned separately, ED25519 `SHA256:VUDScEQeLJXUiJPAUsNa1krzWMD6bTeskmLJKQHMmDk`. Guestagent reportsinterfaces/reboots/shutsdown. Scubbo has standard password-protected sudo; randomconsolepassword/privatehash staysoutsideGit. |
+| LAN/source addressing | Workstation andhost→guestHTTP200, guestserverobserves`.50`/`.69`sourceIPs, noNAT. Guest→culexSSHbanner/NASports/hostSSHpass.64MiBchecksummedSSHtransferbothdirections withMac passes at~221/152Mbps, includesWi-Fi/SSH overhead. |
+| DNS/Internet/time | Normalresolveranddirect`.1`LAN/InternetA/AAAAqueriespass; DebianverifiedHTTPS200/HA8123/JFhealth200. ChronyNormal/Stratum2. Six boundedDNS/HTTPchecks pass. |
+| MTU/bulk | DF1472payload/1500MTU tohostandculex,3packets/0loss each. Two5second/2streamguest-hostiperfruns~12.7/13.8Gbit/s; forward0/reverse58retransmits recorded. Virtualhostpathdoesnotmeasurephysical1GbLANthroughput orprovezeroTCP loss. Hosttestbinaries extractedprivatelyfromsignedpackages, nohostpackageinstall/permanentiperfservice. |
+| Tailscale | Jack reconnectsMac; forced`tailscale nc`SSHto`.221`throughOPNsense subnetrouter passes, directepsilon tailnetSSHpasses. MacisonLAN, so this proves tunnel/subnetroute butnotphysicallyoff-siteclient reachability. CLI/serverversionwarningretained. |
+| Discovery | Guestavahi discovers/resolvesgalactusSSHservice; guestpublishedtestservice observedonMac viaDNS-SD. ActualbidirectionalmDNSservice discovery; temporarypublisherstopped. SSDP/control-deviceworkflowuntested. |
+| Existing k3s overlay | EpsilonSonarrpod resolvescluster/LANnames and reachesrealculexPrometheusClusterIP/readiness. Initial inventedservicehostnamefailedDNS; correctedfromactualServiceinventory. Guestk3soverlaytestsfollowjoining101/102. |
+| Guest NAS I/O | Jackapproveduniquetestdirectory onexistingmanual-nfs;1MiBwrite/fsync/read/SHA256passes, onlytestpayload/directoryremoved andtemporarymountcleanlydetached. iSCSITCP3260reachable; blockfilesystemtestneedsdedicateddisposableLUN, productionLUNsnotattached. |
+| Recovery | NAS`vm-backups`maproot1001:1001fileIOpasses/~10.3TiBavailable. Stop-mode199archive882,000,610bytes, fullSHA256`6b5e70c52eddd21c8366dcff8f5de89508ad72170060ca4e62b2b4afd87af7f7`. Restore198onboot0/NICremovedbeforefirstboot verifiesEFI/OS/guestagent/installmarker/SSHkey; cleanlyshutoff/retained. Restoreguestnetworkidentitynotattached. |
+| Notifications | Archivecaptureexit0; defaultmail-to-root notificationfailed/noemailrecipient/local-onlymail. Jackselectstrackedfollowup; configure/testdeliverybeforeproductionbackupjobs. No production schedule created. |
+
+Remaining acceptance: physicallyoff-siteclient andguest→remoteendpoint; dedicatediSCSItestLUN/guestCSI; explicitdenied-sourcefirewalltest; stabilityduringlongphysicaltransfer/guest-presenthostreboot; SSDP/realHAdeviceworkflows; restoredguestnetworkidentity; notificationdelivery. Hoststaticbridge/DNS/localstoragepersistencealreadyprovedbycontrolledhostrebootbeforeprobecreation. Guestbootdiagnosticsincludeq35PCIhotplugslotduplication(-EBUSY), nocodecvirtualaudio andactivepNFShelperabsentpipe; nofailedguestunits/rootdiskerrorsobserved. SystemdautomaticVMSSHgeneratorfailedwithoutVSock; explicit`systemd.ssh_auto=no` restoredcleannormalSSHservicebootbehaviouronreboot. Guestjournalisnotclaimederror-free.
+
+Retain199running/onboot0,198stopped/noNIC/onboot0,originalISO/derivedprivateinstaller/seed/password, NASarchive andallrecoveryrecordsuntilJackapprovescleanup. No automatic promotion to production follows a partial matrix.

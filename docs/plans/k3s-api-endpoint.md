@@ -1,6 +1,6 @@
 # Stable k3s API endpoint
 
-**Status: host placement/address plan accepted; router validation and implementation pending.** Jack selected `https://k3s-api.avril:6443`, candidate VIP `192.168.1.220`, with host-OS proxies on epsilon and culex. General-purpose server guest candidate is `.222`; probe `.221` and GPU agent `.223`. They are recorded in the [catalogue address allocations](../asset-catalogue.md#intended-address-allocations-not-yet-reserved-in-opnsense), not yet validated/excluded at the router. Current production clients still use `https://epsilon:6443`.
+**Status: host placement/address plan accepted; Jack confirms router pool exclusion, proxy/VIP implementation pending.** Jack selected `https://k3s-api.avril:6443`, VIP `192.168.1.220`, with host-OS proxies on epsilon and culex. Planned server guest is `.222`, GPU agent `.223`; deployed probe leases `.221`. The [catalogue address allocations](../asset-catalogue.md#proxmox-and-api-address-allocations) record these addresses and reported exclusions. Current production clients still use `https://epsilon:6443`.
 
 ## Endpoint architecture
 

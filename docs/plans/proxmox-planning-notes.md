@@ -45,13 +45,19 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Install/verify Proxmox management stack and record its deployed state.
 - [x] Complete Proxmox management transaction and verification reboot; record deployed version/access/recovery and release installation ownership.
 - [x] Jack verifies interactive Proxmox UI login; expected no-subscription notice explained.
-- [ ] Verify named-administration access; agree static bridge/router/resolver policy and dedicated VM storage/probe execution.
-- [ ] Execute bridge/storage/probe preparation in Jack's notified next-stage window; resolve router`.69` exclusion before staticassignment.
-- [ ] Resolve intentionalreboot's hostNFS DNSbootstrap failures with selectedOPNsenseDNS/Tailscaleownership andverifyhostmountrecovery.
+- [ ] Verify named-administration access; static bridge/router/resolver policy and dedicated VM storage/probe execution agreed and recorded.
+- [x] Execute bridge/storage/probe preparation in Jack's notified next-stage window; resolve router`.69` exclusion before staticassignment.
+- [x] Resolve intentionalreboot's hostNFS DNSbootstrap failures with selectedOPNsenseDNS/Tailscaleownership andverifyhostmountrecovery.
 - [x] Apply approved OPNsense hostDNS/TailscaleacceptDNSfalse and restore both failedhostNFS mounts without productionCSI changes.
 - [ ] Obtain installedrouterversion/privateexactDHCPcandidateparserandleasevalidation/rollbackproof before Jack's livepoolchange decision.
 - [x] Jack reports applying three pools excluding`.69` and confirmsprobe`.221`mapping; realDHCPACKobserved, parser/configpreflight notsupplied.
-- [ ] Allocate Jackapprovedselected931GiBsingle-driveRAID0 asoneGPT/ext4partition; verify mountpoint-gatedvm-local and preservepreallocationmetadata.
+- [x] Allocate Jackapprovedselected931GiBsingle-driveRAID0 asoneGPT/ext4partition; verify mountpoint-gatedvm-local and preservepreallocationmetadata.
+- [x] Staticbridge/DNS/storagebootpersistence andcore/GPU/CSIrestored after normalreboot; timedrollbackcancelledafterindependentLANchecks.
+- [x] Finish Jackapprovedunattendedprobe199Debianinstall; verifyDHCP221/SSH/guestagent andboundednetwork/backuprestorechecks; trackremainingmatrix.
+- [ ] Complete remaining probe off-site/iSCSI/firewall/stability checks or agree scope exceptions before production rollout.
+- [ ] Configure/test Proxmox backup notifications before production schedules; Jack explicitly defers delivery configuration.
+- [x] Preserve final private network/probe/installer/recovery evidence off-host and verify matching content/permissions.
+- [x] Verify final bridge/probe documentation/manifests and prepare the stage commit for Jack's review.
 - [x] Allocate selectedGPT/ext4UUID443ddd4e/verifywritefsyncread+mountpointinactive-whenabsent; uploadhashverifiedDebianISO.
 - [x] Reproduce default Proxmox-kernel/NVIDIA incompatibility before physical interruption; review proprietary580 support and artifact provenance.
 - [x] Rehearse the verified NVIDIA580 upstream installer/DKMS and Proxmox-kernel boot in the isolated clone; review warnings and physical driver maintenance with Jack.
@@ -96,6 +102,10 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Verify epsilon iDRAC or physical boot-console access before its rescue-imaging outage.
 
 ## Operator UI acceptance
+
+Probe stage completeOctober9locally/October10UTC:199Debian13.7/kernel6.12.107/MACc7/DHCP221/keySSH/guestagent/normalreboot, LANHTTPpeerIPs/MTU/DNS/InternetTLS/NTP/mDNS/NFSfileIO/forcedTSsubnetpass. Virtualiperf~12.7/13.8Gbitreverse58retransmits; physicallyoffsite/iSCSILUN/SSDP/denyfirewall/longtransfer/guest-presenthostreboot/restorenetworkidentityremainopen, noautomaticproductionpromotion. NASvm-backupsregistered1001:1001/fsync/~10.3TiBavailable;199stoparchive882000610B/hash6b5e70...→unused198restoreNICremovedbeforeboot/EFI+OS+agent+installmarker+SSHkeypass/cleanstopretained. Defaultmailnotificationfailed/no recipient/local-onlyMTA; Jackselectsfollowupbeforeproductionjobs. GuesterrorjournalretainsPCIhotplug/audio/pNFSdiagnostics; systemd.ssh_auto=no removesVMSSHgeneratorVSockerrorafteractualreboot. FinalprivateconfigSQLite32KiBintegrityok/tar194560B;262files/1.77GBstagehash/modes/symlinkverifiedtoculexfinal-stage-20261010.wy034ay5. NoArgoCDwrites/rcloneoff/Vaultsealedseparatelytracked/80Running78Ready0Pending. [Finalevidence](../../agentic-investigations/2026-10-09-epsilon-bridge-storage.md#final-recovery-evidence).
+
+Finalverification:fiveexistingrendererunittestspasswithpristineoutput;257localdocumentationlinks/anchorsacross11changedMarkdownfilesand10Bashcodeexamplespass, probe-late.shsyntax/duplicate-key-safehostJSON/gitdiffcheckpass. Exactprobe199/restore198deployedhardwarematchesprivatecapturedconfigsandrestoreSSHpublickeymatchestrustedoriginalpin, storagestanzaoptionsmatchincludingdefaultshared0. InitialrawstoragestringassertionwasinvalidbecausePVEserializesindentation/orderanddefaultvalues; correctedsemanticcomparisonpasseswithoutliveconfigurationchange. ChangedfilescontainnoSSHprivatekeys/passwordhashes; originalprivateISO/seed/passwordarchivesremainoutsideGit.
 
 20:33UTCJackpoolchange/proceedconfirmed3ranges10–68/70–219/230–254/.69mapping/probe221MACc7hostnamenetwork-probe; observedrealDHCPACK20:19:53, noprivateparser/configproof supplied. Explicitapprovesformatselected931GiBWWN...c7d... oneGPText4/fullcapacity/singleRAID0. ExactVD1pdisksvdkeymapsbay2only; first/last1MiBprivateoffhost/edgeunchanged/emptylayout/sfdiskGPTcreateF3D6.../PART7ACB... thenredundantBLKRRPARTbusyafterkernelalreadyloaded→read-onlygeometryholdsopencheckpass/continueexistingpartitionno rewrite. ext4UUID443ddd4e-511c-4726-b481-8af641099740/fullinit/1%reserved/fstab/0verify/writefsyncreaddeletepass; vm-localgatedunmount→inactive/remountactive906GiBfree/defaultlocalretained/ISOuploadedhashpass. FreshbridgeSQL84364509hasheef3b09ed41fb4a0b4f8d2f21f77b370002a5ee898ebeff3e3062023c184279a/globals519/hostarchivehash1a3738bc32bed98d15fd1eeb8b59498196d2cf1fb59043868632c9d800a4c9ef protectedoffhost/networkvU2O84xo/bridge. Candidateparsedstatic69vmbr0/MACstable/unusedportsmanual/noflannelifaceoverride, pendingdrainquiesce/cutoverrollbacktimer. No guestallocated/routeragentwrite/ArgoCDwrites; Vaultunreadyindependentfollowup/rcloneoff.
 

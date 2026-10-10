@@ -22,6 +22,7 @@ Scattered TODOs that either don't belong in any particular application, or that 
 - [~] Set up SSO via Authentik (ArgoCD done, Jellyfin/Grafana/others pending)
 - [X] Fully backup and test k3s HA Postgres cluster (see [docs/k3s-ha-postgres/](docs/k3s-ha-postgres/))
 - [ ] Configure CloudNative-PG scheduled backups to S3/MinIO for Immich and Authentik databases
+- [ ] Configure and test Proxmox backup notification delivery before scheduling production VM backups. Probe199 archive/isolatedrestore passed; default `mail-to-root` failed because `root@pam` has no email recipient and host mail is local-only. Jack selected deferring delivery configuration. [Probe results](docs/plans/proxmox-network-probe.md#observed-probe-results).
 - [ ] Migrate standalone PostgreSQL apps (Ombi?) to CloudNative-PG
 - [ ] Investigate storing democratic-csi Helm values partially in git (non-secret config) with secrets injected separately (Vault, sealed-secrets, or Helm --set flags)
 - [X] Auto-purge Cloudflare cache after publishing a new blog entry (ArgoCD PostSync hook in blog-deployment repo)

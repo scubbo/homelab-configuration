@@ -19,4 +19,4 @@ iface vmbr0 inet static
     hwaddress 14:18:77:28:11:0c
     bridge-ports eno1
     bridge-stp off
-    bridge-fd 0
+    bridge-fd 2

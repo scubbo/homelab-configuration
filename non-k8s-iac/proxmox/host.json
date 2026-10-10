@@ -1,5 +1,5 @@
 {
-  "status": "management installed; bridge and storage pending; guests planned",
+  "status": "management, static bridge, storage and probe backup/isolated restore verified; production guests planned",
   "physical_host": "epsilon",
   "hypervisor": {
     "hostname": "epsilon",
@@ -18,7 +18,7 @@
     "vm_storage_partition_uuid": "7ACB3EE1-6ECC-4A39-8E01-85B229192448",
     "vm_storage_gpt_uuid": "F3D6D65F-1BEC-4201-A7F8-B1F4A3CDCCFC",
     "vm_storage_raid": "single physical bay2 SSD/RAID0; no redundancy",
-    "vm_storage_acceptance": "mounted ext4 write/fsync/read/delete; unmounted directory storage inactive; remounted active; verified Debian ISO uploaded",
+    "vm_storage_acceptance": "mounted ext4 write/fsync/read/delete; unmounted directory storage inactive; remounted active; normal host reboot persistence; verified ISO/probe199 and isolated restore198 volumes",
     "storage_candidate_wwn": "0x614187703cb534002c7d389b1499c8ab",
     "storage_signature_check": "Jack ran privileged wipefs --no-act and blkid -p; no signatures reported",
     "reserved_memory_mib": 8192,
@@ -50,7 +50,7 @@
     },
     "installed_version": "pve-manager/9.2.21/4f6e0ac86f9e8c7f",
     "management_url": "https://192.168.1.69:8006",
-    "network_stage": "eno1 DHCP; vmbr0 not deployed",
+    "network_stage": "vmbr0 static 192.168.1.69/24 on eno1; MAC preserved; normal reboot acceptance October9",
     "resolver_owner": "OPNsense 192.168.1.1; Tailscale accept-dns=false",
     "running_kernel": "7.0.14-23-pve",
     "gpu_driver": {
@@ -114,10 +114,16 @@
       "name": "network-probe",
       "manifest": "vms/199-network-probe.conf.in",
       "ipv4": "192.168.1.221",
-      "address_validation": "Jack confirms pool exclusion and MAC02:00:00:01:00:c7 mapping to .221/hostname network-probe on October9; guest lease acceptance pending",
+      "address_validation": "Jack confirms pool exclusion and mapping; guest offered/leased .221 by .1, same MAC/address after guest-agent reboot and stop-mode backup",
       "address_assignment": "temporary OPNsense DHCP reservation",
       "os": "Debian 13 amd64",
-      "purpose": "network and storage acceptance before production guests"
+      "purpose": "network and storage acceptance before production guests",
+      "deployed_manifest": "vms/199-network-probe.conf",
+      "installed_os": "Debian 13.7",
+      "running_kernel": "6.12.107+deb13-amd64",
+      "state": "running; onboot disabled",
+      "ssh_host_ed25519_fingerprint": "SHA256:VUDScEQeLJXUiJPAUsNa1krzWMD6bTeskmLJKQHMmDk",
+      "acceptance": "LAN/keySSH/DNS/InternetTLS/NTP/MTU/mDNS/NFSfileIO/tailnetforcedsubnet/guestreboot/archive-isolatedrestore verified; offsiteclient/dedicatediSCSILUN/notifications pending"
     }
   },
   "kubernetes": {
@@ -155,7 +161,7 @@
     "nas_ipv4": "192.168.1.39",
     "nas_platform": "TrueNAS CORE",
     "planned_nas_export": "/mnt/high-resiliency/proxmox-backups",
-    "export_status": "export and host mount/root file creation-write-read-delete accepted; Proxmox backup/restore pending",
+    "export_status": "registered vm-backups; mapped-root write/fsync/read/delete and probe199 stop-mode backup→NIC-less198 boot/cleanstop verified",
     "nas_export": "/mnt/high-resiliency/proxmox-backups",
     "nas_user": "proxback",
     "nas_uid": 1001,
@@ -176,6 +182,18 @@
     },
     "vm_backup_schedule": "weekly, stop mode, retain 4",
     "ha_backup_schedule": "daily, off-host, retain 7",
-    "last_restore_exercise": null
+    "schedule_status": "planned; no production VM or native HA backup schedule deployed",
+    "notification_delivery": "default mail-to-root failed/no recipient/local-only MTA; Jack defers delivery configuration until before production schedules",
+    "last_restore_exercise": {
+      "checked_utc": "2026-10-10T00:05:24Z",
+      "source_vmid": 199,
+      "restore_vmid": 198,
+      "restored_manifest": "vms/198-probe-restore.conf",
+      "archive": "vm-backups:backup/vzdump-qemu-199-2026_10_09-14_51_53.vma.zst",
+      "archive_bytes": 882000610,
+      "archive_sha256": "6b5e70c52eddd21c8366dcff8f5de89508ad72170060ca4e62b2b4afd87af7f7",
+      "result": "hash rechecked; restore onboot0/noNIC before firstboot; EFI/guestagent/OS/installmarker/SSHhostkey verified; clean guestagent shutdown retained",
+      "pruning": "disabled during exercise; archive and both VMs retained"
+    }
   }
 }
