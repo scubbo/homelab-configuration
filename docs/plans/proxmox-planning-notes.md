@@ -4,6 +4,18 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 
 ## Task tracking
 
+- [x] Jack confirms maintenance window/Jellyfin idle/no concurrent host or NAS maintenance/Pi physically off; authorizes134transfer.
+- [x] Refresh private router config/lease recovery, recheck live configuration against tested candidate and apply reviewed134exclusion/MAC64mapping through Jack's router UI.
+- [x] Jack reports final135–219poolSave/DHCPprocess/currentparser/tokenizedfinalcandidatecomparisonpass; windowstillactive.
+- [x] VM100-onlyNetworkManagerdown/up receives134from1/sameMAC64/7200lease/GWDNS1/FQDN+IPHTTP200/strictSSH; guestandhostbootsunchanged.
+- [x] Jack posttransferphone-Tailscalelogin+Zigbeecontrolpass; testclienttailnetTCPrecoverswithappforwarding134.
+- [x] Refresh Core discovery sockets afterLANaddresschange andverify134mDNS/access; finalrouter/host/clientrecords tracked separately.
+- [x] Jack reports narrowedcandidateparser/70–133Save/DHCPprocess/liveparserpassed;135–219upperpool/finalcandidatecomparisonawaited.
+- [x] Renew VM100 DHCP and verify134ownership/DNS/LANtailnetSSH+HTTP/radio and shared-host storage/cluster recovery.
+- [x] Preserve134transfer evidence/configuration off-host, update catalogue/runbooks and prepare the completion commit for Jack's review.
+- [x] Jack saves router before/after private configuration+leases; finalPID60912/afterhashesrecorded, freshpostchangeoffrouterexportunconfirmed.
+- [ ] Jack saves a full post-change OPNsense export off-router; retain private before/after configuration and leases.
+
 - [x] Jack authorizes HA cutover using verified18:01PDT full backup after Pi power/cable replacement did not restore reliable service.
 - [x] Jack confirms Pi physically powered off/storage retained and existing HubZ dongle connected to epsilon.
 - [x] Jack confirms OPNsense full configuration export saved locally and currentthreepoolboundsunchanged.
@@ -25,7 +37,7 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Restore currentHAOSNASarchiveunderunused197/noNICUSB/onboot0 beforefirstboot; EFI/HAOS/agent/originalZHAentry+network+6devices/bothcapturedSQLintegritypass; cleanstopretained.
 - [x] Preserve final cutover configuration/diagnostics off-host and verify manifests/documentation for Jack's review commit.
 - [ ] Reauthenticate restored Tailscale app locally and verify phone/mobile-data access to HA before final address transfer.
-- [ ] Review OPNsense26.1.5 configuration/lease recovery and134 exclusion/reservation transfer before live DHCP edits.
+- [x] Review OPNsense26.1.5 configuration/lease recovery and134 exclusion/reservation transfer before live DHCP edits.
 - [ ] Restore HAOS100 from accepted source backup and verify application/ZHA/real device/remote access with Jack.
 
 - [ ] Investigate Pi LAN service outage reported after HAOS staging; establish cause and recover source access before cutover.
@@ -140,6 +152,8 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Verify epsilon iDRAC or physical boot-console access before its rescue-imaging outage.
 
 ## Operator UI acceptance
+
+HA134transferOctober10accepted:Jackconfirmedwindow/Jellyfinidle/Pioff/noothermaintenance, refreshedprivatebeforeXML/config/leasecopies3LRcfL/unchangedliveconfig/candidateownISCparserpass. JackUIstagesMAC64/narrows70–133/adds135–219defaults, liveparser+tokenizedcandidatecomparisonpass/PID60912. VM-onlyNetworkManagerUUIDdownupreceives134/24/serverGWDNS1/7200s/MAC64/hostnamehomeassistant at15:11:01UTC, guest30c7b895/host64618670bootsunchanged. FQDN/IPHTTP200/strictSSH25/DNS134/noAAAA/ARP64/actualprobe199mDNS1348123, JacknormalURLdashboards+Zigbeecontrol/phone-mobiledataremoteconfirmed. Tailscaleappstale-local-forwardinginferredfromstartupcode; watchdogrestart15:19rebuilds134DNAT/testTCPpass. CoremDNSbound76→scopedCorerestart15:26→134discoveryverified. Cluster80Running78Ready0Pending/24healthyattachments/JF/NAShealthy/rcloneoff/noArgoCDwrite. RouterpostXML/config/leaseshashesrecorded/exportsfollowuptracked. Culexhaos-address-transfer-20261010.pjjirwd441files391602B andclient8972fwu326files129732Bhashmodes/fsync; consistentpmxcfs36KiBintegrityok/privatePVE112640Bpreserved. Fiveunittests/272local linksanchors/13Bashblocks/JSON+4poolnonoverlap-exclusions/exactVM100197198manifests/diffchecks pass. Broaderbatteryautomation/RF/USBreconnect/hostcoldboot/backupnotification+schedulesremainopen.
 
 HAcutovercheckpoint04:00UTC: production100running/onboot1/DHCP76/HubZif01/originalchannel15/PAN+IEEE+keymatchverifiedprivately, Jackmainscontrol/postguestrestart/mobiledataTailscaleloginpass/same100.99.206.29Online. Pi off/SDretained/sourceunreliable; battery/automation/distantRF/USBreconnect/hostcoldboottestopen. Nativebackup69373e1c03:45UTC85555200B/hashc9479...privateoffhost; NASstop100archive3640705565B/hashd47aba...→isolated197noNICUSBbeforeboot/EFI+HAOS+agent+originalZHA6devices/bothcapturedSQLintegrity/cleanstopretained. Notificationsfailed/no productionjobs;134candidateonlyremove134/preservepooloptions/MAC64/routerparserpass, JackdefersapplyuntilJellyfinidle. Finalprivateconfig98files172096768Btoculexhaos-cutover-20261010.n5zeg321 and42clientfiles85673370Btohaos-cutover-client-evidence-20261010.ly6g1bc6hashmodes/fsync. Fiveunittests/260linksanchors/9Bashblocks/JSON/exact100+197manifest/diffchecks pass. NoagentrouterArgoCDwrites/hostreboot/k3sguestmigration/rcloneenable. [Checkpoint](../../agentic-investigations/2026-10-10-haos-vm-staging.md#cutover-checkpoint-and-deferred-acceptance).
 

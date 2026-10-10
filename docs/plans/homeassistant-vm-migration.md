@@ -1,6 +1,6 @@
 # Home Assistant: Raspberry Pi to HAOS VM
 
-**Status: HA runs in VM100 on temporary DHCP `.76`; original Zigbee network, remote login, guest restart and isolated NAS restore verified. `.134` transfer is deferred until Jellyfin users are idle.** The same physical HubZ coordinator belongs exclusively to VM100, with automatic VM startup enabled. Pi powered off/storage retained. Battery-device/automation/distant-room checks, backup schedules/notifications and host-reboot acceptance remain open. Kubernetes guest migration is deferred. Retain source/off-host artifacts until Jack accepts migration and recovery.
+**Status: HA runs in VM100 at `192.168.1.134` / `homeassistant.avril`; LAN login, Zigbee control, mobile-data Tailscale access and discovery verified.** Original Zigbee network, guest restart and isolated NAS restore also passed. The HubZ coordinator belongs exclusively to VM100, automatic VM startup is enabled, and the Pi remains powered off with its storage retained. Battery-device/automation/distant-room checks, backup schedules/notifications and host-reboot acceptance remain open. Kubernetes guest migration is deferred. Retain recovery artifacts until Jack accepts migration and recovery.
 
 The [host-selection decision](proxmox-host-selection.md) and [manifests](../../non-k8s-iac/proxmox/README.md) select epsilon with separate general-purpose k3s, GPU-worker, and HAOS guests. Related: [planning notes](proxmox-planning-notes.md), [current asset catalogue](../asset-catalogue.md), and [active plans](README.md).
 
@@ -25,7 +25,7 @@ The source address is declared in [`charts/external-dns/homeassistant-dns-endpoi
 
 Empty [deployed VM100](../../non-k8s-iac/proxmox/vms/100-homeassistant.conf) isHAOS18.3/amd64/2vCPU/4GiBfixed/64GiBdisk. FirstbootautomaticallyinstalledCore2026.10.0/Supervisor2026.09.3; normalfullbackuprestoreselectsbackupCoreversion2026.9.3, so no sourceupgradeisneeded. Agent/DHCP76/gatewayDNS`.1`/verifiedInternetHTTPS/onboardinguntouched/guest-rebootnewbootID/sameMACaddress/cleanstopverified,PiandJFHTTP200afterward. Bootjournalretainstimezone-eventsource/no-audiocodec/PulseAudio/BlueZ/Pythonwarningdiagnostics, notclaimederror-free.
 
-Beforefinaladdressacceptance:finishbattery-device/automation/distantRFchecks andresolvePi-onlyintegrations(`raspberry_pi`,`rpi_power`)throughoperatorreview. Router`.134`liesinside`.70–.219`; parser-testedcandidate splitsitinto`.70–.133`/`.135–.219`, retains`.10–.68`/`.230–.254`/pooloptions andmaps134toMAC64. Refreshcurrentprivateconfig/leases/candidatecomparisonandrollbackbeforeactualwrite; OPNsenseISCSavecanreconfigureimmediately. JackdefersrouterchangeuntilJellyfinusersidle; noagentrouterwrite.
+The accepted router configuration excludes `.69`, `.134` and `.220–.229` from dynamic allocation: `.10–.68`, `.70–.133`, `.135–.219`, `.230–.254`. Jack applied the `.134` reservation transfer to MAC `02:00:00:01:00:64` in the confirmed maintenance window after private configuration/lease backups and current/intermediate/final ISC parser tests. Actual generated configuration matched the tested candidate; VM100 received `.134` from `.1`. Keep unrelated mappings intact. OPNsense ISC pool Save can immediately reconfigure DHCP; future changes need fresh recovery/preflight checks.
 
 **Remote access:** JackreauthenticatesrestoredTailscaleapp; same`homeassistant.coin-pangolin.ts.net`/100.99.206.29Online/LANtailnetHTTP200/phone-mobiledata-loginverified, survivesVMrestart. Pi remainsofftoavoidruncopiedidentitytwice. Sourcebackup/capturednetworkkeysaretainedonculex`haos-source-20261010.dhenn_hr`, repaired/authenticatednativebackup`69373e1c`onculex`haos-vm-recovery-20261010.b3zpwbkx`. SourceTailscalewasexpired/NeedsLogin; recoveryhappenedontheVM.
 
@@ -35,9 +35,15 @@ Beforefinaladdressacceptance:finishbattery-device/automation/distantRFchecks and
 
 Jackauthorizesusing01:01UTCbackupf4389be0becausePiunreliableaftercablereplacement; confirmsPiphysicallyoff/SDretained/dongleonepsilon. SeparateemptyEFI+OScheckpointretainedonepsilonandhashverified/fsyncedtoculex`haos-empty-checkpoint-20261010.zg1fp3_y`. Verifiedwholedevice10c4:8a2a/serial716000F1attached100/guestif01present; nohostGPU/Kuberneteshandoff. PrivaterestoreISOcopiedbackupread-onlytoguest/guestfullhashverified/ISOejected/retained. Fullrestorejobecd88b252d9648e69ec8f88fcbec490a completesexit0/done100/errorsnone; Core2026.9.3amd64/all3appsstarted/Supervisorhealthy. Jacklogs in at76anddashboardsappear.
 
-ZHAonboardingautodiscoveryformedadifferentnetworkafterassistantattachedcoordinatortooearly. Jack'sapprovednativeRestoreoldsettingsrepairrestoresoriginalchannel15/PAN7485/IEEE/network+TCkeys; privatecomparisontocapturedsourcepasses/sixdevicesretained/mainsphysicalcontrolworkswithoutre-pairing. Guestrestartfreshlogsnomismatch/sameif01/Jackcontrol+remotechecks pass. Pi-onlyrpi_powerunsupportedonx86 remains tracked. Router26.1.5export/privategeneratedconfig+leasesat`/root/ha-dhcp-check.6qp5gi`/ownISC4.4.3-P1currentandcandidateparserpass, livechange deferred. VM100onboot1; no sharedhostrebootduringJellyfinuse.
+ZHAonboardingautodiscoveryformedadifferentnetworkafterassistantattachedcoordinatortooearly. Jack'sapprovednativeRestoreoldsettingsrepairrestoresoriginalchannel15/PAN7485/IEEE/network+TCkeys; privatecomparisontocapturedsourcepasses/sixdevicesretained/mainsphysicalcontrolworkswithoutre-pairing. Guestrestartfreshlogsnomismatch/sameif01/Jackcontrol+remotechecks pass. Pi-onlyrpi_powerunsupportedonx86 remains tracked. Router26.1.5/ISC4.4.3-P1 final134exclusion+MACtransfer accepted; privateconfigurationandleasecopiesretained. VM100onboot1; no sharedhostrebootduringJellyfinuse.
 
 Nativefullbackup`69373e1c`(03:45UTC),85,555,200bytes/hash`c9479df2dbd5752391d761812b289960313424a3886792d68ab1708957315b95`, repairedradio+authenticatedTailscale/fullapps+DB/privateoffhost. Stop-modeNASarchive`vzdump-qemu-100-2026_10_09-20_52_45.vma.zst`,3,640,705,565bytes/hash`d47aba67020c4dc4e5aed5d6b95d5398d7c213d5f8df348d964a269a90364528`, pruningdisabled. Restoredintoisolated [VM197](../../non-k8s-iac/proxmox/vms/197-haos-restore.conf), NIC+USBremoved/onboot0beforefirstboot; EFI/HAOS/agent/originalZHAentry+network+sixdevices/capturedrecorder+ZigbeeSQLintegritypass. Cleanlystopped/retained197, production100runs. Scheduledbackupjobs/notificationdeliverystillpending, noarchivecleanup.
+
+### Address transfer accepted
+
+Actual DHCP `.134/24`, MAC64/hostnamehomeassistant/7200slease/servergatewayDNS`.1` accepted15:11:01UTCOctober10. Normal and direct-router DNS answer134/noAAAA; ARP identifiesVM64, strictSSH25/FQDN+IPHTTP200 pass. Guest and physical host boot IDs stayed unchanged; only VM100's NetworkManager connection was reactivated. All24storageattachments/Jellyfin/NAS/cluster retained their working baseline. Jack verifies normal-name dashboards and Zigbee control, plus Tailscale on phone/mobile data after the transfer.
+
+Tailscale0.30.1 startup forwarding retained its former local destination until Supervisor's watchdog restarted the unhealthy app15:19UTC, rebuilding DNAT to134; exact initialtarget inferredfrom startupcode/timing, final134rulecaptured. No manual firewall/identity changes. Core's mDNS socket still bound76 until scoped `ha core restart`15:26UTC; subsequent134socket and actualHAservice discovery fromVM199 pass. LAN/tailnet HTTP and Jack's device/login checks pass after refresh. Future live address changes must inspect both app forwarding and discovery sockets, rather than treating tailnet ping as TCP acceptance. [Execution](../../agentic-investigations/2026-10-10-haos-vm-staging.md#address-and-discovery-acceptance).
 
 ## 1. Identify the source and dependencies
 
@@ -124,9 +130,10 @@ Keep auto-start off until cutover. The committed manifest's `usb0` and `onboot: 
 In OPNsense's **active DHCP backend** (Kea/ISC as installed):
 
 1. Record the original reservation/static configuration for rollback. Replace the `.134` reservation's Pi MAC with VM MAC `02:00:00:01:00:64` (or create the reservation if the Pi used a static address). Ensure `.134` is excluded from dynamic allocation and not owned by another lease/reservation.
-2. Remove the VM's temporary lease and stale Pi lease as needed through the DHCP UI. Renew by booting the VM after the reservation is active. Flush the router's stale `.134` ARP entry if clients still resolve it to the Pi's MAC.
+2. Obtain a fresh VM lease after the reservation is active. A running HAOS guest can reconnect only its inspected NetworkManager profile through the Proxmox guest agent; a guest start is another execution path. Confirm the actual DHCP server/address/gateway/DNS and MAC. Only remove a conflicting lease or specific stale ARP entry if observations establish it is needed; the executed transfer required neither.
 3. Keep the existing external-dns Home Assistant record targeting `.134`; do not create a manual Unbound override. Check both the VM and router DNS use the intended LAN path. For Pi-MAC-specific firewall/DHCP rules, transfer ownership; IP-based rules may already match. Check IPv6 separately: a Pi's SLAAC address will not be inherited from an IPv4 reservation, so update/remove any stale AAAA or IPv6 rule through its owning configuration.
 4. Verify any reverse proxy/tunnel upstream and HA URL/mobile-app configuration still targets the service, not a retired Pi Tailscale identity or `.local` discovery result. Preserve HTTP versus HTTPS, port 8123, WebSocket support, TLS validation, and trusted proxy settings. OS-level Pi remote-access services need separate restoration as identified in preflight.
+5. Check Tailscale app forwarding and Core discovery bindings after any live address change. Capture failures first; refresh only the affected app or Core when its stale address is established, then verify actual remote TCP and mDNS service discovery. Do not flush global firewall rules or replace the tailnet identity to repair address-bound state.
 
 If an execution-time decision requires a different guest IP, edit the HA guest address in `host.json`, the DNSEndpoint target, firewall/NAT/proxy upstreams, and hardcoded consumers together. Jack reviews/pushes the GitOps DNS change and observes normal reconciliation or manually syncs. Wait for the effective DNS answer before declaring availability; do not apply the DNSEndpoint directly or run an ArgoCD write operation from an agent. Rollback must restore these same consumers and the GitOps DNS target. Keeping `.134` avoids that deployment dependency during this outage.
 
@@ -172,10 +179,9 @@ The same coordinator plus its restored application state should preserve pairing
 
 ### Acceptance checklist
 
-- [ ] Guest 100 owns `.134`, has working DNS/gateway/time, and the Pi is powered off.
-- [x] Pi physicallyoff/SDretained; guest76/GWDNS1/HAOSCore18.3/2026.9.3amd64/Supervisorhealthy/allappsstarted.
-- [ ] `dig @192.168.1.1 homeassistant.avril A +short` returns `.134`; the workstation's normal `dig homeassistant.avril A +short` agrees. Check any AAAA answer too.
-- [ ] LAN browser login works by `homeassistant.avril` using the verified scheme/port. After restore, `curl --fail --max-time 15 http://homeassistant.avril:8123/` (or the verified HTTPS URL) succeeds; browser WebSocket updates work.
+- [x] Guest100DHCP134/GWDNS1/clock/supportedhealthySupervisor; Pi physicallyoff/SDretained.
+- [x] `dig @192.168.1.1 homeassistant.avril A +short` and normalresolver return134; noAAAA, LANARPVM-MAC64.
+- [x] Jack verifies LAN login/dashboard at `http://homeassistant.avril:8123`; freshHTTP200/strictSSH25 andmDNS134:8123 pass. Individualintegration/live-event checks remain tracked below.
 - [ ] The actual existing remote access path works from outside the LAN (phone on mobile data or a remote Tailscale client), including DNS, login, live updates, and callbacks. A LAN test alone does not prove this.
 - [x] JackconfirmsphoneWi-Fioff/mobiledata/Tailscalelogin; samepeername/IPOnline/HTTP200/postguestrestartremotecheckpasses. Individualintegrationcallbackacceptanceremainstracked.
 - [ ] Restored app/recorder/MQTT state is healthy; entity/device counts match the baseline except documented pre-existing unavailability.
@@ -188,7 +194,7 @@ The same coordinator plus its restored application state should preserve pairing
 - [ ] Set `qm set 100 --onboot 1`; in a scheduled host reboot window verify both VM auto-start and Zigbee reconnection. If USB enumeration races prevent startup, investigate logs/topology and fix the cause before completion.
 - [x] Onboot1withJackapproval/guest-onlyreboot+stopbackupresumptionpass; hostcoldboottestdeferreduntilreviewedmaintenancewindow.
 - [ ] Complete and commit the [VM manifest's](../../non-k8s-iac/proxmox/vms/100-homeassistant.conf.in) actual volume IDs/selector and [`host.json`](../../non-k8s-iac/proxmox/host.json)'s observed non-secret inputs. Add the active HAOS/hypervisor and Pi rollback status to the [asset catalogue](../asset-catalogue.md).
-- [x] [Deployedmanifest](../../non-k8s-iac/proxmox/vms/100-homeassistant.conf)/hostintent/catalogue includeactualvolumes/USB/autostart andretained [isolatedrestore197](../../non-k8s-iac/proxmox/vms/197-haos-restore.conf); final134addressacceptancepending.
+- [x] [Deployedmanifest](../../non-k8s-iac/proxmox/vms/100-homeassistant.conf)/hostintent/catalogue includeactualvolumes/USB/autostart/accepted134address andretained [isolatedrestore197](../../non-k8s-iac/proxmox/vms/197-haos-restore.conf).
 
 ## 5. Recovery and retirement
 

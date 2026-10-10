@@ -1,5 +1,5 @@
 {
-  "status": "HAOS100 restored/radio+remote+guest-restart+NAS-isolated-restore verified on temporary76;134transfer/devicefollowups/backupjobs pending; Kubernetes guests deferred",
+  "status": "HAOS100 restored and serving134/homeassistant.avril; radio/remote/guest-restart/NAS-isolated-restore verified; broaderdevicechecks/backupjobs pending; Kubernetes guests deferred",
   "physical_host": "epsilon",
   "hypervisor": {
     "hostname": "epsilon",
@@ -68,13 +68,14 @@
       "name": "homeassistant",
       "manifest": "vms/100-homeassistant.conf.in",
       "deployed_manifest": "vms/100-homeassistant.conf",
-      "state": "HAOS18.3/Core2026.9.3amd64 runningtemporaryDHCP76/onboot1/HubZUSB; dashboards/originalZHAnetwork/mainsdevice/mobiledataTailscale/guest-reboot verified;134transferpending; Pi physicallyoff/storageretained",
+      "state": "HAOS18.3/Core2026.9.3amd64 runningDHCP134/onboot1/HubZUSB; normalLANname/dashboard/originalZHAnetwork/mainsdevice/mobiledataTailscale/guest-reboot verified; Pi physicallyoff/storageretained",
       "staging_ipv4": "192.168.1.76",
-      "staging_address_assignment": "ordinary temporary DHCP; same address after guest reboot/stop-mode backup; not reserved",
+      "staging_address_assignment": "completed temporaryDHCP76 stage; productionreservation134verified2026-10-10T15:11:01Z",
       "ssh_host_ed25519_fingerprint": "SHA256:QSh3lI++BYlSp9G/vATPQosdWFAGkv2s+Rxr57LfLPA",
       "remote_access": "homeassistant.coin-pangolin.ts.net/100.99.206.29 sameTailscaleidentity/authenticated/Online/LANtailnetHTTP200/Jackphone-mobiledata-loginverified",
       "ipv4": "192.168.1.134",
       "address_assignment": "OPNsense DHCP reservation",
+      "address_acceptance": "MAC02:00:00:01:00:64 received134/24from1/7200slease/hostnamehomeassistant/GWDNS1; LANARPmatches/DNS134/noAAAA/FQDNstrictSSH+HTTP200/mDNS134:8123; Jacklogin+Zigbee+mobiledataremoteconfirmed",
       "dns_name": "homeassistant.avril",
       "image": {
         "version": "18.3",
@@ -102,7 +103,7 @@
         "supervisor_version": "2026.09.3",
         "used_disk_GiB": 10.6,
         "ethernet_mac": "B8:27:EB:AB:B6:DD",
-        "address_assignment": "DHCP134; fixed mapping confirmed by Jack; exclusion from dynamic pool pending",
+        "address_assignment": "formerDHCP134/PiMACmapping transferredtoVM100; Pi physicallyoff/storageretained",
         "ssh": "root@homeassistant.avril:25 in Terminal & SSH app; existing key",
         "apps": ["core_configurator", "core_ssh", "a0d7b954_tailscale"],
         "remote_access": "Jack uses Pi Tailscale name/IP; homeassistant.coin-pangolin.ts.net /100.99.206.29 peer Offline; source app NeedsLogin after expired node key, operator reauthentication and real remote test pending",
@@ -115,7 +116,7 @@
           "encrypted": false,
           "off_host_copy": "/home/scubbo/epsilon-recovery.mVvt2ir2/haos-source-20261010.dhenn_hr/f4389be0.tar on culex",
           "coverage": "all installed apps/share/ssl/media/HA config/recorder/zigbee DB; both captured SQLite integrity checks pass",
-          "restore_status": "fullrestorejobecd88b252d9648e69ec8f88fcbec490a done100/errorsnone/exit0; Core2026.9.3amd64/all3appsstarted/dashboards/radio/mainsdevice/remote/guest-reboot pass;134transfer/battery/automationpending"
+          "restore_status": "fullrestorejobecd88b252d9648e69ec8f88fcbec490a done100/errorsnone/exit0; Core2026.9.3amd64/all3appsstarted/dashboards/radio/mainsdevice/remote/guest-reboot/134LANnamepass; battery/automationpending"
         }
       },
       "native_recovery_backup": {
@@ -191,17 +192,26 @@
   "router": {
     "dhcp_backend": "ISC DHCPv4 [legacy]",
     "version_reported": "OPNsense26.1.5-amd64/FreeBSD14.3-RELEASE-p9/OpenSSL3.0.19",
-    "backup_status": "Jack confirms full configuration export saved locally; privategeneratedDHCP/leasecopies under/root/ha-dhcp-check.6qp5gi; currentand134exclusion/MAC64candidateownISC4.4.3-P1parserpass",
-    "ha_address_transfer_status": "Jack defers liveDHCP change until Jellyfin users idle; VM100remains temporaryDHCP76/Pi physicallyoff;134mappingstillPiMAC",
+    "backup_status": "Jack confirms full prechangeexport/privatebefore+afterconfigXML/generatedDHCP/leases under/root/ha-address-window.3LRcfL and earlierpreflightcopies; current/intermediate/finalcandidateparserpass; freshpostchangeoffrouterexportrequested/unconfirmed",
+    "ha_address_transfer_status": "completedinJackconfirmedwindow; staged134MAC64/narrow70–133/add135–219/actualgeneratedtokenizedcomparisonpass; VM100DHCP134accepted/Pioff",
+    "postchange_recovery": {
+      "router_directory": "/root/ha-address-window.3LRcfL",
+      "config_xml_sha256": "0cc275eb0e28eeda7de1b3879f9f3a798b21efeb00ba7e0abbd3ec11020de4ca",
+      "dhcp_config_sha256": "e2985966b04cfb2432b01135de48b27fed02065e607fde15a343982db0807637",
+      "lease_snapshot_sha256": "d8186e0197e5c25ef81c5831841d6f933d960074340ef81b440d0c5028bca601",
+      "DHCP_PID_reported": 60912
+    },
     "current_dynamic_pools": [
       {"start": "192.168.1.10", "end": "192.168.1.68"},
-      {"start": "192.168.1.70", "end": "192.168.1.219"},
+      {"start": "192.168.1.70", "end": "192.168.1.133"},
+      {"start": "192.168.1.135", "end": "192.168.1.219"},
       {"start": "192.168.1.230", "end": "192.168.1.254"}
     ],
     "project_range_conflict_check": "Jack reports no existing assignments in 192.168.1.220-229",
     "project_range_exclusion_status": "Jack corrected overlapping pools on 2026-10-05; 192.168.1.220-229 outside dynamic pools",
-    "dhcp_service_validation": "Jack confirms three nonoverlapping pools and .69/probe mappings on October9; epsilon DHCPACK observed 2026-10-09T20:19:53Z; exact router config/parser preflight not supplied",
-    "management_address_exclusion": "192.168.1.69 outside all three reported dynamic pools; fixed epsilon mapping retained"
+    "dhcp_service_validation": "Jackreportsfinalgeneratedconfigmatchestestedcandidate/liveISC4.4.3-P1parser/DHCPprocessrunning; guestNetworkManager134newlease2026-10-10T15:11:01Z/actual1server/GWDNSpass; no unrelatedleases/mappingsdeleted",
+    "management_address_exclusion": "192.168.1.69 outside all four dynamic pools; fixed epsilon mapping retained",
+    "homeassistant_address_exclusion": "192.168.1.134 outside all four dynamic pools; fixed VM100MAC02:00:00:01:00:64 mapping active"
   },
   "backup": {
     "proxmox_storage_id": "vm-backups",
