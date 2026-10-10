@@ -1,8 +1,8 @@
 # Proxmox on epsilon
 
-**Status: Proxmox platform/probe verified; HAOS100 restored/radio+remote+guest-reboot/NAS-isolated-restore and134address transfer accepted. Broaderdevice/backupjobs pending. Kubernetes guests deferred; VIP/remainingprobematrix pending.** Jack selected package installation on epsilon's upgraded Debian filesystem, with a general-purpose k3s server guest, a GPU k3s worker guest, and HAOS. Physical and guest k3s nodes coexist during migration. Keep their names/IPs distinct; the physical node currently remains `epsilon`, not a renamed Kubernetes node.
+**Status: platform/HAOS134 acceptance complete with follow-ups tracked; eps-base101/server and eps-gpu102/agent Debian/tainted k3s staging active. GPU/workload/API transition pending.** Jack selected package installation on epsilon's upgraded Debian filesystem, with a general-purpose k3s server guest, a GPU k3s worker guest, and HAOS. Physical and guest k3s nodes coexist during migration. Keep their names/IPs distinct; the physical node currently remains `epsilon`, not a renamed Kubernetes node.
 
-Sequence: [Debian maintenance and rehearsal](epsilon-debian-upgrade.md) → Proxmox package/kernel/network installation → [network probe](#3-network-probe-and-acceptance) → [HAOS staging and cutover](homeassistant-vm-migration.md) → [production Kubernetes guests](#4-production-kubernetes-guests) when Jack schedules that work. Jack prioritizes HAOS and defers Kubernetes guest migration while Jellyfin is in use. [PostgreSQL HA](k3s-postgres-ha.md) is a parallel investigation whose deployment/placement needs a separate decision.
+Sequence: [Debian maintenance and rehearsal](epsilon-debian-upgrade.md) → Proxmox package/kernel/network installation → [network probe](#3-network-probe-and-acceptance) → [HAOS staging and cutover](homeassistant-vm-migration.md) → [production Kubernetes guests](#4-production-kubernetes-guests). Jack authorizes eps-base/eps-gpu staging after HA134 acceptance; existing physical workloads stay active while registration-time taints gate migration. [PostgreSQL HA](k3s-postgres-ha.md) is a parallel investigation whose deployment/placement needs a separate decision.
 
 Related: [host assessment](proxmox-host-selection.md), [versioned host/VM configuration](../../non-k8s-iac/proxmox/README.md), [planning evidence](proxmox-planning-notes.md), [current assets](../asset-catalogue.md), and [active plans](README.md).
 
@@ -16,8 +16,8 @@ Complete/verify inputs in [`host.json`](../../non-k8s-iac/proxmox/host.json). Th
 | LAN port | Observed `eno1`, MAC `14:18:77:28:11:0c`; verify after Debian/Proxmox kernel upgrades |
 | API VIP | `k3s-api.avril`, candidate `.220`, proxy services on physical epsilon/culex |
 | VM 199 | Deployed `network-probe`, DHCP `.221`, 1 vCPU / 1 GiB / 16 GiB; reservation/lease/reboot verified |
-| VM 101 | Planned `epsilon-k3s`, `.222`, k3s server, 8 vCPU / 16 GiB / 128 GiB; static guest / router exclusion confirmed by Jack |
-| VM 102 | Planned `epsilon-gpu`, `.223`, k3s agent, 8 vCPU / 16 GiB / 64 GiB; static guest / router exclusion confirmed by Jack; P1000 passthrough unproved |
+| VM 101 | Staging `eps-base`, `.222`, k3s server, 8 vCPU / 16 GiB / 128 GiB; static guest / router exclusion confirmed by Jack |
+| VM 102 | Staging `eps-gpu`, `.223`, k3s agent, 8 vCPU / 16 GiB / 64 GiB; static guest / router exclusion confirmed by Jack; P1000 passthrough unproved |
 | VM 100 | HAOS18.3/Core2026.9.3amd64/running/onboot1/USBHubZ, 2 vCPU / 4 GiB / 64 GiB; DHCP134/MAC64/normalLANname+tailnet+Zigbeecontrolpass/Pioff |
 | Future guests | `.224–.229`, held for additional colocated guests; no guests/MACs yet |
 
@@ -135,7 +135,7 @@ The same native-template provisioning process is used for 199, 101, and 102:
 2. Run `qm create` with manifest name, CPU, sockets/cores, fixed RAM (`balloon=0`), machine `q35`, `bios=ovmf`, `ostype=l26`, VirtIO `net0` on `vmbr0`, `agent=1`, tags/startup, and **onboot=0 during staging**. Keep `hostpci0` absent until GPU handoff. Use the manifest options directly; do not invent an actual volume ID from its token. For example, guest 101's create-time configuration is:
 
    ```bash
-   qm create 101 --name epsilon-k3s --ostype l26 --machine q35 --bios ovmf \
+   qm create 101 --name eps-base --ostype l26 --machine q35 --bios ovmf \
      --cpu host --sockets 1 --cores 8 --memory 16384 --balloon 0 \
      --scsihw virtio-scsi-single --agent 1 --onboot 0 \
      --net0 virtio=02:00:00:01:00:65,bridge=vmbr0 \
@@ -163,15 +163,15 @@ The [HAOS image import](homeassistant-vm-migration.md#2-provision-and-test-the-e
 
 ### General-purpose server and GPU worker
 
-VM **101** (`epsilon-k3s`) joins the existing external-PostgreSQL cluster as a server using the protected current **server token**, datastore connection, and matching critical cluster/service CIDRs, DNS/domain, disabled components, encryption options and SANs. VM **102** (`epsilon-gpu`) joins as an **agent** via the chosen server registration endpoint using the matching agent/server token. Both initially pin the execution-time cluster version (observed `v1.32.6+k3s1`), not a default latest installer. The physical k3s node and pods can stay until guest verification/cutover.
+VM **101** (`eps-base`) joins the existing external-PostgreSQL cluster as a server using the protected current **server token**, datastore connection, and matching critical cluster/service CIDRs, DNS/domain, disabled components, encryption options and SANs. VM **102** (`eps-gpu`) joins as an **agent** via the chosen server registration endpoint using the matching agent/server token. Both initially pin the execution-time cluster version (observed `v1.32.6+k3s1`), not a default latest installer. The physical k3s node and pods can stay until guest verification/cutover.
 
 Install required `qemu-guest-agent`, `nfs-common`, `open-iscsi`, curl, and kernel support inside each guest. Start the guest agent, enable `iscsid`, verify driver-required `iscsiadm` paths/mount propagation, and give node/pod networks the required access. Keep Docker's PostgreSQL on its working lifecycle while [HA placement](k3s-postgres-ha.md) is resolved; physical k3s retirement does not remove that datastore.
 
-Use root-owned mode-0600 config/token files, matched settings copied securely without printing secrets. For server 101, explicitly set `node-name: epsilon-k3s` and its own `node-ip`; for worker 102, `node-name: epsilon-gpu`, its `node-ip`, and the reviewed `server:` URL. Do not copy physical kubelet/node-password/pod-CIDR state. Download/review the k3s installer, install the pinned version with `server` versus `agent`, and test Ready status/control-plane participation. Initially cordon guests if needed while applying labels/taints.
+Use root-owned mode-0600 config/token files, matched settings copied securely without printing secrets. For server101 set `node-name: eps-base`/node-ip222; agent102 `node-name: eps-gpu`/node-ip223/registrationserver. Jack approves registration-time `homelab.scubbo.org/staging=true:NoSchedule` on both so ordinary workloads await acceptance. Broadly tolerating DaemonSets can still run; inventory their actual behavior. Do not copy physical kubelet/node-password/pod-CIDR state. Install the pinned version with server versus agent and verify Ready/control-plane participation before scheduling changes.
 
 ### Scheduling transition through GitOps
 
-Current hostname selectors for [Jellyfin](../../charts/jellyfin/values.yaml), [Tdarr](../../charts/tdarr/values.yaml), [arr-stack](../../charts/arr-stack/values.yaml), and [NVIDIA device-plugin](../../app-of-apps/nvidia-device-plugin.jsonnet) use physical `epsilon`. Before each cutover, edit the owning chart/app definitions to target the appropriate guest: Jellyfin/Tdarr/device-plugin → `epsilon-gpu`; arr-stack → `epsilon-k3s` unless its actual resource/storage requirements indicate otherwise.
+Current hostname selectors for [Jellyfin](../../charts/jellyfin/values.yaml), [Tdarr](../../charts/tdarr/values.yaml), [arr-stack](../../charts/arr-stack/values.yaml), and [NVIDIA device-plugin](../../app-of-apps/nvidia-device-plugin.jsonnet) use physical `epsilon`. Before each cutover, edit the owning chart/app definitions to target the appropriate guest: Jellyfin/Tdarr/device-plugin → `eps-gpu`; arr-stack → `eps-base` unless its actual resource/storage requirements indicate otherwise.
 
 These changes are prepared/reviewed and pushed by Jack at the migration stage, not applied prematurely while guests do not exist. Agents do not patch deployments or call ArgoCD write operations. Preserve the existing GPU time-slicing configuration (2 schedulable slots, no VRAM isolation) inside the single GPU guest; splitting k3s guests does not split the GPU hardware.
 

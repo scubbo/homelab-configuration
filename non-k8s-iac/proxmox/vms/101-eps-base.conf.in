@@ -9,7 +9,7 @@ cpu: host
 efidisk0: @EFI_VOLUME@,efitype=4m,pre-enrolled-keys=0
 machine: q35
 memory: 16384
-name: epsilon-k3s
+name: eps-base
 net0: virtio=02:00:00:01:00:65,bridge=vmbr0
 onboot: 1
 ostype: l26

@@ -16,12 +16,12 @@ kubectl / ArgoCD / joining nodes
   epsilon proxy OR culex proxy
             |
    ready k3s API server
-  culex (.13) / epsilon-k3s (.222)
+   culex (.13) / eps-base (.222)
 ```
 
 This preserves the endpoint during proxy/host maintenance, but cannot keep the shared PostgreSQL datastore alive during epsilon failure; the [SQL HA workstream](k3s-postgres-ha.md) addresses that separate dependency.
 
-Forward raw TCP 6443 to verified k3s **server** addresses: culex `.13` and guest `epsilon-k3s`'s reserved address once joined. Physical epsilon `.69` is a temporary backend during overlap. `epsilon-gpu` is an agent and is not a backend. TLS passes through to the API server; this avoids introducing a second certificate/authentication layer. Add `k3s-api.avril` and the selected VIP to the relevant server `tls-san` configuration, retain the cluster CA, and validate certificates/clients before transition.
+Forward raw TCP 6443 to verified k3s **server** addresses: culex `.13` and guest `eps-base`'s reserved address once joined. Physical epsilon `.69` is a temporary backend during overlap. `eps-gpu` is an agent and is not a backend. TLS passes through to the API server; this avoids introducing a second certificate/authentication layer. Add `k3s-api.avril` and the selected VIP to the relevant server `tls-san` configuration, retain the cluster CA, and validate certificates/clients before transition.
 
 Reserve the VIP outside DHCP allocation and check duplicates/firewall/Tailscale subnet routing using the [network preparation procedure](proxmox-network-storage-preparation.md#1-opnsense-address-block). VRRP requires actual LAN reachability, interface/VIP ownership, and tested priority/preemption behavior; its presence alone does not prove failover.
 

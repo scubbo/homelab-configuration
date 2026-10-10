@@ -78,6 +78,10 @@ Rollback reverses ownership: stop the VM and disable its auto-start, move the ra
 
 Recovery is a separate proof. The plan uses daily native HA backups, weekly stop-mode VM backups, and an isolated restore exercise. VM archives do not include the radio's NVRAM or Kubernetes's external datastore/PVs. Those dependencies need their own copies and instructions.
 
+## Stage Kubernetes guests with distinct identities
+
+The Kubernetes guests are `eps-base` (server) and `eps-gpu` (agent), each with a separate static LAN address, MAC and OS disk. An unattended installer has a single-disk capacity guard, key-only SSH, a standard password-protected sudo account, no swap, a guest agent and the NFS/iSCSI prerequisites. The private media contains the console password hash and public SSH key, but no production cluster tokens. k3s joins later at the actual existing cluster version with a registration-time NoSchedule staging taint. Broadly tolerating DaemonSets still need inspection; a taint is not proof that the node runs no pods. Physical GPU ownership, workload selectors and the stable API transition are separate acceptance stages.
+
 ## Results to record after execution
 
 - Host-conversion and Home Assistant outage durations.

@@ -72,11 +72,13 @@ Jackconfirmednoexistingprojectaddressconflictsandpoolsexclude`.69`and`.220–.22
 | HAOS guest `homeassistant.avril` | `192.168.1.134` | `02:00:00:01:00:64`; active DHCPreservation | VM100lease134/24/servergatewayDNS1/7200s/hostnamehomeassistant/ARP64/direct+normalDNS134/noAAAA/FQDNSSHHTTP/mDNS134:8123pass.134excludedfromallfourpools/Piphysicallyoff |
 | API endpoint `k3s-api.avril` | `192.168.1.220` | Floating VIP, not a VM DHCP lease | Pool exclusion confirmed by Jack; proxy/VIP not deployed |
 | Probe guest `network-probe.avril` | `192.168.1.221` | `02:00:00:01:00:c7`; DHCPreservation/ens18/vmbr0 | Jackmappingconfirmed/actual7200sleasefrom`.1`/sameaddressafterrebootandstopbackup; deployedonboot0 |
-| k3s server guest `epsilon-k3s.avril` | `192.168.1.222` | `02:00:00:01:00:65`; static guest, DHCP exclusion | Pool exclusion confirmed by Jack; guest not deployed |
-| GPU worker guest `epsilon-gpu.avril` | `192.168.1.223` | `02:00:00:01:00:66`; static guest, DHCP exclusion | Pool exclusion confirmed by Jack; guest not deployed |
+| k3s server guest `eps-base.avril` | `192.168.1.222` | `02:00:00:01:00:65`; static guest, DHCP exclusion | Pool exclusion confirmed by Jack; unattended guest staging authorized, no k3s join yet |
+| GPU worker guest `eps-gpu.avril` | `192.168.1.223` | `02:00:00:01:00:66`; static guest, DHCP exclusion | Pool exclusion confirmed by Jack; unattended staging/tainted join authorized, GPU ownership remains physical epsilon |
 | Future colocated guests | `192.168.1.224–192.168.1.229` | Six addresses held for future guests; no MACs assigned | Repository reservation and router pool exclusion confirmed by Jack |
 
 Jack accepted API proxy placement on existing physical hosts epsilon and culex, independently started by their host OS. Neither proxy nor VIP is installed. [Endpoint design](plans/k3s-api-endpoint.md) and [versioned host intent](../non-k8s-iac/proxmox/host.json) describe implementation/acceptance. [Router and NAS preparation](plans/proxmox-network-storage-preparation.md) reserves the complete `.220–.229` block while distinguishing router configuration from repository intent.
+
+Guest101eps-base/server/222 and102eps-gpu/agent/223 unattended staging approved by Jack. StaticIPv4/keySSH/privateconsolepassword/registration-time `homelab.scubbo.org/staging=true:NoSchedule` separate guest acceptance from workload migration. Node-exporter tolerates allNoSchedule taints; ordinary apps andCSI awaitreviewed acceptance. GPUremainsphysicalepsilon; APIretiresonlyafterstableendpointchecks. [Execution](../agentic-investigations/2026-10-10-k3s-guests.md).
 
 ## Domains and public exposure
 

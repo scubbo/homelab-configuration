@@ -4,6 +4,18 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 
 ## Task tracking
 
+- [x] Jack selects guest names eps-base (101/server/.222) and eps-gpu (102/agent/.223), unattended key-based Debian installation and temporary NoSchedule staging taints.
+- [x] Update native VM templates, host intent and documentation; naming renderer tests fail on prior names then pass with eps-base/eps-gpu.
+- [x] Capture/hashverify/privateoffhost fresh prejoinSQL/config/token checkpoint; unused IDs/MACs/storage/headroom/HA+JF verified before allocation.
+- [x] Build private verified installerISOs and allocate/start101+102 with staticaddresses/diskguards/no passthrough/onboot0; installation active.
+- [x] Pin/review k3sv1.32.6+k3s1installer/binary/upstreamSHA256; prepare private matchingserverDSN/token andagenttoken configs with stagingtaint.
+- [x] Verify initial name/configuration stage:5rendererunittests/284localdocumentationlinks/9Bashblocks/latecommand/staticpreseedtokens/JSON/configcriticalvaluespass; commit reviewed staging intent locally.
+- [ ] Preserve cluster configuration/datastore recovery and inspect matching server settings before guests join.
+- [ ] Install and verify Debian guests with static addressing, unique identities, SSH/guest agent and storage-client prerequisites.
+- [ ] Join both guests at the existing k3s version with staging taints; verify control-plane, node/network/runtime and bounded storage acceptance.
+- [ ] Preserve guest configuration/recovery evidence, update catalogue and commit for review.
+- [ ] Agree GPU ownership handoff, workload scheduling and stable API transition before retiring physical epsilon k3s.
+
 - [x] Jack confirms maintenance window/Jellyfin idle/no concurrent host or NAS maintenance/Pi physically off; authorizes134transfer.
 - [x] Refresh private router config/lease recovery, recheck live configuration against tested candidate and apply reviewed134exclusion/MAC64mapping through Jack's router UI.
 - [x] Jack reports final135–219poolSave/DHCPprocess/currentparser/tokenizedfinalcandidatecomparisonpass; windowstillactive.

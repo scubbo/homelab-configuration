@@ -1,0 +1,21 @@
+node-name: eps-base
+node-ip: 192.168.1.222
+server: https://192.168.1.69:6443
+token-file: /etc/rancher/k3s/cluster-token
+datastore-endpoint: "@DATASTORE_ENDPOINT@"
+cluster-cidr: 10.42.0.0/16
+service-cidr: 10.43.0.0/16
+cluster-dns: 10.43.0.10
+cluster-domain: cluster.local
+flannel-backend: vxlan
+flannel-iface: ens18
+resolv-conf: /etc/resolv.conf
+write-kubeconfig-mode: "0600"
+node-taint:
+  - homelab.scubbo.org/staging=true:NoSchedule
+tls-san:
+  - eps-base
+  - eps-base.avril
+  - 192.168.1.222
+  - k3s-api.avril
+  - 192.168.1.220

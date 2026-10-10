@@ -20,8 +20,8 @@ Jack's chosen layout:
 | --- | --- | --- |
 | `192.168.1.220` | `k3s-api.avril`, floating API endpoint | VIP controlled by Keepalived, no DHCP mapping to one physical MAC |
 | `192.168.1.221` | `network-probe.avril` | `02:00:00:01:00:c7`, DHCP reservation |
-| `192.168.1.222` | `epsilon-k3s.avril`, server guest | `02:00:00:01:00:65`, static guest / DHCP exclusion |
-| `192.168.1.223` | `epsilon-gpu.avril`, worker guest | `02:00:00:01:00:66`, static guest / DHCP exclusion |
+| `192.168.1.222` | `eps-base.avril`, server guest | `02:00:00:01:00:65`, static guest / DHCP exclusion |
+| `192.168.1.223` | `eps-gpu.avril`, worker guest | `02:00:00:01:00:66`, static guest / DHCP exclusion |
 | `192.168.1.224–229` | Six future guests | Reserved address block, no invented MAC mappings |
 
 1. Check for active leases, static mappings, manual overrides, or other known static devices throughout `.220–.229`. Resolve any collision with Jack before assigning the block. Keep existing `.69` epsilon management and `.134` HA service records unchanged until their migration stages.

@@ -1,0 +1,11 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: eps-base
+  namespace: external-dns
+spec:
+  endpoints:
+    - dnsName: eps-base.avril
+      recordType: A
+      targets:
+        - 192.168.1.222

@@ -1,5 +1,5 @@
 {
-  "status": "HAOS100 restored and serving134/homeassistant.avril; radio/remote/guest-restart/NAS-isolated-restore verified; broaderdevicechecks/backupjobs pending; Kubernetes guests deferred",
+  "status": "HAOS100 serving134; eps-base101/server and eps-gpu102/agent Debian installation and staging-tainted k3s joins active; GPU handoff/workload/API transition pending",
   "physical_host": "epsilon",
   "hypervisor": {
     "hostname": "epsilon",
@@ -130,24 +130,26 @@
       }
     },
     "101": {
-      "name": "epsilon-k3s",
-      "manifest": "vms/101-epsilon-k3s.conf.in",
+      "name": "eps-base",
+      "manifest": "vms/101-eps-base.conf.in",
       "ipv4": "192.168.1.222",
       "address_validation": "Jack confirmed no conflicts and ISC pool exclusion; guest not deployed",
       "address_assignment": "static guest configuration",
       "os": "Debian 13 amd64",
       "k3s_role": "server",
+      "staging_taint": "homelab.scubbo.org/staging=true:NoSchedule",
       "datastore_host": "epsilon.avril",
       "datastore_port": 5432
     },
     "102": {
-      "name": "epsilon-gpu",
-      "manifest": "vms/102-epsilon-gpu.conf.in",
+      "name": "eps-gpu",
+      "manifest": "vms/102-eps-gpu.conf.in",
       "ipv4": "192.168.1.223",
       "address_validation": "Jack confirmed no conflicts and ISC pool exclusion; guest not deployed",
       "address_assignment": "static guest configuration",
       "os": "Debian 13 amd64",
       "k3s_role": "agent",
+      "staging_taint": "homelab.scubbo.org/staging=true:NoSchedule",
       "gpu": {
         "model": "NVIDIA Quadro P1000",
         "observed_pci_functions": ["0000:05:00.0", "0000:05:00.1"],

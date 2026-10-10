@@ -25,8 +25,8 @@ class RenderVMTest(unittest.TestCase):
     def test_debian_guests_allocate_manifest_disks_and_use_pinned_installer(self):
         host = json.loads((BASE / "host.json").read_text())
         for vmid, name, cores, memory, size in [
-            ("101", "epsilon-k3s", "8", "16384", "128"),
-            ("102", "epsilon-gpu", "8", "16384", "64"),
+            ("101", "eps-base", "8", "16384", "128"),
+            ("102", "eps-gpu", "8", "16384", "64"),
             ("199", "network-probe", "1", "1024", "16"),
         ]:
             with self.subTest(vmid=vmid):

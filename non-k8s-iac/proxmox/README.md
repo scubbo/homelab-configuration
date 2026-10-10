@@ -1,6 +1,6 @@
 # Proxmox VM configuration
 
-**Status: HAOS100 restored and serving134/homeassistant.avril/onboot1; radio/remote/guest-reboot/NAS-isolated-restore verified. Broaderdevice/backupfollowupspending; Kubernetes guests deferred.** Jack selected package installation on epsilon after [rehearsed Debian maintenance](../../docs/plans/epsilon-debian-upgrade.md). The [host decision](../../docs/plans/proxmox-host-selection.md) stages a general-purpose k3s server, GPU worker, and HAOS while physical k3s remains available until cutover.
+**Status: HAOS100 serving134; eps-base101/server and eps-gpu102/agent unattended Debian/tainted k3s staging active. GPU/workload/API transition pending.** Jack selected package installation on epsilon after [rehearsed Debian maintenance](../../docs/plans/epsilon-debian-upgrade.md). The [host decision](../../docs/plans/proxmox-host-selection.md) stages a general-purpose k3s server, GPU worker, and HAOS while physical k3s remains available until cutover.
 
 - [Installation, storage, and staged Kubernetes migration](../../docs/plans/proxmox-installation.md).
 - [Network probe acceptance](../../docs/plans/proxmox-network-probe.md).
@@ -46,6 +46,8 @@ The Debian installer is pinned to `debian-13.7.0-amd64-netinst.iso` using the SH
 
 Jackapprovedkey-basedunattendedDebianinstallationforprobe199. [`probe-preseed.cfg.in`](probe-preseed.cfg.in) suppliesDHCP/hostname/minimalpackages/EFI+rootrecipe andchecksitsonlySCSIdiskisexact16GiBbeforepartitioning. Replacepassword-hashtokenonlyinprivateoperatorstaging, retainrandompasswordprivately andinjectonlyanexistingpublicSSHkey. [`probe-late.sh`](probe-late.sh) installskey-onlySSH/guestagent/serialconsole, standardscubbosudoaccount andinstallercompletionrecord. [`probe-grub.cfg`](probe-grub.cfg) autoselectsthetextinstaller/serialconsole. The versionedofficialISOisretainedunmodified; derivedprivateISOaddsseed/key/latecommand/menu withxorriso boot-image replay. KeepderivedISO/seed/passwordoutsideGit/privatepermissions; neverattachproductiondisks/tokens/passthrough. Actualinstaller/lease/SSH/guestagenttestsareseparatefromtemplatechecks.
 
+[`k3s-preseed.cfg.in`](k3s-preseed.cfg.in), [`k3s-late.sh`](k3s-late.sh) and [`k3s-grub.cfg`](k3s-grub.cfg) stage101/102withstaticIPv4/name/exactsingleSCSIdiskguard,EFI+root/noSwap/keySSH/serial/guestagent/iscsid/kernelnetworkprerequisites. Renderhostname/address/disksize/privatehash/packagesseparatelyforeachguest; no productiontokensoninstallerISO. ExistingpublicSSHkey/privateconsolepasswords retainedoutsideGit. Afterinstalledboot/network/rebootchecks, usematchingprotectedclustercredentials/pinnedk3sversionwith `homelab.scubbo.org/staging=true:NoSchedule`. [Execution](../../agentic-investigations/2026-10-10-k3s-guests.md) records actual joins; physicalepsilon/P1000remainactiveuntilhandoffacceptance.
+
 [`render_vm.py`](render_vm.py) uses only Python's standard library, reads the selected guest's manifest/host intent, and **prints** one-time staging commands. It does not connect to a host, invoke `qm`, or allocate anything. It derives CPU/RAM/MAC/disk sizes from the manifest, allocates fresh EFI/OS disks, disables automatic boot, and omits USB/PCI assignment until their separate handoff steps. It refuses completed volume references, duplicate/unsupported options, and missing installer/image inputs.
 
 ```bash
@@ -61,8 +63,8 @@ Review the printed commands and run them deliberately in the Proxmox shell after
 | VMID / manifest | Role | vCPU / fixed RAM | Local OS disk | Persistent MAC |
 | --- | --- | --- | --- | --- |
 | [100, homeassistant](vms/100-homeassistant.conf.in) | HAOS and USB coordinator | 2 / 4 GiB | 64 GiB minimum; increase for source usage/restore headroom | `02:00:00:01:00:64` |
-| [101, epsilon-k3s](vms/101-epsilon-k3s.conf.in) | General-purpose k3s server | 8 / 16 GiB | 128 GiB | `02:00:00:01:00:65` |
-| [102, epsilon-gpu](vms/102-epsilon-gpu.conf.in) | k3s agent, Jellyfin/Tdarr P1000 | 8 / 16 GiB | 64 GiB | `02:00:00:01:00:66` |
+| [101, eps-base](vms/101-eps-base.conf.in) | General-purpose k3s server | 8 / 16 GiB | 128 GiB | `02:00:00:01:00:65` |
+| [102, eps-gpu](vms/102-eps-gpu.conf.in) | k3s agent, Jellyfin/Tdarr P1000 | 8 / 16 GiB | 64 GiB | `02:00:00:01:00:66` |
 | [199, network-probe](vms/199-network-probe.conf.in) | Minimal network/storage acceptance | 1 / 1 GiB | 16 GiB | `02:00:00:01:00:c7` |
 
 Confirm locally administered MACs and VMIDs are unused beforeallocatingadditionalguests. [Catalogue address allocations](../../docs/asset-catalogue.md#proxmox-and-api-address-allocations) hold API `.220`, probe `.221`, server `.222`, GPU worker `.223`, and future guests `.224–.229`; JackconfirmsISCexclusion/probe221mappingandactualprobeleaseisverified. [Router/NAS preparation](../../docs/plans/proxmox-network-storage-preparation.md) recordsreportedpoolboundsandunsuppliedrouterpreflight. HA retains `.134`. The host retains `.69`/`epsilon`; guests never share its Kubernetes name/IP. No `epsilon-physical` node rename is needed to achieve physical/guest overlap.
