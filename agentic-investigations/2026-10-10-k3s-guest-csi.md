@@ -26,3 +26,27 @@ Test image `docker.io/library/python:3.13-slim-bookworm@sha256:a1165e272e578941b
 | eps-gpu-iscsi | pvc-a1c8eed4-c7f3-4590-be71-dc3c9f9d64f7 | eps-gpu | 26383d708defcbef56d8a71a7bcea03593f77c930f3df277bb36491f4550323d |
 
 Raw evidence retained outsideGit in workstation `/private/var/folders/9n/t8ngskcd35s1ldc6876b128m0000gn/T/opencode/k3s-guest-csi-ynalbidr`, private700parent/600files. Initialdriverlogs preserve Node/gRPC `Calling start() ...` deprecation and `retry - failed condition` message followed by successful NodePublishVolume/emptyresponse; registration reports PluginRegisteredtrue and GRPCerrornil. These are recorded diagnostics, not hidden warnings or failed mounts. Consumer assertions/logs are pristine. Lifecycle verification proceeds with evidence captured before deleting only authorized test pods; no force detach/logout/repair.
+
+## Persistence and exclusive cross-node reattachment
+
+All four original writer pods/logs/UIDs preserved in private evidence before normal15s-grace deletion. Waited for every testVolumeAttachment to disappear; read actualguestmountinfo/globalmount hashes/by-pathIQNdevices/sysfsiscsi sessions from privilegednode-agenthost view. Bothguests have no testmounts/devices/sessions before creating replacementconsumers, while24productionattachmentsremainhealthy.
+
+Four `recreate-*` rootlesspods mount the same claims on originalVMs and verify unchangedidentifier/size/SHA256/proofJSON. AllReady/zero restarts; actualhostmounts two pervolume/global+pod, uniqueattachment on correctnode. Normallydeleted these consumers and proved complete release again. Four `cross-*` verificationpods then mount each claim on the oppositeVM: eps-base claims on eps-gpu, eps-gpu claims on eps-base. All original payloads/checksums match, and per-PVinspection confirms exactlyoneattachment/currentnode, mounted onlythere, no device/mount onthepreviousnode. iSCSI ext4 is never concurrentlymounted onbothguests. NFS crossesnodessequentiallyaswell; simultaneousRWX/partition/failurestress is not partofthisexercise.
+
+Normallyremoved cross-node verificationpods and proved a third completeunmount/detach/session/devicerelease. No logout/manualmount/forceddetach/filesystemrepair. This tests twelve actual pod-volume verificationcases:fourinitialwrites, foursame-nodepersistentrecreations, fourcross-node reattachments. Kubernetes CSI nodepublish/stage andunpublish/unstage pluscontrollerattach/detach participated in the observed path.
+
+## Final state and retained assets
+
+Afterzero testconsumers/attachments/hostmounts/devices/sessions, alltemporaryCSI-agentlogs/specs preserved, agentpods normallydeleted, and kubeletremovesbothguestdriverregistrations. ActualproductionDaemonSettemplates byte-matchpretest; physicalCSIagents remainrunning. BothVMstagingtaints retained; no durableCSI-agent schedulingchange orapplicationmigration. OrdinaryCSIagents will run when the reviewed schedulingstage removes/tolerates the stagingtaint, with no duplicate temporaryagents left behind.
+
+FourPVCs remainBound withunchangedPVUIDs/reclaimRetain/NASdataand4MiBproofpayloads. Namespace retained; no testconsumer oragentpodrunning. BothguestlocalSSH mount/sessionchecks independentlyconfirmzero testmounts/by-pathdevices/iSCSIsessions aftertemporaryagentsretire. k3sactive/NRestarts0/zero failedunits; freshstorage-windowerror-levelkernellogs show no entries. OneunprivilegedIQNfile-readobservation failedEACCES becauseiscsiconfig isrootonly; runtimeobservationsrepeatedwithoutreadingprivilegedfile, permissionsunchanged. Anotherfinalsummarydisplay lackedlabels onanunlabelledretainednetworktestpod; corrected optionalfieldhandlingagainstcapturedJSON, no testphase orlivewritesrepeated.
+
+Final17:22UTC allfivenodesReady/82Running80Ready0Pending/knownLidarr+Vaultonly;24productionattachmentUIDs/specs/node/PV/attachedstatus unchanged, HA/JF200/physicalhostbootunchanged/rcloneoff. CSIagentsinitialwarningdiagnostics retained separatelyfrompristineconsumerassertions, no error-freeglobaljournalclaim.
+
+Fullprivateevidence80files/4631571bytes copied/hash-mode-verified/fsynced to culex `/home/scubbo/epsilon-recovery.mVvt2ir2/k3s-guest-csi-20261010.5sj15f91`, manifestSHA256`d931093a0c8e36b8e8423a77dc296323a14895172debdf2dca92c4b751e4e52e`. Includesbaseline/manifests/events/testlogs/nodeagentlogs/hostmounts/sessions/perphasepodmetadata/results/finalclaimidentities andtesthelpers. Mode600/privateparent700; workstationcopiesandtransferarchive retained. It records testdataidentity/checksums, not a NASdata backup orspecificVMarchivebootrestore.
+
+## Handoff
+
+NFS and iSCSI CSI provisioning/mount/nonrootwrite/fsync/read/same-nodepersistence/exclusivecross-node reattachment/cleanunmount+detach pass on bothVMs. Testclaims/dataremain for Jackcleanupreview; temporarypods retired perapproval. ProductionCSIinstallation andVMstagingtaints remainunchanged. GPUownership/workloadtransition/stableAPI/backupnotifications andproductionapplicationrestorecoverage keeptheir separateacceptance. Initialcheckpoint69ac42b records provisioning/fileIO; completionrecordcommittedlocally, nopush.
+
+Completionchecks:five rendererunittests/pristine,279localdocumentationlinks/anchors/fiveBashblocks/duplicate-keyhostJSON/CSIassetrefs/privatekeyhashscan/diffcheckpass. Tests exercise actualCSIcontrollers/nodeagents/kubelet/galactus/NFS/ext4/iSCSIlifecycle and realpersistentdata, no mock behavior or HelmchartYAMLcorrectnesschecks. Full evidence/checksums/retainedtestassetidentities distinguish these tests from productionworkflow/recoverycoverage.

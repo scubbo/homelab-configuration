@@ -1,6 +1,6 @@
 # Proxmox VM configuration
 
-**Status: eps-base101/server and eps-gpu102/agent Ready/staging-tainted/onboot1 at v1.32.6+k3s1; guest restart/API/network/NFS acceptance passed. GPU/workload/API transition pending.** HAOS100 serves134. The physical k3s nodes remain available during the reviewed transition.
+**Status: eps-base101/server and eps-gpu102/agent Ready/staging-tainted/onboot1 at v1.32.6+k3s1; guest restart/API/network/NFS+iSCSI CSI acceptance passed. GPU/workload/API transition pending.** HAOS100 serves134. The physical k3s nodes remain available during the reviewed transition.
 
 - [Installation, storage, and staged Kubernetes migration](../../docs/plans/proxmox-installation.md).
 - [Network probe acceptance](../../docs/plans/proxmox-network-probe.md).
@@ -49,6 +49,8 @@ Jackapprovedkey-basedunattendedDebianinstallationforprobe199. [`probe-preseed.cf
 [`k3s-preseed.cfg.in`](k3s-preseed.cfg.in), [`k3s-late.sh`](k3s-late.sh) and [`k3s-grub.cfg`](k3s-grub.cfg) stage101/102withstaticIPv4/name/exactsingleSCSIdiskguard,EFI+root/noSwap/keySSH/serial/guestagent/iscsid/kernelnetworkprerequisites. Renderhostname/address/disksize/privatehash/packagesseparatelyforeachguest; no productiontokensoninstallerISO. ExistingpublicSSHkey/privateconsolepasswords retainedoutsideGit. Afterinstalledboot/network/rebootchecks, usematchingprotectedclustercredentials/pinnedk3sversionwith `homelab.scubbo.org/staging=true:NoSchedule`. [Execution](../../agentic-investigations/2026-10-10-k3s-guests.md) records actual joins; physicalepsilon/P1000remainactiveuntilhandoffacceptance.
 
 [`vms/101-eps-base.conf`](vms/101-eps-base.conf) and [`vms/102-eps-gpu.conf`](vms/102-eps-gpu.conf) record installed disks/identities/onboot1/no passthrough; both guests are Ready/static222223/staging-tainted. [`k3s/eps-base.yaml.in`](k3s/eps-base.yaml.in) requires private datastore substitution and a root0600 token file; [`k3s/eps-gpu.yaml`](k3s/eps-gpu.yaml) joins as an agent with its protected token. Existing cluster version/artifact checksums and real restart/network/NFS results are recorded in the [guest acceptance](../../docs/plans/proxmox-installation.md#observed-guest-acceptance). Keep allocation templates for review, not repeated provisioning of existing IDs. Bare-host DNS resources await Jack's GitOps deployment.
+
+[CSI acceptance](../../agentic-investigations/2026-10-10-k3s-guest-csi.md) verifies dynamicallyprovisionedNFS/iSCSIpodvolumes onbothVMs:write/fsync/read,same-nodepersistence,exclusivecross-node reattachment andcompleteunmount/detach/sessionrelease. Temporarynodeagents retireaftertests; productionCSItemplates/stagingtaints stayintact. Four1GiBBoundRetainPVCs/testdata retainedin `k3s-csi-acceptance-20261010`; no testconsumers left running. OrdinaryCSIagents still need the reviewedstaging-to-workload schedulingtransition.
 
 [`render_vm.py`](render_vm.py) uses only Python's standard library, reads the selected guest's manifest/host intent, and **prints** one-time staging commands. It does not connect to a host, invoke `qm`, or allocate anything. It derives CPU/RAM/MAC/disk sizes from the manifest, allocates fresh EFI/OS disks, disables automatic boot, and omits USB/PCI assignment until their separate handoff steps. It refuses completed volume references, duplicate/unsupported options, and missing installer/image inputs.
 
