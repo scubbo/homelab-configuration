@@ -1,6 +1,6 @@
 # Stable k3s API endpoint
 
-**Status: host placement/address plan accepted; Jack confirms router pool exclusion, proxy/VIP implementation pending.** Jack selected `https://k3s-api.avril:6443`, VIP `192.168.1.220`, with host-OS proxies on epsilon and culex. Planned server guest is `.222`, GPU agent `.223`; deployed probe leases `.221`. The [catalogue address allocations](../asset-catalogue.md#proxmox-and-api-address-allocations) record these addresses and reported exclusions. Current production clients still use `https://epsilon:6443`.
+**Status: host placement/address plan accepted; proxy/VIP implementation pending.** Jack selected `https://k3s-api.avril:6443`, VIP `192.168.1.220`, with host-OS proxies on epsilon and culex. `eps-base` server `.222` and `eps-gpu` agent `.223` are Ready/staging-tainted; direct222API verifies with the existing cluster CA/client identity. The [catalogue address allocations](../asset-catalogue.md#proxmox-and-api-address-allocations) record addresses/exclusions. Current production clients still use `https://epsilon:6443`.
 
 ## Endpoint architecture
 
@@ -21,7 +21,7 @@ kubectl / ArgoCD / joining nodes
 
 This preserves the endpoint during proxy/host maintenance, but cannot keep the shared PostgreSQL datastore alive during epsilon failure; the [SQL HA workstream](k3s-postgres-ha.md) addresses that separate dependency.
 
-Forward raw TCP 6443 to verified k3s **server** addresses: culex `.13` and guest `eps-base`'s reserved address once joined. Physical epsilon `.69` is a temporary backend during overlap. `eps-gpu` is an agent and is not a backend. TLS passes through to the API server; this avoids introducing a second certificate/authentication layer. Add `k3s-api.avril` and the selected VIP to the relevant server `tls-san` configuration, retain the cluster CA, and validate certificates/clients before transition.
+Forward raw TCP 6443 to verified k3s **server** addresses: culex `.13` and joined `eps-base` `.222`. Physical epsilon `.69` is a temporary backend during overlap. `eps-gpu` is an agent and is not a backend. TLS passes through to the API server; this avoids introducing a second certificate/authentication layer. Guest101's config includes `k3s-api.avril`/VIP SAN intent; existing physical server SANs and all backends still require endpoint-specific verification before transition. Retain the cluster CA and validate certificates/clients.
 
 Reserve the VIP outside DHCP allocation and check duplicates/firewall/Tailscale subnet routing using the [network preparation procedure](proxmox-network-storage-preparation.md#1-opnsense-address-block). VRRP requires actual LAN reachability, interface/VIP ownership, and tested priority/preemption behavior; its presence alone does not prove failover.
 

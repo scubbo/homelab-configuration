@@ -82,6 +82,8 @@ Recovery is a separate proof. The plan uses daily native HA backups, weekly stop
 
 The Kubernetes guests are `eps-base` (server) and `eps-gpu` (agent), each with a separate static LAN address, MAC and OS disk. An unattended installer has a single-disk capacity guard, key-only SSH, a standard password-protected sudo account, no swap, a guest agent and the NFS/iSCSI prerequisites. The private media contains the console password hash and public SSH key, but no production cluster tokens. k3s joins later at the actual existing cluster version with a registration-time NoSchedule staging taint. Broadly tolerating DaemonSets still need inspection; a taint is not proof that the node runs no pods. Physical GPU ownership, workload selectors and the stable API transition are separate acceptance stages.
 
+Both guests joined the existing external-PostgreSQL cluster at `v1.32.6+k3s1`, retaining its CA and credentials. The server's direct API passed certificate-verified, authenticated reads. Forty real network checks exercised guest/physical pod paths, service DNS and existing endpoints before and after guest restarts. Unique manual-NFS test directories passed write/fsync/read/checksum and clean unmount. Only node-exporter tolerates the staging taint persistently; production CSI pod-volume checks still require their own resources and acceptance. Stop-mode NAS backups resume both guests normally, while independent private configuration and fresh SQL copies preserve the external datastore dependency. Those captures are not boot-restore proof for the two guest archives. [Executed checks](../../agentic-investigations/2026-10-10-k3s-guests.md) retain that distinction.
+
 ## Results to record after execution
 
 - Host-conversion and Home Assistant outage durations.

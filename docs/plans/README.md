@@ -6,7 +6,7 @@ Active plans describe proposed work, dependencies, execution steps, and acceptan
 
 Jack selected Proxmox on epsilon's upgraded Debian installation. Practice physical-host maintenance first; keep physical k3s/pods while preparing distinct general-purpose and GPU guests. The SQL datastore's HA design is investigated independently of the accepted-downtime upgrade.
 
-Jack accepts proceeding from HAOS migration to staging `eps-base` (101/server/.222) and `eps-gpu` (102/agent/.223). Unattended Debian/keySSH and registration-time NoSchedule staging taints are approved. Physical epsilon serves existing workloads/API/datastore during guest acceptance; GPU ownership and workload/API retirement have separate handoff checks.
+`eps-base` (101/server/.222) and `eps-gpu` (102/agent/.223) are Ready at the existing k3s version, with staging taints and installed/restart/API/network/NFS acceptance. [Guest results](proxmox-installation.md#observed-guest-acceptance) record the executed checks. Physical epsilon serves existing workloads/API/datastore; GPU ownership, CSI/workload scheduling and API retirement have separate handoff checks. Guest DNS definitions await Jack's reviewed GitOps push.
 
 HAOS100runsrestoredCore2026.9.3/USBHubZ/onboot1/DHCP134; Pi off/SDretained. [Address transfer accepted](homeassistant-vm-migration.md#address-transfer-accepted): http://homeassistant.avril:8123/dashboards/Zigbeecontrol/phone-mobiledataTailscalework. OriginalZigbeenetwork/guestreboot/nativebackup+NASarchive→isolated197boot+dataSQLintegrity/cleanstopverified. BatteryautomationRFchecks/backupnotification+schedules/hostcoldboot remain open; Kubernetes guest migration is deferred. Tailnetidentity100.99.206.29unchanged.
 

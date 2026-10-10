@@ -10,10 +10,20 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Build private verified installerISOs and allocate/start101+102 with staticaddresses/diskguards/no passthrough/onboot0; installation active.
 - [x] Pin/review k3sv1.32.6+k3s1installer/binary/upstreamSHA256; prepare private matchingserverDSN/token andagenttoken configs with stagingtaint.
 - [x] Verify initial name/configuration stage:5rendererunittests/284localdocumentationlinks/9Bashblocks/latecommand/staticpreseedtokens/JSON/configcriticalvaluespass; commit reviewed staging intent locally.
-- [ ] Preserve cluster configuration/datastore recovery and inspect matching server settings before guests join.
-- [ ] Install and verify Debian guests with static addressing, unique identities, SSH/guest agent and storage-client prerequisites.
-- [ ] Join both guests at the existing k3s version with staging taints; verify control-plane, node/network/runtime and bounded storage acceptance.
-- [ ] Preserve guest configuration/recovery evidence, update catalogue and commit for review.
+- [x] Preserve cluster configuration/datastore recovery and inspect matching server settings before guests join.
+- [x] Install and verify Debian guests with static addressing, unique identities, SSH/guest agent and storage-client prerequisites.
+- [x] Jack approves perguestunique manual-nfs smallwrite/fsync/read/checksum/targetedtestcleanup/cleanunmountchecks; productionPVCs excluded.
+- [x] Join both guests at the existing k3s version with staging taints; verify control-plane, node/network/runtime and bounded storage acceptance.
+- [x] BothDebianinstalled/static222223/SSHpublickeypins/uniqueIQN+machineID/guestreboot/NFS1MiBIOpass/nofailedunits/noSwap.
+- [x] eps-base/server andeps-gpu/agentReadyv1.32.6+k3s1/stagingtaintpresent/NRestarts0/newpasswordstate; direct222APIverifiedTLS+authenticatedreadyz/nodeinventorypass.
+- [x] 32realguest/physicalpodIP+ClusterIP/DNS TCP checks pass usingboundedprivateacceptancetestpods/pinnedimage; physicalHA/JF remainhealthy.
+- [x] Both guest k3s services/runtime/node taints survive guest-only reboot; NRestarts0/privateconfig600/onboot1/direct serverAPI pass. HOME warning was confined to the guest-agent check and resolved by HOME=/root.
+- [x] Eight post-reboot guest↔guest/physicalpod/serviceDNS/HA path checks pass; bounded test pods/services retained for cleanup review.
+- [x] Sequential NAS stop-mode101/102 archives/hashcaptured/pruningoff/guestsresumedReady; postjoinSQL/globals/PVE and independentprivateguestconfig/nodeidentity archives captured.
+- [x] Final postbackup strictSSH/MTU1500/DF1472/zero-lossLAN/NTP/TCPprerequisites/runtime/nodeexporterReady/24productionattachments/HA+JF pass; no GPU handoff or CSI claim.
+- [x] Preserve post-join SQL/PVE/guest configuration and NAS archives; off-host136files/1820984044bytes/privatehash-modes-fsyncmatch plus9clientfiles verified.
+- [x] Preserve guest configuration/recovery evidence and update deployed hardware, host intent, catalogue and runbooks; installed-node commit prepared for review.
+- [x] Final installed-node checks:five renderer tests/pristine output,274localdocumentationlinks/anchors,fiveBashblocks/latecommand,duplicate-keyJSON/assetreferences/privatekeyhashscan/native101102liveconfigcomparison/diffcheck pass. Allfive nodesReady/82Running80Ready0Pending/24healthyattachments; retained diagnostics distinguish expected testpod interruption and baseline Lidarr/Vault findings.
 - [ ] Agree GPU ownership handoff, workload scheduling and stable API transition before retiring physical epsilon k3s.
 
 - [x] Jack confirms maintenance window/Jellyfin idle/no concurrent host or NAS maintenance/Pi physically off; authorizes134transfer.

@@ -1,6 +1,6 @@
 # Proxmox on epsilon
 
-**Status: platform/HAOS134 acceptance complete with follow-ups tracked; eps-base101/server and eps-gpu102/agent Debian/tainted k3s staging active. GPU/workload/API transition pending.** Jack selected package installation on epsilon's upgraded Debian filesystem, with a general-purpose k3s server guest, a GPU k3s worker guest, and HAOS. Physical and guest k3s nodes coexist during migration. Keep their names/IPs distinct; the physical node currently remains `epsilon`, not a renamed Kubernetes node.
+**Status: eps-base101/server and eps-gpu102/agent are Ready at v1.32.6+k3s1 with staging taints; installed boot, guest restart, API/network/NFS checks pass. GPU/workload/API transition pending.** HAOS100 serves134 with recovery and follow-ups recorded. Physical and guest k3s nodes coexist; physical `epsilon` retains its identity and current workloads.
 
 Sequence: [Debian maintenance and rehearsal](epsilon-debian-upgrade.md) → Proxmox package/kernel/network installation → [network probe](#3-network-probe-and-acceptance) → [HAOS staging and cutover](homeassistant-vm-migration.md) → [production Kubernetes guests](#4-production-kubernetes-guests). Jack authorizes eps-base/eps-gpu staging after HA134 acceptance; existing physical workloads stay active while registration-time taints gate migration. [PostgreSQL HA](k3s-postgres-ha.md) is a parallel investigation whose deployment/placement needs a separate decision.
 
@@ -16,8 +16,8 @@ Complete/verify inputs in [`host.json`](../../non-k8s-iac/proxmox/host.json). Th
 | LAN port | Observed `eno1`, MAC `14:18:77:28:11:0c`; verify after Debian/Proxmox kernel upgrades |
 | API VIP | `k3s-api.avril`, candidate `.220`, proxy services on physical epsilon/culex |
 | VM 199 | Deployed `network-probe`, DHCP `.221`, 1 vCPU / 1 GiB / 16 GiB; reservation/lease/reboot verified |
-| VM 101 | Staging `eps-base`, `.222`, k3s server, 8 vCPU / 16 GiB / 128 GiB; static guest / router exclusion confirmed by Jack |
-| VM 102 | Staging `eps-gpu`, `.223`, k3s agent, 8 vCPU / 16 GiB / 64 GiB; static guest / router exclusion confirmed by Jack; P1000 passthrough unproved |
+| VM 101 | `eps-base`, `.222`, Ready k3s server/stagingtaint/onboot1, 8 vCPU / 16 GiB / 128 GiB; static guest / router exclusion verified |
+| VM 102 | `eps-gpu`, `.223`, Ready k3s agent/stagingtaint/onboot1, 8 vCPU / 16 GiB / 64 GiB; static guest / no PCI passthrough yet |
 | VM 100 | HAOS18.3/Core2026.9.3amd64/running/onboot1/USBHubZ, 2 vCPU / 4 GiB / 64 GiB; DHCP134/MAC64/normalLANname+tailnet+Zigbeecontrolpass/Pioff |
 | Future guests | `.224–.229`, held for additional colocated guests; no guests/MACs yet |
 
@@ -162,6 +162,16 @@ The [HAOS image import](homeassistant-vm-migration.md#2-provision-and-test-the-e
 ## 4. Production Kubernetes guests
 
 ### General-purpose server and GPU worker
+
+#### Observed guest acceptance
+
+Both guests are installed Debian13.7/keySSH/serial/agent/iscsid/chrony, unique machine IDs/iSCSI initiators/MACs/static addresses; no swap/clean dpkg audit/zero failed units. Guest-only restarts preserve k3s Ready/version/NoSchedule staging taint/runtime health/NRestarts0; onboot1 enabled after checks. Actual configuration: [eps-base101](../../non-k8s-iac/proxmox/vms/101-eps-base.conf), [eps-gpu102](../../non-k8s-iac/proxmox/vms/102-eps-gpu.conf), [server template](../../non-k8s-iac/proxmox/k3s/eps-base.yaml.in), [agent config](../../non-k8s-iac/proxmox/k3s/eps-gpu.yaml). Protected token/DSN/files remain outside Git.
+
+Direct `https://192.168.1.222:6443` verifies with the existing cluster CA/client identity and returns authenticated readyz/node inventory.32 real cross-node podIP/ClusterIP-DNS checks and8 post-restart network checks pass across guests/epsilon/culex; both guest NFS clients write/fsync/read/checksum and cleanly unmount unique manual-nfs test directories. Only broadly tolerating node-exporter runs persistently; disposable bounded network-test resources remain retained for Jack's review. The staging taint blocks ordinary applications and unmodified CSI node DaemonSets, so CSI/iSCSI pod-volume acceptance remains a separate scheduling-stage check. [Execution and recovery](../../agentic-investigations/2026-10-10-k3s-guests.md).
+
+New bare-host DNSEndpoints are committed for Jack's GitOps review/push; `.222`/`.223` work without publishing the names. Physical epsilon/culex/API/PostgreSQL/P1000/workload selectors stay active; no GPU handoff or endpoint retirement is implied by node readiness.
+
+Sequential stop-mode101/102 archives on `vm-backups` are captured/hashverified with pruningdisabled and both guests resume Ready. Private postjoin SQL/globals/pmxcfs/PVE configuration and separate guestconfig/nodeidentity captures supplement the VMarchives. [Recorded recovery](../../agentic-investigations/2026-10-10-k3s-guests.md#backup-and-final-runtime-acceptance) distinguishes these captures from bootrestore acceptance. Notificationdelivery still fails because no recipient is configured; schedules remain pending.
 
 VM **101** (`eps-base`) joins the existing external-PostgreSQL cluster as a server using the protected current **server token**, datastore connection, and matching critical cluster/service CIDRs, DNS/domain, disabled components, encryption options and SANs. VM **102** (`eps-gpu`) joins as an **agent** via the chosen server registration endpoint using the matching agent/server token. Both initially pin the execution-time cluster version (observed `v1.32.6+k3s1`), not a default latest installer. The physical k3s node and pods can stay until guest verification/cutover.
 
