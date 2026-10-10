@@ -4,6 +4,10 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 
 ## Task tracking
 
+- [ ] Investigate Pi LAN service outage reported after HAOS staging; establish cause and recover source access before cutover.
+- [x] Verify Pi service recovery/new boot and capture previous/current logs; persistent undervoltage proved, no agent reboot/restart.
+- [ ] Jack inspects Pi PSU/cable/connector; confirm power-delivery remediation or agreed migration/rollback boundary. Exact reset trigger remains unproved.
+
 - [x] Record Jack's HAOS-first ordering; defer Kubernetes guest migration while Jellyfin is in use.
 - [ ] Inventory Pi installation/apps/storage/radio/network/remote access and establish protected full-backup/key coverage.
 - [x] Verify pinned HAOS artifact and available resources; provision empty VM100 with temporary DHCP/onboot0.
@@ -112,6 +116,10 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Verify epsilon iDRAC or physical boot-console access before its rescue-imaging outage.
 
 ## Operator UI acceptance
+
+Pioutage01:29UTC:Jacknooperatorchanges/DNS134/pingcorrectMACfromMac+epsilon+culex; SSHHAobserverfail/start,100confirmedstopped/noaddresscollision. Actualunplannedboot01:30:31.995981/newbootb0368a7d; SSHobserverreturns01:31:48/HA20001:33:17+4boundedchecks01:34:01–17, noagentPiwrite/restart/powercycle. Priorbounded2000kernelentries994lowvoltagewarnings22:31→01:21/currentbootcontinueswarnings; confirmsphysicalpower-deliveryfault, exactresettriggernotproved/nofinalcleanshutdown/panic/OOMkill/storageerrorrecord. Currentstartupkswapd/SLUBallocationwarnings/~1GiBRAM, recorderuncleanshutdownsessioncleanup; noforcedrepair/DBrestore. Priorfullbackup/capturedSQLintegrityretainedoffhost. PhysicalPSU/cablerating/inspectionrequestedJack. [Outage record](../../agentic-investigations/2026-10-10-haos-vm-staging.md#pi-service-outage-and-automatic-recovery).
+
+Incident43privatefiles356665B copied/hashmodesverified/fsync toculexha-pi-outage-20261010.zb3d484e;118relative documentationlinks/anchors/4Bashcodeexamples/diffcheckpass. Sourcepower/resetrootcausefollowupstaysopen; automaticHTTPreturndoesnotcompletehardwareacceptance. NoagentPi restart/repair/configwrite.
 
 HAOS priority October10UTC: Jack defers k3s101/102 because Jellyfin users are active. Source rootSSH25/existingkey works; failed scubbo login was wrong username. Pi HAOS18.3/Core2026.9.3/10.6GiBused/ZHAHubZif01/USB10c4:8a2a/serial716000F1. Fullbackupf4389be0 at01:01:15UTC done100/errorsnone/allappsstarted,85719040bytes/hash41752178c2ced3876f0aa860620dfbf4a7920c10f3f0670a4bc0c616d8381cce/unencrypted/secret-bearing. Recorder/Zigbee DBs and threeapps included; both capturedSQLiteintegrityok/ZHA savednetworkbackup09Oct16:23 retainedprivately. Culexhaos-source-20261010.dhenn_hr56sourcefiles237919841B/modeshashesverified/fsync, macOStarprovenancesidecars/warningsretained.
 

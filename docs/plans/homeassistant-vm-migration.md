@@ -29,6 +29,8 @@ Beforecutover:confirmactualTailscaleclientURL, realdevicebaseline/physicalradioR
 
 **Source remote access requires operator recovery:** JackusesPiTailscalename/IP, peer`homeassistant.coin-pangolin.ts.net`/100.99.206.29currentlyOffline. Sourcelogshowsnodekeyexpired→NeedsLogin; appstarteddoesnotestablishconnectivity. JackreauthenticateslocallythenverifiescurrentremoteURL; finalcutoverbackupcapturesworkingnodestate. Do notstartrestoredTailscaleidentitywhilePiisactive. Currentfullbackup/capturednetworkkeysarehashverified/fsyncedonculex`haos-source-20261010.dhenn_hr`; stagingimages/config/evidenceonculex`haos-stage-20261010.d2y4wvgm`. Theseprovebackupcaptureandemptyboot, notproductionHArestore.
 
+**Source hardware health:** Piunplannedboot01:30:31UTC/servicesautomaticallyrecover01:33; repeatedkernelundervoltagebeforeandafterconfirmsunstablepowerdelivery, exactresetcauseunproved. [Incident evidence](../../agentic-investigations/2026-10-10-haos-vm-staging.md#pi-service-outage-and-automatic-recovery) recordspriorbackupintact/noagentreboot/noVMaddresscollision. Jackinspectspoweradapter/cable; agreehowtostabilizesourceandrollbackappliancebeforecutover, without assumingbootrecoverymeanshardwarehealthy.
+
 ## 1. Identify the source and dependencies
 
 On the working Pi, record the following before creating the final backup. Store secret-bearing exports outside Git.
