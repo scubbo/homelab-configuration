@@ -1,8 +1,8 @@
 # Proxmox on epsilon
 
-**Status: Proxmox management/kernel/staticbridge/DNS/dedicatedstorage reboot accepted; probe199 installed and boundednetwork/NASbackup/isolatedrestore verified. Productionguests/VIP/HAOS and remainingprobematrix/notificationdelivery pending.** Jack selected package installation on epsilon's upgraded Debian filesystem, with a general-purpose k3s server guest, a GPU k3s worker guest, and HAOS. Physical and guest k3s nodes coexist during migration. Keep their names/IPs distinct; the physical node currently remains `epsilon`, not a renamed Kubernetes node.
+**Status: Proxmox platform/probe verified; empty HAOS100 boot/reboot/shutdown verified, HA cutover pending. Kubernetes guests deferred while Jellyfin is in use; VIP/remainingprobematrix/notificationdelivery pending.** Jack selected package installation on epsilon's upgraded Debian filesystem, with a general-purpose k3s server guest, a GPU k3s worker guest, and HAOS. Physical and guest k3s nodes coexist during migration. Keep their names/IPs distinct; the physical node currently remains `epsilon`, not a renamed Kubernetes node.
 
-Sequence: [Debian maintenance and rehearsal](epsilon-debian-upgrade.md) → Proxmox package/kernel/network installation → [network probe](#3-network-probe-and-acceptance) → [production Kubernetes guests](#4-production-kubernetes-guests) → [HAOS cutover](homeassistant-vm-migration.md). [PostgreSQL HA](k3s-postgres-ha.md) is a parallel investigation whose deployment/placement needs a separate decision.
+Sequence: [Debian maintenance and rehearsal](epsilon-debian-upgrade.md) → Proxmox package/kernel/network installation → [network probe](#3-network-probe-and-acceptance) → [HAOS staging and cutover](homeassistant-vm-migration.md) → [production Kubernetes guests](#4-production-kubernetes-guests) when Jack schedules that work. Jack prioritizes HAOS and defers Kubernetes guest migration while Jellyfin is in use. [PostgreSQL HA](k3s-postgres-ha.md) is a parallel investigation whose deployment/placement needs a separate decision.
 
 Related: [host assessment](proxmox-host-selection.md), [versioned host/VM configuration](../../non-k8s-iac/proxmox/README.md), [planning evidence](proxmox-planning-notes.md), [current assets](../asset-catalogue.md), and [active plans](README.md).
 
@@ -18,7 +18,7 @@ Complete/verify inputs in [`host.json`](../../non-k8s-iac/proxmox/host.json). Th
 | VM 199 | Deployed `network-probe`, DHCP `.221`, 1 vCPU / 1 GiB / 16 GiB; reservation/lease/reboot verified |
 | VM 101 | Planned `epsilon-k3s`, `.222`, k3s server, 8 vCPU / 16 GiB / 128 GiB; static guest / router exclusion confirmed by Jack |
 | VM 102 | Planned `epsilon-gpu`, `.223`, k3s agent, 8 vCPU / 16 GiB / 64 GiB; static guest / router exclusion confirmed by Jack; P1000 passthrough unproved |
-| VM 100 | `homeassistant`, 2 vCPU / 4 GiB / 64 GiB minimum; reserved `.134`, existing internal DNS |
+| VM 100 | EmptyHAOS18.3staged/stopped/onboot0, 2 vCPU / 4 GiB / 64 GiB; testedtemporaryDHCP76, Pi retains `.134` until reviewed cutover |
 | Future guests | `.224–.229`, held for additional colocated guests; no guests/MACs yet |
 
 Guest/API addresses are allocated in the [asset catalogue](../asset-catalogue.md#proxmox-and-api-address-allocations). Jack confirms pool exclusion and no project conflicts; recheck execution-time lease/reservation/static-IP inventory before deploying further guests. Change conflicting candidates in the catalogue/host intent together. Check persistent MAC uniqueness. Add bare guest DNS names through reviewed external-dns DNSEndpoints, following [`galactus-dns-endpoint.yaml`](../../charts/external-dns/galactus-dns-endpoint.yaml) without `recordTTL`; no competing manual overrides. Proxmox's `/etc/hosts` must resolve its own name to `.69` even when Kubernetes DNS automation is unavailable. Jack reviews/pushes GitOps changes; agents never write/sync/refresh ArgoCD applications.

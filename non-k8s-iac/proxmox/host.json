@@ -1,5 +1,5 @@
 {
-  "status": "management, static bridge, storage and probe backup/isolated restore verified; production guests planned",
+  "status": "platform/probe verified; empty HAOS100 boot/reboot/shutdown verified; HA cutover pending; Kubernetes guests deferred",
   "physical_host": "epsilon",
   "hypervisor": {
     "hostname": "epsilon",
@@ -67,6 +67,10 @@
     "100": {
       "name": "homeassistant",
       "manifest": "vms/100-homeassistant.conf.in",
+      "deployed_manifest": "vms/100-homeassistant.conf",
+      "state": "empty HAOS18.3/amd64 VM cleanly stopped; onboot0/no USB; production Pi retains134",
+      "staging_ipv4": "192.168.1.76",
+      "staging_address_assignment": "ordinary temporary DHCP; same address after guest reboot; not reserved",
       "ipv4": "192.168.1.134",
       "address_assignment": "OPNsense DHCP reservation",
       "dns_name": "homeassistant.avril",
@@ -76,11 +80,39 @@
         "sha256": "fae6a728768cc10aff60d4820bfcd40d64cd77fab82c8bd92af13b3d9d414090"
       },
       "zigbee": {
-        "integration": null,
-        "model": null,
-        "serial_number": null,
+        "integration": "ZHA/ezsp",
+        "model": "Silicon Labs HubZ Smart Home Controller / HUSBZB-1",
+        "serial_number": "716000F1",
+        "usb_vendor_product": "10c4:8a2a",
+        "source_serial_path": "/dev/serial/by-id/usb-Silicon_Labs_HubZ_Smart_Home_Controller_716000F1-if01-port0",
+        "captured_coordinator_ieee": "00:0d:6f:00:17:b0:66:db",
+        "captured_firmware": "5.4.1.0 build 962",
+        "captured_channel": 15,
+        "captured_network_backup_utc": "2026-10-09T16:23:44.749430Z",
         "usb_host_selector": null,
         "guest_serial_path": null
+      },
+      "source": {
+        "installation": "HAOS18.3/RaspberryPi3-64/aarch64",
+        "core_version": "2026.9.3",
+        "supervisor_version": "2026.09.3",
+        "used_disk_GiB": 10.6,
+        "ethernet_mac": "B8:27:EB:AB:B6:DD",
+        "address_assignment": "DHCP134; fixed mapping confirmed by Jack; exclusion from dynamic pool pending",
+        "ssh": "root@homeassistant.avril:25 in Terminal & SSH app; existing key",
+        "apps": ["core_configurator", "core_ssh", "a0d7b954_tailscale"],
+        "remote_access": "Jack uses Pi Tailscale name/IP; homeassistant.coin-pangolin.ts.net /100.99.206.29 peer Offline; source app NeedsLogin after expired node key, operator reauthentication and real remote test pending",
+        "backup": {
+          "slug": "f4389be0",
+          "created_utc": "2026-10-10T01:01:15.193896Z",
+          "type": "full",
+          "bytes": 85719040,
+          "sha256": "41752178c2ced3876f0aa860620dfbf4a7920c10f3f0670a4bc0c616d8381cce",
+          "encrypted": false,
+          "off_host_copy": "/home/scubbo/epsilon-recovery.mVvt2ir2/haos-source-20261010.dhenn_hr/f4389be0.tar on culex",
+          "coverage": "all installed apps/share/ssl/media/HA config/recorder/zigbee DB; both captured SQLite integrity checks pass",
+          "restore_status": "not restored; fresh final backup and agreed cutover required"
+        }
       }
     },
     "101": {

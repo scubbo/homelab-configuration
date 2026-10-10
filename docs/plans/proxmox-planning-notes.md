@@ -4,6 +4,16 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 
 ## Task tracking
 
+- [x] Record Jack's HAOS-first ordering; defer Kubernetes guest migration while Jellyfin is in use.
+- [ ] Inventory Pi installation/apps/storage/radio/network/remote access and establish protected full-backup/key coverage.
+- [x] Verify pinned HAOS artifact and available resources; provision empty VM100 with temporary DHCP/onboot0.
+- [x] Verify empty HAOS boot/onboarding/DNS/Internet/reboot/clean shutdown and preserve configuration/evidence off-host.
+- [x] Capture full source backup with Jack's approval; verify app/database coverage, SQLite integrity and private off-Pi/off-host matching copies.
+- [ ] Jack reauthenticates source Tailscale app after expired-node-key/NeedsLogin; establish actual remote-access baseline before cutover.
+- [ ] Confirm physical HubZ coordinator location/extension cable and representative device/automation baseline.
+- [x] Verify HAOS staging documentation/configuration and prepare the commit for Jack's review.
+- [ ] Agree HA cutover window, `.134` exclusion/reservation transfer, radio relocation and application/device acceptance with Jack.
+
 - [x] Inspect host capacity, cluster roles, storage, and Home Assistant DNS.
 - [x] Agree the architecture with Jack: Proxmox on culex, separate Kubernetes and HAOS guests.
 - [x] Document hypervisor installation and the culex host conversion.
@@ -102,6 +112,14 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 - [x] Verify epsilon iDRAC or physical boot-console access before its rescue-imaging outage.
 
 ## Operator UI acceptance
+
+HAOS priority October10UTC: Jack defers k3s101/102 because Jellyfin users are active. Source rootSSH25/existingkey works; failed scubbo login was wrong username. Pi HAOS18.3/Core2026.9.3/10.6GiBused/ZHAHubZif01/USB10c4:8a2a/serial716000F1. Fullbackupf4389be0 at01:01:15UTC done100/errorsnone/allappsstarted,85719040bytes/hash41752178c2ced3876f0aa860620dfbf4a7920c10f3f0670a4bc0c616d8381cce/unencrypted/secret-bearing. Recorder/Zigbee DBs and threeapps included; both capturedSQLiteintegrityok/ZHA savednetworkbackup09Oct16:23 retainedprivately. Culexhaos-source-20261010.dhenn_hr56sourcefiles237919841B/modeshashesverified/fsync, macOStarprovenancesidecars/warningsretained.
+
+VM100emptyHAOS18.3/2vCPU4GiB64GiB/onboot0/noUSB bootsDHCP76/DNSgateway1/untouchedonboarding/verifiedHTTPS/Supervisorhealthy,Coreautomatically2026.10.0. Guest-onlyrebootnewbootID/sameMAC76/onboarding/cleanstopaccepted01:06:36; Pi134/JF200/cluster80Running78Ready0Pending, nohostreboot/drain/GPUhandoff. Culexhaos-stage-20261010.d2y4wvgm35files1480561459B/configSQLiteintegrityok/acceptedguestconfig/images/evidencehash/modesverified/fsync. CapturedsourceCorebackuprestoreuses2026.9.3; no sourceupgrade needed. Guestbootdiagnosticsremainlisted, noterror-free.
+
+Jack confirms Pi134mappingB8:27:EB:AB:B6:DD and PiTailscalename/IPremoteuse. Mapping134inside70–219needsreviewedexclusionbeforeownershiptransfer; no routerwrite. Currentpeerhomeassistant.coin-pangolin.ts.net/100.99.206.29Offline; actualsourceTailscalelogexpirednodekey→NeedsLogin, pre-existingremoteaccessblocker/Jacklocalreauth. ExactclientURL/physicalradioRFplacement/realdevicebaseline/cutoverwindow remainunconfirmed. [Execution](../../agentic-investigations/2026-10-10-haos-vm-staging.md).
+
+HAstagingverification:fiveexistingrendererunittestspass/pristine;250localdocumentationlinks/anchorsacross8changedMarkdownfiles/9Bashcodeexamples/duplicate-key-safehostJSON/private-key-hashscan/gitdiffcheckpass. ActualVM100manifestmatchescapturedacceptedhostconfigurationexcludinggeneratedmeta, stagingMAC/resources/onboot0/noUSBretainplannedfinaltemplateasrendererinput. Realguestreboot/onboarding/HTTPS/DNS/backupcoverage+SQLitechecksareexecutionacceptance; HAproductionrestore/USB/realdevice/remoteacceptancepending.
 
 Probe stage completeOctober9locally/October10UTC:199Debian13.7/kernel6.12.107/MACc7/DHCP221/keySSH/guestagent/normalreboot, LANHTTPpeerIPs/MTU/DNS/InternetTLS/NTP/mDNS/NFSfileIO/forcedTSsubnetpass. Virtualiperf~12.7/13.8Gbitreverse58retransmits; physicallyoffsite/iSCSILUN/SSDP/denyfirewall/longtransfer/guest-presenthostreboot/restorenetworkidentityremainopen, noautomaticproductionpromotion. NASvm-backupsregistered1001:1001/fsync/~10.3TiBavailable;199stoparchive882000610B/hash6b5e70...→unused198restoreNICremovedbeforeboot/EFI+OS+agent+installmarker+SSHkeypass/cleanstopretained. Defaultmailnotificationfailed/no recipient/local-onlyMTA; Jackselectsfollowupbeforeproductionjobs. GuesterrorjournalretainsPCIhotplug/audio/pNFSdiagnostics; systemd.ssh_auto=no removesVMSSHgeneratorVSockerrorafteractualreboot. FinalprivateconfigSQLite32KiBintegrityok/tar194560B;262files/1.77GBstagehash/modes/symlinkverifiedtoculexfinal-stage-20261010.wy034ay5. NoArgoCDwrites/rcloneoff/Vaultsealedseparatelytracked/80Running78Ready0Pending. [Finalevidence](../../agentic-investigations/2026-10-09-epsilon-bridge-storage.md#final-recovery-evidence).
 

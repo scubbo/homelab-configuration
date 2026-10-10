@@ -1,6 +1,6 @@
 # Home Assistant: Raspberry Pi to HAOS VM
 
-**Status: planned, downtime accepted.** Target: Proxmox guest 100 on physical epsilon, with the **same physical Zigbee dongle** passed through to Home Assistant OS. Finish the [Debian maintenance](epsilon-debian-upgrade.md), [Proxmox installation](proxmox-installation.md), and [network probe](proxmox-network-probe.md) first. The Pi remains the rollback appliance until migration and recovery checks pass.
+**Status: empty VM100 boot/reboot/shutdown verified; full source backup captured and checked; cutover pending.** Target: Proxmox guest 100 on physical epsilon, with the **same physical Zigbee dongle** passed through to Home Assistant OS. Debian maintenance, Proxmox bridge/storage and bounded probe backup/restore checks are complete; [remaining probe paths](proxmox-network-probe.md#observed-probe-results) stay tracked. Jack prioritizes HAOS and defers Kubernetes guest migration while Jellyfin is in use. VM100 is stopped/onboot0/noUSB, temporary DHCP `.76`; Pi still owns `.134`. Source backup, `.134` exclusion, radio/network ownership and an agreed HA outage precede restoration. The Pi remains the rollback appliance until migration and recovery checks pass.
 
 The [host-selection decision](proxmox-host-selection.md) and [manifests](../../non-k8s-iac/proxmox/README.md) select epsilon with separate general-purpose k3s, GPU-worker, and HAOS guests. Related: [planning notes](proxmox-planning-notes.md), [current asset catalogue](../asset-catalogue.md), and [active plans](README.md).
 
@@ -18,6 +18,16 @@ The [host-selection decision](proxmox-host-selection.md) and [manifests](../../n
 | Zigbee | Existing coordinator, existing integration/network identity, verified guest `/dev/serial/by-id/...` path |
 
 The source address is declared in [`charts/external-dns/homeassistant-dns-endpoint.yaml`](../../charts/external-dns/homeassistant-dns-endpoint.yaml). Confirm the Pi actually uses it and determine whether it is static or DHCP-reserved. Keeping `.134` preserves DNS and consumers of the numeric address. Proxmox's host management address is separate. HAOS uses guest networking, not Proxmox cloud-init `ipconfig` settings. The bridged guest is on the same LAN as the Pi, preserving mDNS/SSDP discovery without NAT or an extra ingress.
+
+## Observed preparation
+
+[Execution evidence](../../agentic-investigations/2026-10-10-haos-vm-staging.md) records source HAOS18.3/Core2026.9.3/Pi3-64,10.6GiBused, ZHA/HubZHUSBZB-1/serial716000F1/USB10c4:8a2a/interfaceif01. ExistingSSHkeyworkswith`root@homeassistant.avril -p25`; rootisinsideTerminal&SSHapp. JackconfirmsPiDHCP134/MACB8:27:EB:AB:B6:DDmappingandTailscaleremoteuse. AppsFileeditor/TerminalSSH/Tailscalestateincludedinfreshfullbackup`f4389be0`,85,719,040bytes/hash`41752178c2ced3876f0aa860620dfbf4a7920c10f3f0670a4bc0c616d8381cce`; archiveisunencrypted/secret-bearing/private, nocurrentrestoreclaim. CapturedrecorderandZigbeeSQLintegritychecks pass; privateZHA16:23UTCnetworkbackup retained.
+
+Empty [deployed VM100](../../non-k8s-iac/proxmox/vms/100-homeassistant.conf) isHAOS18.3/amd64/2vCPU/4GiBfixed/64GiBdisk. FirstbootautomaticallyinstalledCore2026.10.0/Supervisor2026.09.3; normalfullbackuprestoreselectsbackupCoreversion2026.9.3, so no sourceupgradeisneeded. Agent/DHCP76/gatewayDNS`.1`/verifiedInternetHTTPS/onboardinguntouched/guest-rebootnewbootID/sameMACaddress/cleanstopverified,PiandJFHTTP200afterward. Bootjournalretainstimezone-eventsource/no-audiocodec/PulseAudio/BlueZ/Pythonwarningdiagnostics, notclaimederror-free.
+
+Beforecutover:confirmactualTailscaleclientURL, realdevicebaseline/physicalradioRFplacement, Pi-onlyintegrations(`raspberry_pi`,`rpi_power`)andcustomcomponentx86behaviour, freshfinalbackup. Router`.134`liesinside`.70–.219`; reviewedexclusionwouldsplitthatpoolinto`.70–.133`/`.135–.219`andretain`.10–.68`/`.230–.254`. Confirmexactrouterversion/privateconfig+leases/candidateparser/rollbackandprotectNASclientsduringDHCPwrite; OPNsenseISCSavecanreconfigureimmediately. Jackperformsreviewedrouterchange; noagentrouterwritehasoccurred.
+
+**Source remote access requires operator recovery:** JackusesPiTailscalename/IP, peer`homeassistant.coin-pangolin.ts.net`/100.99.206.29currentlyOffline. Sourcelogshowsnodekeyexpired→NeedsLogin; appstarteddoesnotestablishconnectivity. JackreauthenticateslocallythenverifiescurrentremoteURL; finalcutoverbackupcapturesworkingnodestate. Do notstartrestoredTailscaleidentitywhilePiisactive. Currentfullbackup/capturednetworkkeysarehashverified/fsyncedonculex`haos-source-20261010.dhenn_hr`; stagingimages/config/evidenceonculex`haos-stage-20261010.d2y4wvgm`. Theseprovebackupcaptureandemptyboot, notproductionHArestore.
 
 ## 1. Identify the source and dependencies
 

@@ -6,6 +6,10 @@ Active plans describe proposed work, dependencies, execution steps, and acceptan
 
 Jack selected Proxmox on epsilon's upgraded Debian installation. Practice physical-host maintenance first; keep physical k3s/pods while preparing distinct general-purpose and GPU guests. The SQL datastore's HA design is investigated independently of the accepted-downtime upgrade.
 
+Jack prioritizes Home Assistant source inventory and empty HAOS VM staging. Kubernetes server/GPU guest migration is deferred while Jellyfin users are active. HAOS runs independently of Kubernetes; its source-backup, radio, addressing and outage checks govern cutover.
+
+EmptyHAOS100boot/onboarding/DNSHTTPS/reboot/cleanstopverified; stopped/onboot0/noUSB, Pi134remainsproduction. Freshfullsourcebackupcaptured/hashverified/offhostwithapp+recorder+ZHAcoverage. [Observed preparation](homeassistant-vm-migration.md#observed-preparation) recordssourceTailscaleexpiredkey/NeedsLogin/operatorreauth,134poolexclusion/radioRF/realdevicebaseline andcutoverwindowinputs.
+
 PhysicalepsilonDebian13/Proxmoxmanagement/kernel7.0.14/NVIDIA580/staticbridge/DNS/dedicatedstorage aredeployed/rebootverified. Probe199keySSH/DHCP221/LAN/Internet/mDNS/NFS/guestreboot/NASbackup→isolatedrestore198pass; [remainingnetworkmatrix](proxmox-network-probe.md#observed-probe-results) andnotificationdeliveryneedreviewbeforeproductionguests/HAOS. ManagementURL`https://192.168.1.69:8006`, UIloginconfirmed/namedadminaccesspending. Rclone remainsJackowned/offline; unrelatedVaultsealed/Lidarrfailurefollowups tracked.
 
 1. [Host-selection decision](proxmox-host-selection.md).
