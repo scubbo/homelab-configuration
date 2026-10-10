@@ -4,6 +4,13 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 
 ## Task tracking
 
+- [x] Jack authorizes CSI-provisioned test volumes/pods for both NFS and iSCSI on eps-base and eps-gpu.
+- [x] Jack approves normal deletion/recreation of named test consumer pods and temporary CSI-agent removal after verified test-volume unmount/detach; four PVCs/data/evidence retained.
+- [x] Capture CSI/node/storage/production baseline; fourBoundtestclaims reproduce unregistereddriver MountDevice failure while stagingtaints remain.
+- [x] Temporary CSI node agents on bothVMs Ready/zero restarts/bothdriversregistered; four1GiBtestvolumes pass nonroot4MiBwrite/fsync/read/checksum and actualhostmount/IQN checks.
+- [ ] Recreate test consumers and verify persistent data, clean unmount/detach, and exclusive iSCSI cross-node reattachment.
+- [ ] Preserve test claims/data/evidence, update assets/acceptance records, and commit the results for Jack's review.
+
 - [x] Jack selects guest names eps-base (101/server/.222) and eps-gpu (102/agent/.223), unattended key-based Debian installation and temporary NoSchedule staging taints.
 - [x] Update native VM templates, host intent and documentation; naming renderer tests fail on prior names then pass with eps-base/eps-gpu.
 - [x] Capture/hashverify/privateoffhost fresh prejoinSQL/config/token checkpoint; unused IDs/MACs/storage/headroom/HA+JF verified before allocation.
