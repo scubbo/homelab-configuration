@@ -7,6 +7,17 @@ appDef.helmApplication(
     sourceTargetRevision="11.2.0",
     namespace="prometheus",
     helmValues={
+        nodeSelector: {
+            "kubernetes.io/hostname": "eps-base"
+        },
+        tolerations: [
+            {
+                key: "homelab.scubbo.org/staging",
+                operator: "Equal",
+                value: "true",
+                effect: "NoSchedule"
+            }
+        ],
         serviceMonitor: {
             enabled: true,
             defaults: {
