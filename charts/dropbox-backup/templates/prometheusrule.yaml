@@ -1,0 +1,83 @@
+{{- if .Values.alerting.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: dropbox-backup-alerts
+  labels:
+    # Required for the kube-prometheus-stack Prometheus to discover this rule.
+    release: prometheus
+spec:
+  groups:
+    - name: dropbox-backup
+      interval: 1m
+      rules:
+        {{- if .Values.exporter.enabled }}
+        # The authoritative "is the backup healthy" signal: a real snapshot must
+        # exist recently. Clears itself as soon as the next good snapshot lands.
+        - alert: DropboxBackupStale
+          expr: time() - max(restic_backup_timestamp{namespace="dropbox-backup"}) > {{ .Values.alerting.staleAfterSeconds }}
+          for: 30m
+          labels:
+            severity: critical
+            namespace: dropbox-backup
+          annotations:
+            summary: "dropbox-backup has no fresh snapshot — the nightly backup is not producing snapshots."
+        # restic-exporter runs `restic check` each refresh; 0 means the repo failed
+        # its integrity check.
+        - alert: DropboxBackupCheckFailed
+          expr: restic_check_success{namespace="dropbox-backup"} == 0
+          for: 15m
+          labels:
+            severity: critical
+            namespace: dropbox-backup
+          annotations:
+            summary: "dropbox-backup restic repository failed its integrity check (restic check)."
+        # If the exporter is down we lose the two metric-based signals above, so we
+        # would not know the backup had gone stale. Alert on that blindness.
+        - alert: DropboxBackupExporterDown
+          expr: up{namespace="dropbox-backup"} == 0
+          for: 15m
+          labels:
+            severity: critical
+            namespace: dropbox-backup
+          annotations:
+            summary: "dropbox-backup restic-exporter is down — backup health is unobserved."
+        {{- end }}
+        # Fast, specific notice that a dropbox-backup Job (nightly backup or restore
+        # drill) failed outright. Uses the condition-based metric (not the failed-pod
+        # count, which is >0 even for jobs that recovered on retry), guarded by start
+        # time so old failed Jobs lingering in history stop alerting.
+        - alert: DropboxBackupJobFailed
+          expr: kube_job_failed{namespace="dropbox-backup", condition="true"} == 1 and on(job_name) (kube_job_status_start_time{namespace="dropbox-backup"} > (time() - 129600))
+          for: 5m
+          labels:
+            severity: critical
+            namespace: dropbox-backup
+          annotations:
+            summary: "A dropbox-backup Job failed (see the failed Job in namespace dropbox-backup)."
+        {{- if .Values.restoreDrill.enabled }}
+        # The scariest signal: the repo is not actually restorable, or the drill has
+        # stopped running. Active only once the drill has succeeded at least once
+        # (the metric is absent before the first successful run).
+        - alert: DropboxRestoreDrillStale
+          expr: time() - kube_cronjob_status_last_successful_time{namespace="dropbox-backup", cronjob="dropbox-backup-restore-drill"} > {{ .Values.alerting.drillStaleAfterSeconds }}
+          for: 1h
+          labels:
+            severity: critical
+            namespace: dropbox-backup
+          annotations:
+            summary: "dropbox-backup restore drill has not succeeded within its window — restorability is unverified."
+        {{- end }}
+        {{- if .Values.alerting.manualDrillReminder.enabled }}
+        # Not a failure condition: a deliberate calendar reminder delivered through
+        # the existing alert→Telegram path. Fires for one hour on the configured day
+        # each month, nudging Jack to do a manual full-restore spot-check by hand.
+        - alert: DropboxBackupManualDrillReminder
+          expr: (day_of_month() == {{ .Values.alerting.manualDrillReminder.dayOfMonth }}) and (hour() == {{ .Values.alerting.manualDrillReminder.hour }})
+          labels:
+            severity: critical
+            namespace: dropbox-backup
+          annotations:
+            summary: "Monthly reminder: do a manual full-restore spot-check of dropbox-backup (restic restore into a scratch dir, eyeball the files)."
+        {{- end }}
+{{- end }}
