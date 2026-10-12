@@ -191,6 +191,83 @@ After enabling it on the live replacement host, `192.168.1.13` routed through `t
 
 ## Remaining hardening
 
-- Perform and document an isolated restoration exercise from an AWS Backup recovery point before deleting the legacy `jellyfin-proxy` stack.
 - Keep the legacy stack available until the restoration exercise and a normal NPM certificate renewal have both succeeded.
 - Implement the planned AWS CloudWatch/EventBridge alert visibility in Grafana. AWS alerts currently route to the confirmed SNS email subscription.
+
+## Isolated AWS Backup restoration drill (2026-10-05)
+
+### Scope and safety controls
+
+Tested the latest completed AWS Backup recovery point for the encrypted NPM state volume without changing the live proxy, its state volume, its Elastic IP, NPM configuration, Cloudflare DNS, or Kubernetes resources.
+
+- Source recovery point: `snap-0ba1a06a458516363`, created 2026-10-04 from the live `vol-0699ed35f7bcbf753` state volume.
+- Restore job: `a2f8a3a2-6a6d-4ebd-8692-136d3b5b6815`; completed in 76 seconds.
+- Restored resource: encrypted 20 GiB EBS volume `vol-068de847cf4a8f0f9` in `us-east-1c`, encrypted with the same KMS key as the source.
+- Test host: temporary `t3.micro` `i-09336bb5af2e9abba` in `us-east-1c`, using the SSM instance profile and a dedicated security group with **no inbound rules**. Its public IP existed only for outbound SSM connectivity.
+- The restored disk was attached but no NPM container was started and no network listener was exposed.
+
+### Verification results
+
+The restored volume was mounted read-only with `noload` and unmounted after inspection:
+
+```
+/dev/nvme1n1 /mnt/npm-restore ro,relatime,norecovery
+```
+
+`fsck.ext4 -fn` completed without repairs. The restored NPM state was readable:
+
+- `proxy_host_rows=1`
+- `certificate_rows=1`
+- `/letsencrypt/live/npm-1/fullchain.pem` contains the expected `jellyfin.scubbo.org` Let's Encrypt certificate, valid through 2026-12-30.
+
+This proves that AWS Backup can restore the encrypted NPM state volume and that the restored data contains both the proxy configuration and ACME certificate material needed for recovery.
+
+### Cleanup verification
+
+After verification, the temporary instance was terminated, the restored EBS volume was deleted, and the no-ingress security group was deleted. AWS confirmed the volume and security group no longer existed. The live replacement proxy passed both EC2 system/instance status checks and continued serving public HTTPS throughout.
+
+## CloudFormation bootstrap reconciliation (2026-10-05)
+
+### Objective
+
+The live proxy had been repaired through SSM after its original cloud-init failure. This left the deployed CloudFormation launch template with stale user data, so a future instance replacement could reproduce the failure. The reconciliation replaced the EC2 instance from the corrected template while preserving the existing NPM state volume and Elastic IP.
+
+### First replacement attempt and root cause
+
+The first CloudFormation update rolled back safely. CloudFormation created a replacement instance, then tried to create the replacement `AWS::EC2::VolumeAttachment` while `vol-0699ed35f7bcbf753` was still attached to the old instance. EC2 rejected the request:
+
+```
+vol-0699ed35f7bcbf753 is already attached to an instance
+```
+
+CloudFormation cannot concurrently attach one EBS volume to the old and replacement instances. It deleted the provisional replacement and restored the old instance, volume attachment, and EIP association. Public Jellyfin remained healthy after rollback.
+
+### Successful controlled cutover
+
+After an additional completed on-demand state-volume backup (`snap-0c7dd201b3cf4997d`), the approved sequence was:
+
+1. Stop the existing replacement instance `i-0d4e80162cbd407ad`.
+2. Wait for it to stop, then detach `vol-0699ed35f7bcbf753` and wait for the volume to become `available`.
+3. Create and execute a fresh CloudFormation change set.
+
+CloudFormation completed the update successfully:
+
+- New instance: `i-0887ba1714b7bed76`
+- Elastic IP retained: `34.231.142.91`
+- Persistent encrypted state volume retained and attached: `vol-0699ed35f7bcbf753`
+- New EIP association: `eipassoc-06c582b3559d09ea6`
+- Corrected cloud-init completed without errors and installed AWS CLI v2 from AWS's archive.
+
+### Tailscale convergence delay
+
+Immediately after the new node enrolled, public HTTPS returned `502`: NPM and its persisted certificate were running, but the new Tailscale peer could not yet query OPNsense DNS at `100.80.219.48:53` or reach Traefik at `192.168.1.13:80`. The node had the correct subnet route and `tailscale ping opnsense` succeeded, but data-plane connections initially timed out.
+
+This recovered without an OPNsense firewall, Unbound, or Tailscale ACL change once the replacement node's peer path converged. The final checks confirmed:
+
+- `jellyfin.avril` resolves to `192.168.1.13` over `tailscale0`.
+- The proxy receives Jellyfin's expected upstream `302` response.
+- Public HTTP redirects to HTTPS.
+- Public HTTPS returns Jellyfin's expected `302` then `200` response with the original trusted Let’s Encrypt certificate.
+- The new EC2 instance passes system and instance status checks.
+
+Do not treat a short post-enrollment upstream `502` as evidence that an OPNsense Tailscale firewall rule needs changing. Verify the Tailscale peer path and allow it time to converge before altering firewall or DNS policy.

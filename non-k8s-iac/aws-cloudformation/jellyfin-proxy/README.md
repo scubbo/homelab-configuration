@@ -96,6 +96,20 @@ aws ssm start-session \
 
 This port-forward is the only supported way to access NPM administration. Do not add an Internet-facing port 81 or SSH rule as a convenience workaround.
 
+## Replacing the proxy instance
+
+The NPM state volume can attach to only one EC2 instance at a time. A direct CloudFormation replacement attempts to create the new instance before replacing its volume attachment, so the update rolls back while the old instance still owns the volume.
+
+For a controlled replacement after confirming a current AWS Backup recovery point:
+
+1. Stop the current `ProxyInstance` and wait for `stopped`.
+2. Detach the `ProxyStateVolume` and wait for `available`.
+3. Create and review a fresh CloudFormation change set.
+4. Execute it. CloudFormation creates the replacement instance, attaches the preserved state volume, and moves the existing Elastic IP.
+5. Wait for cloud-init and SSM, then verify NPM, Tailscale, `jellyfin.avril`, and external HTTPS before considering the outage complete.
+
+The replacement may return an upstream `502` briefly while a newly enrolled Tailscale node establishes its data-plane path to OPNsense. Confirm route/DNS convergence before changing OPNsense firewall or Unbound configuration.
+
 If the Session Manager port-forward accepts a local connection but reports that its connection to destination port 81 failed, investigate through SSM rather than changing security-group rules. The usual cause is that NPM has not started:
 
 ```bash
@@ -130,7 +144,15 @@ Before changing public DNS, validate this exact request through SSM:
 curl --fail --location --connect-timeout 10 --max-time 30 http://jellyfin.avril/
 ```
 
-AWS Backup protects the state volume, but a backup is not a recovery test. At least once after migration, restore a recovery point to a temporary volume in `us-east-1c`, attach it to an isolated replacement instance, and verify the NPM configuration and certificate files are usable. Destroy the test resources when validation is complete.
+AWS Backup protects the state volume, but a backup is not a recovery test. The restoration drill on 2026-10-05 passed: the latest recovery point restored to an encrypted 20 GiB volume in `us-east-1c`, and an isolated SSM-only host mounted it with `ro,noload`. The NPM SQLite database contained the Proxy Host and certificate records, and the restored certificate matched `jellyfin.scubbo.org`.
+
+Repeat the following after material changes to backup, storage, NPM, or recovery infrastructure:
+
+1. Restore the latest recovery point to a temporary volume in `us-east-1c` with AWS Backup.
+2. Attach it to an SSM-only test instance protected by a security group with no inbound rules.
+3. Mount the volume read-only with `noload`; do not start NPM from the restored state.
+4. Run a no-repair filesystem check and inspect the NPM SQLite database and public certificate metadata. Never print private keys or NPM credential values.
+5. Terminate the test instance, delete the restored volume, and delete the temporary security group. Verify all temporary resources are gone.
 
 ## Monitoring follow-up
 
