@@ -5,7 +5,7 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 ## Task tracking
 
 - [x] Jack authorizes pushing the task branch and opening a PR for approval. Integrate currentmain Jellyfinproxy documentation; resolve assetcatalogue conflict preserving galactus/migration records and main's acceptedproxyinstance/restore-drill facts.
-- [ ] Push the reviewed task branch and open/attach its PR; pilotdeployment remains gated by Jack's approval/merge.
+- [x] Taskbranch pushed and [PR64](https://github.com/scubbo/homelab-configuration/pull/64) opened/attached forJackapproval; currentmain integrated/tests pass/mergeable. Pilotdeployment remains gated by approval/merge and actualGitOpsrollout verification.
 
 - [x] October12 Jack authorizes deletion of exactly four retained CSI test PVCs/NAS data after live identity/consumer/mount checks.
 - [x] Jack selects GitOps review/push for application migration; general applications distributed across eps-base and culex, eps-gpu reserved for GPU handoff. Verify one real app before subsequent migrations; Jellyfin/arr-family/GPU consumers excluded.
