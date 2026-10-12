@@ -4,6 +4,14 @@ Related: [host assessment](proxmox-host-selection.md), [installation plan](proxm
 
 ## Task tracking
 
+- [x] October12 Jack authorizes deletion of exactly four retained CSI test PVCs/NAS data after live identity/consumer/mount checks.
+- [x] Jack selects GitOps review/push for application migration; general applications distributed across eps-base and culex, eps-gpu reserved for GPU handoff. Verify one real app before subsequent migrations; Jellyfin/arr-family/GPU consumers excluded.
+- [x] FourCSItestclaims/PVsdeletedwithUIDpreconditions/controllerfinalizers; read-onlyNASdataset/NFSexport/iSCSIextent+targetabsenceverified;24productionattachmentsUID/specsunchanged/evidencepreserved.
+- [x] Prepare wedding-media pilot selector/exactstagingtoleration on eps-base; read-onlystaticNFS/RollingUpdate preservefirstappgate, no broadernodepromotion/CSIagentchange. Liveplacementredassertionculex/currentLANpublicbrowser+mediaRangebaselinepass; localcommitforJackreview/push.
+- [x] Preservecleanup+pilotbaseline+redplacementverifier evidenceoffhost56files/5460642bytes/hashmodefsyncmatch; current82Running80Ready0Pending/24productionattachmentUIDspecsintact/VMstagingtaints unchanged. Fiveexistingrendererchecks/307localdocslinks/fiveBashblocks/JSON/keyscan/diffcheckpass; no chartYAMLcorrectnesscheck.
+- [ ] After Jack deploys the pilot, verify its actual VM placement, readiness, media/HTTP/ingress and persistent-storage path before preparing later migrations.
+- [ ] Distribute subsequent eligible general workloads across eps-base and culex through reviewed GitOps, preserving existing exclusions and app-by-app acceptance.
+
 - [x] Jack authorizes CSI-provisioned test volumes/pods for both NFS and iSCSI on eps-base and eps-gpu.
 - [x] Jack approves normal deletion/recreation of named test consumer pods and temporary CSI-agent removal after verified test-volume unmount/detach; four PVCs/data/evidence retained.
 - [x] Capture CSI/node/storage/production baseline; fourBoundtestclaims reproduce unregistereddriver MountDevice failure while stagingtaints remain.
