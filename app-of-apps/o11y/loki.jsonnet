@@ -107,7 +107,14 @@ appDef.helmRemotePlusLocalApplication(
                     effect: "NoSchedule"
                 }
             ],
-            affinity: null,
+            affinity: {
+                podAntiAffinity: {
+                    requiredDuringSchedulingIgnoredDuringExecution: []
+                }
+            },
+            deploymentStrategy: {
+                type: "Recreate"
+            },
             service: {
                 type: "ClusterIP"
             }
