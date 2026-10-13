@@ -96,6 +96,18 @@ appDef.helmRemotePlusLocalApplication(
         gateway: {
             enabled: true,
             replicas: 1,
+            nodeSelector: {
+                "kubernetes.io/hostname": "eps-base"
+            },
+            tolerations: [
+                {
+                    key: "homelab.scubbo.org/staging",
+                    operator: "Equal",
+                    value: "true",
+                    effect: "NoSchedule"
+                }
+            ],
+            affinity: null,
             service: {
                 type: "ClusterIP"
             }
