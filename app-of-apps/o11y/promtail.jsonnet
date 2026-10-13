@@ -7,6 +7,24 @@ appDef.helmApplication(
     sourceTargetRevision="6.16.6",
     namespace="prometheus",
     helmValues={
+        tolerations: [
+            {
+                key: "node-role.kubernetes.io/master",
+                operator: "Exists",
+                effect: "NoSchedule"
+            },
+            {
+                key: "node-role.kubernetes.io/control-plane",
+                operator: "Exists",
+                effect: "NoSchedule"
+            },
+            {
+                key: "homelab.scubbo.org/staging",
+                operator: "Equal",
+                value: "true",
+                effect: "NoSchedule"
+            }
+        ],
         config: {
             clients: [{
                 url: "http://loki-gateway.prometheus.svc.cluster.local/loki/api/v1/push"
