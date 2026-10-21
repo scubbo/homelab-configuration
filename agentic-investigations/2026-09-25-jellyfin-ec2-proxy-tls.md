@@ -192,7 +192,6 @@ After enabling it on the live replacement host, `192.168.1.13` routed through `t
 ## Remaining hardening
 
 - Keep the legacy stack available until the restoration exercise and a normal NPM certificate renewal have both succeeded.
-- Implement the planned AWS CloudWatch/EventBridge alert visibility in Grafana. AWS alerts currently route to the confirmed SNS email subscription.
 
 ## Isolated AWS Backup restoration drill (2026-10-05)
 
@@ -271,3 +270,23 @@ This recovered without an OPNsense firewall, Unbound, or Tailscale ACL change on
 - The new EC2 instance passes system and instance status checks.
 
 Do not treat a short post-enrollment upstream `502` as evidence that an OPNsense Tailscale firewall rule needs changing. Verify the Tailscale peer path and allow it time to converge before altering firewall or DNS policy.
+
+## Grafana AWS alert visibility (2026-10-05)
+
+Grafana now has a dedicated `grafana-cloudwatch` IAM user created by the `grafana-cloudwatch` CloudFormation stack. Its manual Kubernetes Secret is `prometheus/grafana-cloudwatch`; the key material is not stored in Git or CloudFormation.
+
+The IAM policy allows only:
+
+- CloudWatch metric and alarm reads;
+- EC2 instance/tag/region discovery for CloudWatch queries;
+- Logs Insights reads for `/aws/events/jellyfin-proxy`.
+
+It cannot alter CloudWatch alarms, publish metrics, operate EC2, publish SNS messages, access Parameter Store, or read AWS Backup data.
+
+The proxy stack now retains the following EventBridge events for 90 days in `/aws/events/jellyfin-proxy` while preserving the existing SNS email notification targets:
+
+- EC2 status-check alarm state transitions;
+- AWS Backup job `FAILED`, `EXPIRED`, and `ABORTED` events;
+- Tailscale auth-key expiration notifications and expiration.
+
+The provisioned Grafana datasource and `Jellyfin Proxy AWS` dashboard are GitOps-managed. After ArgoCD reconciles the Grafana configuration, verify the dashboard can read the EC2 status-check metrics, the `OK` CloudWatch alarm state, and the event-log query.
