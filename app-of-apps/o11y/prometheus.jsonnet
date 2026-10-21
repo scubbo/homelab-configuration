@@ -76,6 +76,40 @@ appDef.helmApplication(
                 enabled: true
             }
         },
+        additionalPrometheusRulesMap: {
+            "persistent-volume-capacity": {
+                groups: [
+                    {
+                        name: "persistent-volume-capacity",
+                        rules: [
+                            {
+                                alert: "KubePersistentVolumeNearlyFull",
+                                expr: |||
+                                    (
+                                      kubelet_volume_stats_available_bytes{job="kubelet", metrics_path="/metrics", namespace=~".*"}
+                                      /
+                                      kubelet_volume_stats_capacity_bytes{job="kubelet", metrics_path="/metrics", namespace=~".*"}
+                                    ) < 0.15
+                                    and kubelet_volume_stats_used_bytes{job="kubelet", metrics_path="/metrics", namespace=~".*"} > 0
+                                    unless on (cluster, namespace, persistentvolumeclaim)
+                                    kube_persistentvolumeclaim_access_mode{access_mode="ReadOnlyMany"} == 1
+                                    unless on (cluster, namespace, persistentvolumeclaim)
+                                    kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+                                |||,
+                                "for": "15m",
+                                labels: {
+                                    severity: "warning"
+                                },
+                                annotations: {
+                                    summary: "PersistentVolume is nearly full",
+                                    description: "The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is below 15% free."
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
         alertmanager: {
             alertmanagerSpec: {
                 // Mount the telegram secret so alertmanager can use it
@@ -100,6 +134,10 @@ appDef.helmApplication(
                             // k3s embeds these components - no separate metrics endpoints
                             matchers: ["alertname =~ KubeSchedulerDown|KubeControllerManagerDown|KubeProxyDown"],
                             receiver: "null"
+                        },
+                        {
+                            matchers: ["alertname =~ KubePersistentVolumeFillingUp|KubePersistentVolumeNearlyFull|KubePodCrashLooping"],
+                            receiver: "telegram"
                         },
                         {
                             matchers: ["severity = critical"],
