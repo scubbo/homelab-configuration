@@ -73,7 +73,12 @@ appDef.helmApplication(
         },
         crds: {
             upgradeJob: {
-                enabled: true
+                enabled: true,
+                image: {
+                    kubectl: {
+                        tag: "v1.32.6"
+                    }
+                }
             }
         },
         additionalPrometheusRulesMap: {
