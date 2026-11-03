@@ -1,0 +1,73 @@
+{{- if .Values.exporter.enabled }}
+# Long-lived exporter that opens the restic repo on a schedule and publishes
+# metrics (last-snapshot age, repo size, snapshot count, check result). The
+# backup itself is a short-lived CronJob with nothing to scrape, so this
+# Deployment is the only continuously-scrapable view of backup health.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dropbox-backup-restic-exporter
+  labels:
+    app: dropbox-backup-restic-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dropbox-backup-restic-exporter
+  template:
+    metadata:
+      labels:
+        app: dropbox-backup-restic-exporter
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: restic-exporter
+          image: "{{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: HOME
+              value: /tmp
+            - name: RESTIC_REPOSITORY
+              value: /data/repo
+            - name: RESTIC_CACHE_DIR
+              value: /cache
+            # The exporter re-reads the repo (snapshots, stats, check) once per
+            # interval. Hourly keeps it well clear of the 03:17 nightly window and
+            # only ever takes a shared lock (the nightly forget/prune, which takes
+            # an exclusive lock, uses --retry-lock to wait out any overlap).
+            - name: REFRESH_INTERVAL
+              value: {{ .Values.exporter.refreshInterval | quote }}
+            - name: LISTEN_PORT
+              value: {{ .Values.exporter.port | quote }}
+            - name: RESTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretName }}
+                  key: restic-password
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.exporter.port }}
+          resources:
+            {{- toYaml .Values.exporter.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: cache
+              mountPath: /cache
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        # Mount the repo directly over NFS (read-write, for restic's shared lock
+        # files) rather than the ReadWriteOnce PVC, so the exporter need not
+        # co-locate on the same node as the backup pod.
+        - name: data
+          nfs:
+            server: {{ .Values.nfs.server }}
+            path: {{ .Values.nfs.path }}
+        - name: cache
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+{{- end }}

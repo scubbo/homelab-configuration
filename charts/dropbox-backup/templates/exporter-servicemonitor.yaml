@@ -1,0 +1,20 @@
+{{- if .Values.exporter.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: dropbox-backup-restic-exporter
+  labels:
+    app: dropbox-backup-restic-exporter
+    # Required for the kube-prometheus-stack Prometheus to discover this monitor.
+    release: prometheus
+spec:
+  endpoints:
+    - port: metrics
+      interval: 60s
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app: dropbox-backup-restic-exporter
+{{- end }}
