@@ -1,0 +1,139 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "dimensions": { "InstanceId": "i-0887ba1714b7bed76" },
+          "metricName": "StatusCheckFailed",
+          "namespace": "AWS/EC2",
+          "period": "60",
+          "refId": "A",
+          "region": "us-east-1",
+          "statistic": "Maximum"
+        }
+      ],
+      "title": "EC2 Status Check Failures",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "dimensions": { "InstanceId": "i-0887ba1714b7bed76" },
+          "metricName": "StatusCheckFailed_System",
+          "namespace": "AWS/EC2",
+          "period": "60",
+          "refId": "A",
+          "region": "us-east-1",
+          "statistic": "Maximum"
+        }
+      ],
+      "title": "EC2 System Status Check Failures",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+      "description": "CloudWatch alarm transitions, AWS Backup failures, and Tailscale auth-key expiry events. SNS email remains the immediate notification path.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "id": 3,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          { "desc": false, "displayName": "State" }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "expression": "fields @timestamp, detail-type, detail.state.value as state, detail.state.reason as reason, detail.alarmName as alarm, detail['policy-type'] as policy, detail['parameter-name'] as parameter\n| sort @timestamp desc",
+          "logGroups": [
+            {
+              "arn": "arn:aws:logs:us-east-1:119281758091:log-group:/aws/events/jellyfin-proxy:*",
+              "name": "/aws/events/jellyfin-proxy"
+            }
+          ],
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "us-east-1"
+        }
+      ],
+      "title": "AWS Alert Events",
+      "type": "table"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["aws", "cloudwatch", "jellyfin"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "browser",
+  "title": "Jellyfin Proxy AWS",
+  "uid": "jellyfin-proxy-aws",
+  "version": 1
+}

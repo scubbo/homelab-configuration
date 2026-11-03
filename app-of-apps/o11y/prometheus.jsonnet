@@ -10,6 +10,7 @@ appDef.helmApplication(
     helmValues={
         grafana: {
             enabled: true,
+            envFromSecret: "grafana-cloudwatch",
             ingress: {
                 enabled: true,
                 ingressClassName: "traefik",
@@ -18,6 +19,20 @@ appDef.helmApplication(
                 ]
             },
             additionalDataSources: [
+                {
+                    name: "CloudWatch",
+                    type: "cloudwatch",
+                    uid: "cloudwatch",
+                    access: "proxy",
+                    jsonData: {
+                        authType: "keys",
+                        defaultRegion: "us-east-1"
+                    },
+                    secureJsonData: {
+                        accessKey: "$AWS_ACCESS_KEY_ID",
+                        secretKey: "$AWS_SECRET_ACCESS_KEY"
+                    }
+                },
                 {
                     name: "Loki",
                     type: "loki",

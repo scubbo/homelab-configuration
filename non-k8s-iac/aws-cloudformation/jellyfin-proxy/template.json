@@ -398,8 +398,49 @@
               "Ref": "ProxyAlertTopic"
             },
             "Id": "backup-failure-notification"
+          },
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "AlertEventLogGroup",
+                "Arn"
+              ]
+            },
+            "Id": "backup-failure-event-log"
           }
         ]
+      }
+    },
+    "AlertEventLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/events/jellyfin-proxy",
+        "RetentionInDays": 90
+      }
+    },
+    "AlertEventLogGroupPolicy": {
+      "Type": "AWS::Logs::ResourcePolicy",
+      "Properties": {
+        "PolicyName": "JellyfinProxyEventBridgeLogDelivery",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AllowEventBridgeToWriteAlertEvents",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": {
+                "Fn::Sub": "${AlertEventLogGroup.Arn}:*"
+              }
+            }
+          ]
+        }
       }
     },
     "ProxyAlertTopic": {
@@ -490,6 +531,47 @@
               "Ref": "ProxyAlertTopic"
             },
             "Id": "tailscale-auth-key-expiry-notification"
+          },
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "AlertEventLogGroup",
+                "Arn"
+              ]
+            },
+            "Id": "tailscale-auth-key-expiry-event-log"
+          }
+        ]
+      }
+    },
+    "InstanceStatusCheckAlarmEventRule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "Record Jellyfin proxy EC2 status-check alarm state transitions for Grafana.",
+        "EventPattern": {
+          "source": [
+            "aws.cloudwatch"
+          ],
+          "detail-type": [
+            "CloudWatch Alarm State Change"
+          ],
+          "detail": {
+            "alarmName": [
+              {
+                "Ref": "InstanceStatusCheckAlarm"
+              }
+            ]
+          }
+        },
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "AlertEventLogGroup",
+                "Arn"
+              ]
+            },
+            "Id": "instance-status-check-event-log"
           }
         ]
       }

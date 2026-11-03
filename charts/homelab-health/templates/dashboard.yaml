@@ -11,3 +11,5 @@ metadata:
 data:
   homelab-health.json: |-
 {{ .Files.Get "dashboards/homelab-health.json" | indent 4 }}
+  jellyfin-proxy-aws.json: |-
+{{ .Files.Get "dashboards/jellyfin-proxy-aws.json" | indent 4 }}
