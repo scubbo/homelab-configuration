@@ -90,4 +90,4 @@ Examples of current manual secrets:
 - `/TODO.md` - Simple checklist of pending tasks
 - `/docs/asset-catalogue.md` - Inventory of durable infrastructure, public exposure, credentials, recovery dependencies, and operational access patterns
 - Individual chart READMEs under `/charts/<name>/README.md`
-- If you add a new tool, library, installation, or technique, you should draft a blog post about it in `~/Code/blogcontent`
+- If you add a new tool, library, installation, or technique, ask Jack whether a blog post is justified. If so, draft it in `~/Code/blogcontent`.
