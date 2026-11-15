@@ -34,7 +34,7 @@ spec:
 
         # Alert when SSL certificate will expire soon
         - alert: SSLCertificateExpiringSoon
-          expr: (probe_ssl_earliest_cert_expiry{probe_scope="external"} - time()) / 86400 < 30
+          expr: probe_ssl_earliest_cert_expiry{probe_scope="external"} - time() < 30 * 86400
           for: 1h
           labels:
             severity: warning
@@ -44,7 +44,7 @@ spec:
 
         # Alert when SSL certificate will expire very soon
         - alert: SSLCertificateExpiringVerySoon
-          expr: (probe_ssl_earliest_cert_expiry{probe_scope="external"} - time()) / 86400 < 7
+          expr: probe_ssl_earliest_cert_expiry{probe_scope="external"} - time() < 7 * 86400
           for: 1h
           labels:
             severity: critical

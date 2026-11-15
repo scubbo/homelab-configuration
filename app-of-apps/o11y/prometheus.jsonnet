@@ -141,7 +141,7 @@ appDef.helmApplication(
                             receiver: "null"
                         },
                         {
-                            matchers: ["alertname =~ KubePersistentVolumeFillingUp|KubePersistentVolumeNearlyFull|KubePodCrashLooping"],
+                            matchers: ["alertname =~ KubePersistentVolumeFillingUp|KubePersistentVolumeNearlyFull|KubePodCrashLooping|SSLCertificateExpiringSoon"],
                             receiver: "telegram"
                         },
                         {
