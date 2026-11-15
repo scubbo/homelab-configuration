@@ -86,6 +86,8 @@ The OPNsense webhook does not support TXT records for ownership tracking. This m
 
 For hostnames that are not Kubernetes Ingresses (e.g. NAS boxes, routers, other LAN hosts), do **not** create Unbound host overrides manually — they will be deleted on the next sync. Instead, declare them as `DNSEndpoint` CRDs in `charts/external-dns/`. External-dns watches these via its `crd` source and will create and maintain the corresponding Unbound record.
 
+Omit `recordTTL` from these endpoints. Unbound host overrides do not support per-record TTLs, so setting one causes repeated updates and Unbound restarts.
+
 Example (`charts/external-dns/my-host-dns-endpoint.yaml`):
 
 ```yaml
@@ -97,7 +99,6 @@ metadata:
 spec:
   endpoints:
     - dnsName: my-host.avril
-      recordTTL: 3600
       recordType: A
       targets:
         - 192.168.1.x
