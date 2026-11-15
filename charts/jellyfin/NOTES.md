@@ -1,4 +1,8 @@
-For external availability - use the following CloudFormation template:
+**Do not deploy the example below.** It describes a retired proxy configuration
+that exposes the administration port publicly. For the managed Jellyfin proxy,
+use the [CloudFormation template and runbook](../../non-k8s-iac/aws-cloudformation/jellyfin-proxy/README.md).
+
+Historical example:
 
 ```
 AWSTemplateFormatVersion: 2010-09-09
